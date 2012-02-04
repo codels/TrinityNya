@@ -861,6 +861,12 @@ Player::Player(WorldSession* session): Unit(true), m_achievementMgr(this), m_rep
     isDebugAreaTriggers = false;
 
     SetPendingBind(0, 0);
+
+	dynamicRate = 1.0f;
+    staticRate = false;
+    changeRate = 0;
+    mkTime = 0;
+    mkCount = 0;
 }
 
 Player::~Player ()
@@ -1509,6 +1515,2522 @@ void Player::SetDrunkValue(uint16 newDrunkenValue, uint32 itemId)
 
     SendMessageToSet(&data, true);
 }
+
+// newland
+//wowkarelia
+
+struct ttlForPvP
+{
+    uint32 hk;
+    uint16 tA;
+    uint16 tH;
+};
+
+ttlForPvP ttl[] = 
+{
+    {100, 1, 15}, // 0
+    {250, 2, 16}, // 1
+    {500, 3, 17}, // 2
+    {1000, 4, 18}, // 3
+    {1500, 5, 19}, // 4
+    {2500, 6, 20}, // 5
+    {4000, 7, 21}, // 6
+    {5555, 8, 22}, // 7
+    {7500, 9, 23}, // 8
+    {10000, 10, 24}, // 9
+    {15000, 11, 25}, // 10
+    {20000, 12, 26}, // 11
+    {25000, 13, 27}, // 12
+    {50000, 14, 28} // 13
+};
+
+
+bool Player::titleCheck(uint8 i)
+{
+    if(i > 13)
+        return false;
+
+    if(ttl[i].hk > GetUInt32Value(PLAYER_FIELD_LIFETIME_HONORABLE_KILLS))
+        return false;
+
+    uint16 tId = GetTeam() == ALLIANCE ? ttl[i].tA : ttl[i].tH;
+
+    if(!HasTitle(tId))
+        if (CharTitlesEntry const* title = sCharTitlesStore.LookupEntry(tId))
+            SetTitle(title);
+
+    return true;
+}
+
+void Player::titleAllCheck()
+{
+    for (uint8 i = 0; i < 14; ++i)
+        if(titleCheck(i))
+            ++tlNextCheck;
+}
+
+void Player::titleCheckKill()
+{
+    if (titleCheck(tlNextCheck))
+        ++tlNextCheck;
+}
+
+std::string strMulti[8] = 
+{
+    "|cFF00FFFF ДВОЙНОЕ УБИЙСТВО",
+    "|cFF00FFFF ТРОЙНОЕ УБИЙСТВО",
+    "|cFF00FFFF ЧЕТЫРЕХКРАТНОЕ УБИЙСТВО",
+    "|cFF00FFFF ПЯТИКРАТНОЕ УБИЙСТВО",
+    "|cFF00FFFF ЗВЕРСТВО",
+    "|cFF00FFFF ПРЕВОСХОДСТВО",
+    "|cFFFF0018 НЕУСМИРИМЫЙ",
+    "|cFFFF0018 ПОДОБЕН БОГУ"
+};
+//CC6600 ModifyMoney(-(int32)cost);
+//23505
+void Player::KillToMultikill()
+{
+    time_t now = time(NULL);
+
+    if (now - mkTime > 15)
+        mkCount = 0;
+
+    mkTime = now;
+
+    if (mkCount < 9)
+        mkCount++;
+
+    if (mkCount < 2)
+        return;
+
+    CastSpell(this, 2379, true);
+
+	ModifyMoney(500000 * (mkCount - 1));
+
+	std::ostringstream strMultiKillMoney;
+
+    strMultiKillMoney << "|TInterface\\Icons\\Inv_misc_coin_02.png:30|t |cFFCC6600";
+    strMultiKillMoney << GetName();
+    strMultiKillMoney << " +" << (50  * (mkCount - 1)) << " ЗОЛОТА";
+
+    WorldPacket dataOne(SMSG_NOTIFICATION, (strMultiKillMoney.str().size()+1));
+    dataOne << strMultiKillMoney.str().c_str();
+    sWorld->SendGlobalMessage(&dataOne);
+
+    std::string strMultiKill;
+    strMultiKill = "|TInterface\\Icons\\Achievement_bg_topdps.png:30|t |cFF60FF00";
+    strMultiKill += GetName();
+    strMultiKill += strMulti[mkCount - 2];
+
+    WorldPacket data(SMSG_NOTIFICATION, (strMultiKill.size()+1));
+    data << strMultiKill;
+    sWorld->SendGlobalMessage(&data);
+
+	CharacterDatabase.PExecute("INSERT INTO `character_multikill` (`character_guid`, `character_name`, `count`, `time`) VALUES ('%u', '%s', '%u', CURRENT_TIMESTAMP())", GetGUID(), GetName(), mkCount);
+
+    if (mkCount < 3)
+        return;
+
+    std::string strMultiKillBerserk;
+    strMultiKillBerserk = "|TInterface\\Icons\\Racial_orc_berserkerstrength.png:30|t |cFF00FFFF";
+    strMultiKillBerserk += GetName();
+    strMultiKillBerserk += "|cFFCC0000  ВХОДИТ В СОСТОЯНИЕ БЕРСЕРКА";
+
+    WorldPacket dataZero(SMSG_NOTIFICATION, (strMultiKillBerserk.size()+1));
+    dataZero << strMultiKillBerserk;
+    sWorld->SendGlobalMessage(&dataZero);
+
+	CastSpell(this, 23505, true);
+
+    if (mkCount < 6)
+        return;
+
+    WorldPacket dataTwo(SMSG_PLAY_SOUND, 4);
+    dataTwo << uint32(14808) << GetGUID();
+    sWorld->SendGlobalMessage(&dataTwo);
+}
+
+void Player::pvpKill()
+{
+    if(!InBattleground())
+        return;
+
+    titleCheckKill();
+    KillToMultikill();
+}
+
+void Player::UpdateSpellToLevel()
+{
+	uint32 level = getLevel();
+
+	if (level >= 20 && !HasSpell(33388)) learnSpell(33388, false);
+	if (level >= 40 && !HasSpell(33391) && HasSpell(33388)) learnSpell(33391, false);
+	if (level >= 60 && !HasSpell(34090) && HasSpell(33388)) learnSpell(34090, false);
+	if (level >= 70 && !HasSpell(34091) && HasSpell(33388)) learnSpell(34091, false);
+	if (level >= 77 && !HasSpell(54197)) learnSpell(54197, false); // air northland
+
+	if (level >= sWorld->getIntConfig(CONFIG_MIN_DUALSPEC_LEVEL) && GetSpecsCount() == 1)
+	{
+		CastSpell(this, 63680, true, NULL, NULL, GetGUID());
+		CastSpell(this, 63624, true, NULL, NULL, GetGUID());
+	}
+
+	if (getClass() == CLASS_ROGUE)
+	{
+		if (!HasSpell(1784)) learnSpell(1784, false); //Незаметность
+
+		if (level < 4) return;
+
+		if (!HasSpell(53)) learnSpell(53, false); //Удар в спину Уровень 1
+		if (!HasSpell(921)) learnSpell(921, false); //Обшаривание карманов 
+
+		if (level < 6) return;
+
+		if (!HasSpell(1757) && HasSpell(1752)) learnSpell(1757, false); //Коварный удар Уровень 2
+		if (!HasSpell(1776)) learnSpell(1776, false); //Парализующий удар
+
+		if (level < 8) return;
+
+		if (!HasSpell(6760) && HasSpell(2098)) learnSpell(6760, false); //Потрошение Уровень 2
+		if (!HasSpell(5277)) learnSpell(5277, false); //Ускользание Уровень 1
+
+		if (level < 10) return;
+
+		if (!HasSpell(2983)) learnSpell(2983, false); //Спринт Уровень 1
+		if (!HasSpell(6770)) learnSpell(6770, false); //Ошеломление Уровень 1
+		if (!HasSpell(5171)) learnSpell(5171, false); //Мясорубка Уровень 1
+		if (!HasSpell(674)) learnSpell(674, false); //Бой двумя оружиями Пассивная
+
+		if (level < 12) return;
+
+		if (!HasSpell(2589) && HasSpell(53)) learnSpell(2589, false); //Удар в спину Уровень 2
+		if (!HasSpell(1766)) learnSpell(1766, false); //Пинок 
+		if (!HasSpell(3127)) learnSpell(3127, false); //Парирование Пассивная
+
+		if (level < 14) return;
+
+		if (!HasSpell(1758) && HasSpell(1752)) learnSpell(1758, false); //Коварный удар Уровень 3
+		if (!HasSpell(703)) learnSpell(703, false); //Гаррота Уровень 1
+		if (!HasSpell(8647)) learnSpell(8647, false); //Ослабление доспеха 
+
+		if (level < 16) return;
+
+		if (!HasSpell(1804)) learnSpell(1804, false); //Взлом замка 
+		if (!HasSpell(6761) && HasSpell(2098)) learnSpell(6761, false); //Потрошение Уровень 3
+		if (!HasSpell(1966)) learnSpell(1966, false); //Ложный выпад Уровень 1
+
+		if (level < 18) return;
+
+		if (!HasSpell(8676)) learnSpell(8676, false); //Внезапный удар Уровень 1
+
+		if (level < 20) return;
+
+		if (!HasSpell(2590) && HasSpell(53)) learnSpell(2590, false); //Удар в спину Уровень 3
+		if (!HasSpell(1943)) learnSpell(1943, false); //Рваная рана Уровень 1
+		//if (!HasSpell(1785)) learnSpell(1785, false); //Незаметность Уровень 2
+		if (!HasSpell(51722)) learnSpell(51722, false); // unk
+
+		if (level < 22) return;
+
+		if (!HasSpell(1759) && HasSpell(1752)) learnSpell(1759, false); //Коварный удар Уровень 4
+		if (!HasSpell(8631) && HasSpell(703)) learnSpell(8631, false); //Гаррота Уровень 2
+		if (!HasSpell(1856)) learnSpell(1856, false); //Исчезновение Уровень 1
+		if (!HasSpell(1725)) learnSpell(1725, false); //Отвлечение 
+
+		if (level < 24) return;
+
+		if (!HasSpell(6762) && HasSpell(2098)) learnSpell(6762, false); //Потрошение Уровень 4
+		if (!HasSpell(2836)) learnSpell(2836, false); //Обнаружение ловушек Пассивная
+
+		if (level < 26) return;
+
+		if (!HasSpell(1833)) learnSpell(1833, false); //Подлый трюк 
+		//if (!HasSpell(8649)) learnSpell(8649, false); //Ослабление доспеха Уровень 2
+		if (!HasSpell(8724) && HasSpell(8676)) learnSpell(8724, false); //Внезапный удар Уровень 2
+
+		if (level < 28) return;
+
+		if (!HasSpell(6768) && HasSpell(1966)) learnSpell(6768, false); //Ложный выпад Уровень 2
+		if (!HasSpell(2070) && HasSpell(6770)) learnSpell(2070, false); //Ошеломление Уровень 2
+		if (!HasSpell(8639) && HasSpell(1943)) learnSpell(8639, false); //Рваная рана Уровень 2
+		if (!HasSpell(2591) && HasSpell(53)) learnSpell(2591, false); //Удар в спину Уровень 4
+
+		if (level < 30) return;
+
+		if (!HasSpell(8632) && HasSpell(703)) learnSpell(8632, false); //Гаррота Уровень 3
+		if (!HasSpell(408)) learnSpell(408, false); //Удар по почкам Уровень 1
+		if (!HasSpell(1842)) learnSpell(1842, false); //Обезвреживание ловушки 
+		if (!HasSpell(1760) && HasSpell(1752)) learnSpell(1760, false); //Коварный удар Уровень 5
+
+		if (level < 32) return;
+
+		if (!HasSpell(8623) && HasSpell(2098)) learnSpell(8623, false); //Потрошение Уровень 5
+
+		if (level < 34) return;
+
+		if (!HasSpell(8696) && HasSpell(2983)) learnSpell(8696, false); //Спринт Уровень 2
+		if (!HasSpell(2094)) learnSpell(2094, false); //Ослепление 
+		if (!HasSpell(8725) && HasSpell(8676)) learnSpell(8725, false); //Внезапный удар Уровень 3
+
+		if (level < 36) return;
+
+		if (!HasSpell(8640) && HasSpell(1943)) learnSpell(8640, false); //Рваная рана Уровень 3
+		if (!HasSpell(8721) && HasSpell(53)) learnSpell(8721, false); //Удар в спину Уровень 5
+		//if (!HasSpell(8650)) learnSpell(8650, false); //Ослабление доспеха Уровень 3
+
+		if (level >= 38 && !HasSpell(8621) && HasSpell(1752)) learnSpell(8621, false); //Коварный удар Уровень 6
+		if (level >= 38 && !HasSpell(8633) && HasSpell(703)) learnSpell(8633, false); //Гаррота Уровень 4
+		if (level >= 40 && !HasSpell(8637) && HasSpell(1966)) learnSpell(8637, false); //Ложный выпад Уровень 3
+		if (level >= 40 && !HasSpell(1860)) learnSpell(1860, false); //Безопасное падение Пассивная
+		if (level >= 40 && !HasSpell(8624) && HasSpell(2098)) learnSpell(8624, false); //Потрошение Уровень 6
+		//if (level >= 40 && !HasSpell(1786)) learnSpell(1786, false); //Незаметность Уровень 3
+		if (level >= 42 && !HasSpell(11267) && HasSpell(8676)) learnSpell(11267, false); //Внезапный удар Уровень 4
+		if (level >= 42 && !HasSpell(6774) && HasSpell(5171)) learnSpell(6774, false); //Мясорубка Уровень 2
+		if (level >= 42 && !HasSpell(1857) && HasSpell(1856)) learnSpell(1857, false); //Исчезновение Уровень 2
+		if (level >= 44 && !HasSpell(11273) && HasSpell(1943)) learnSpell(11273, false); //Рваная рана Уровень 4
+		if (level >= 44 && !HasSpell(11279) && HasSpell(53)) learnSpell(11279, false); //Удар в спину Уровень 6
+		if (level >= 46 && !HasSpell(17347) && HasSpell(16511)) learnSpell(17347, false); //Кровоизлияние Уровень 2
+		if (level >= 46 && !HasSpell(11289) && HasSpell(703)) learnSpell(11289, false); //Гаррота Уровень 5
+		//if (level >= 46 && !HasSpell(11197)) learnSpell(11197, false); //Ослабление доспеха Уровень 4
+		if (level >= 46 && !HasSpell(11293) && HasSpell(1752)) learnSpell(11293, false); //Коварный удар Уровень 7
+		if (level >= 48 && !HasSpell(11297) && HasSpell(6770)) learnSpell(11297, false); //Ошеломление Уровень 3
+		if (level >= 48 && !HasSpell(11299) && HasSpell(2098)) learnSpell(11299, false); //Потрошение Уровень 7
+		if (level >= 50 && !HasSpell(8643) && HasSpell(408)) learnSpell(8643, false); //Удар по почкам Уровень 2
+		if (level >= 50 && !HasSpell(26669) && HasSpell(5277)) learnSpell(26669, false); //Ускользание Уровень 2
+		if (level >= 50 && !HasSpell(34411) && HasSpell(1329)) learnSpell(34411, false); //Расправа Уровень 2
+		if (level >= 50 && !HasSpell(11268) && HasSpell(8676)) learnSpell(11268, false); //Внезапный удар Уровень 5
+		if (level >= 52 && !HasSpell(11303) && HasSpell(1966)) learnSpell(11303, false); //Ложный выпад Уровень 4
+		if (level >= 52 && !HasSpell(11274) && HasSpell(1943)) learnSpell(11274, false); //Рваная рана Уровень 5
+		if (level >= 52 && !HasSpell(11280) && HasSpell(53)) learnSpell(11280, false); //Удар в спину Уровень 7
+		if (level >= 54 && !HasSpell(11290) && HasSpell(703)) learnSpell(11290, false); //Гаррота Уровень 6
+		if (level >= 54 && !HasSpell(11294) && HasSpell(1752)) learnSpell(11294, false); //Коварный удар Уровень 8
+		if (level >= 56 && !HasSpell(11300) && HasSpell(2098)) learnSpell(11300, false); //Потрошение Уровень 8
+		//if (level >= 56 && !HasSpell(11198)) learnSpell(11198, false); //Ослабление доспеха Уровень 5
+		if (level >= 58 && !HasSpell(11305) && HasSpell(2983)) learnSpell(11305, false); //Спринт Уровень 3
+		if (level >= 58 && !HasSpell(11269) && HasSpell(8676)) learnSpell(11269, false); //Внезапный удар Уровень 6
+		if (level >= 58 && !HasSpell(17348) && HasSpell(16511)) learnSpell(17348, false); //Кровоизлияние Уровень 3
+		//if (level >= 60 && !HasSpell(1787)) learnSpell(1787, false); //Незаметность Уровень 4
+		if (level >= 60 && !HasSpell(31016) && HasSpell(2098)) learnSpell(31016, false); //Потрошение Уровень 9
+		if (level >= 60 && !HasSpell(25302) && HasSpell(1966)) learnSpell(25302, false); //Ложный выпад Уровень 5
+		if (level >= 60 && !HasSpell(25300) && HasSpell(53)) learnSpell(25300, false); //Удар в спину Уровень 9
+		if (level >= 60 && !HasSpell(11281) && HasSpell(53)) learnSpell(11281, false); //Удар в спину Уровень 8
+		if (level >= 60 && !HasSpell(34412) && HasSpell(1329)) learnSpell(34412, false); //Расправа Уровень 3
+		if (level >= 60 && !HasSpell(11275) && HasSpell(1943)) learnSpell(11275, false); //Рваная рана Уровень 6
+		if (level >= 61 && !HasSpell(26839) && HasSpell(703)) learnSpell(26839, false); //Гаррота Уровень 7
+		if (level >= 62 && !HasSpell(26861) && HasSpell(1752)) learnSpell(26861, false); //Коварный удар Уровень 9
+		if (level >= 62 && !HasSpell(32645)) learnSpell(32645, false); //Отравление Уровень 1
+		if (level >= 62 && !HasSpell(26889) && HasSpell(1856)) learnSpell(26889, false); //Исчезновение Уровень 3
+		if (level >= 64 && !HasSpell(26865) && HasSpell(2098)) learnSpell(26865, false); //Потрошение Уровень 10
+		if (level >= 64 && !HasSpell(26679)) learnSpell(26679, false); //Смертельный бросок Уровень 1
+		if (level >= 64 && !HasSpell(27448) && HasSpell(1966)) learnSpell(27448, false); //Ложный выпад Уровень 6
+		if (level >= 66 && !HasSpell(31224)) learnSpell(31224, false); //Плащ Теней 
+		if (level >= 66 && !HasSpell(27441) && HasSpell(8676)) learnSpell(27441, false); //Внезапный удар Уровень 7
+		//if (level >= 66 && !HasSpell(26866)) learnSpell(26866, false); //Ослабление доспеха Уровень 6
+		if (level >= 68 && !HasSpell(26867) && HasSpell(1943)) learnSpell(26867, false); //Рваная рана Уровень 7
+		if (level >= 68 && !HasSpell(26863) && HasSpell(53)) learnSpell(26863, false); //Удар в спину Уровень 10
+		if (level >= 69 && !HasSpell(32684) && HasSpell(32645)) learnSpell(32684, false); //Отравление Уровень 2
+		if (level >= 70 && !HasSpell(48689) && HasSpell(8676)) learnSpell(48689, false); // unk
+		if (level >= 70 && !HasSpell(34413) && HasSpell(1329)) learnSpell(34413, false); //Расправа Уровень 4
+		if (level >= 70 && !HasSpell(48673) && HasSpell(26679)) learnSpell(48673, false); // unk
+		if (level >= 70 && !HasSpell(5938)) learnSpell(5938, false); //Отравляющий укол 
+		if (level >= 70 && !HasSpell(26884) && HasSpell(703)) learnSpell(26884, false); //Гаррота Уровень 8
+		if (level >= 70 && !HasSpell(26864) && HasSpell(16511)) learnSpell(26864, false); //Кровоизлияние Уровень 4
+		if (level >= 70 && !HasSpell(26862) && HasSpell(1752)) learnSpell(26862, false); //Коварный удар Уровень 10
+		if (level >= 71 && !HasSpell(51724) && HasSpell(6770)) learnSpell(51724, false); // unk
+		if (level >= 72 && !HasSpell(48658) && HasSpell(1966)) learnSpell(48658, false); // unk
+		if (level >= 73 && !HasSpell(48667) && HasSpell(2098)) learnSpell(48667, false); // unk
+		if (level >= 74 && !HasSpell(57992) && HasSpell(32645)) learnSpell(57992, false); //Отравление Уровень 3
+		if (level >= 74 && !HasSpell(48671) && HasSpell(1943)) learnSpell(48671, false); // unk
+		if (level >= 74 && !HasSpell(48656) && HasSpell(53)) learnSpell(48656, false); // unk
+		if (level >= 75 && !HasSpell(57934)) learnSpell(57934, false); //Маленькие хитрости 
+		if (level >= 75 && !HasSpell(48690) && HasSpell(8676)) learnSpell(48690, false); // unk
+		if (level >= 75 && !HasSpell(48663) && HasSpell(1329)) learnSpell(48663, false); // unk
+		if (level >= 75 && !HasSpell(48675) && HasSpell(703)) learnSpell(48675, false); // unk
+		if (level >= 76 && !HasSpell(48637) && HasSpell(1752)) learnSpell(48637, false); // unk
+		if (level >= 76 && !HasSpell(48674) && HasSpell(26679)) learnSpell(48674, false); // unk
+		//if (level >= 77 && !HasSpell(48669)) learnSpell(48669, false); //Ослабление доспеха уровень 7
+		if (level >= 78 && !HasSpell(48659) && HasSpell(1966)) learnSpell(48659, false); // unk
+		if (level >= 79 && !HasSpell(48672) && HasSpell(1943)) learnSpell(48672, false); // unk
+		if (level >= 79 && !HasSpell(48668) && HasSpell(2098)) learnSpell(48668, false); // unk
+		if (level >= 80 && !HasSpell(48676) && HasSpell(703)) learnSpell(48676, false); // unk
+		if (level >= 80 && !HasSpell(48638) && HasSpell(1752)) learnSpell(48638, false); // unk
+		if (level >= 80 && !HasSpell(48657) && HasSpell(53)) learnSpell(48657, false); // unk
+		if (level >= 80 && !HasSpell(48660) && HasSpell(16511)) learnSpell(48660, false); // unk
+		if (level >= 80 && !HasSpell(51723)) learnSpell(51723, false); //Веер клинков
+		if (level >= 80 && !HasSpell(48666) && HasSpell(1329)) learnSpell(48666, false); // unk
+		if (level >= 80 && !HasSpell(48691) && HasSpell(8676)) learnSpell(48691, false); // unk
+		if (level >= 80 && !HasSpell(57993) && HasSpell(32645)) learnSpell(57993, false); //Отравление Уровень 4
+
+		return;
+	}
+
+	if (getClass() == CLASS_HUNTER)
+	{
+		if (!HasSpell(1494)) learnSpell(1494, false); //Выслеживание животных 
+
+		if (level < 4) return;
+
+		if (!HasSpell(1978)) learnSpell(1978, false); //Укус змеи Уровень 1
+		if (!HasSpell(13163)) learnSpell(13163, false); //Дух обезьяны 
+
+		if (level < 6) return;
+
+		if (!HasSpell(1130)) learnSpell(1130, false); //Метка охотника Уровень 1
+		if (!HasSpell(3044)) learnSpell(3044, false); //Чародейский выстрел Уровень 1
+
+		if (level < 8) return;
+
+		if (!HasSpell(5116)) learnSpell(5116, false); //Контузящий выстрел 
+		if (!HasSpell(14260) && HasSpell(2973)) learnSpell(14260, false); //Удар ящера Уровень 2
+		if (!HasSpell(3127)) learnSpell(3127, false); //Парирование Пассивная
+
+		if (level < 10) return;
+
+		if (!HasSpell(1462)) learnSpell(1462, false); //Знание зверя
+		if (!HasSpell(34026)) learnSpell(34026, false); //Команда "Взять!"
+		if (!HasSpell(6991)) learnSpell(6991, false); //Кормление питомца
+		if (!HasSpell(1515)) learnSpell(1515, false); //Приручение зверя
+		if (!HasSpell(2641)) learnSpell(2641, false); //Прогнать питомца
+
+		if (!HasSpell(19883)) learnSpell(19883, false); //Выслеживание гуманоидов 
+		if (!HasSpell(13165)) learnSpell(13165, false); //Дух ястреба Уровень 1
+		if (!HasSpell(13549) && HasSpell(1978)) learnSpell(13549, false); //Укус змеи Уровень 2
+		
+		if (level >= 12 && !HasSpell(14281) && HasSpell(3044)) learnSpell(14281, false); //Чародейский выстрел Уровень 2
+		if (level >= 12 && !HasSpell(20736)) learnSpell(20736, false); //Отвлекающий выстрел Уровень 1
+		if (level >= 12 && !HasSpell(136)) learnSpell(136, false); //Лечение питомца Уровень 1
+		if (level >= 12 && !HasSpell(2974)) learnSpell(2974, false); //Подрезать крылья 
+		if (level >= 14 && !HasSpell(6197)) learnSpell(6197, false); //Орлиный глаз 
+		if (level >= 14 && !HasSpell(1002)) learnSpell(1002, false); //Звериный глаз 
+		if (level >= 14 && !HasSpell(1513)) learnSpell(1513, false); //Отпугивание зверя Уровень 1
+		if (level >= 16 && !HasSpell(1495)) learnSpell(1495, false); //Укус мангуста Уровень 1
+		if (level >= 16 && !HasSpell(13795)) learnSpell(13795, false); //Обжигающая ловушка Уровень 1
+		if (level >= 16 && !HasSpell(14261) && HasSpell(2973)) learnSpell(14261, false); //Удар ящера Уровень 3
+		if (level >= 16 && !HasSpell(5118)) learnSpell(5118, false); //Дух гепарда 
+		if (level >= 18 && !HasSpell(14318) && HasSpell(13165)) learnSpell(14318, false); //Дух ястреба Уровень 2
+		if (level >= 18 && !HasSpell(13550) && HasSpell(1978)) learnSpell(13550, false); //Укус змеи Уровень 3
+		if (level >= 18 && !HasSpell(19884)) learnSpell(19884, false); //Выслеживание нежити 
+		if (level >= 18 && !HasSpell(2643)) learnSpell(2643, false); //Залп Уровень 1
+		if (level >= 20 && !HasSpell(781)) learnSpell(781, false); //Отрыв 
+		if (level >= 20 && !HasSpell(1499)) learnSpell(1499, false); //Замораживающая ловушка Уровень 1
+		if (level >= 20 && !HasSpell(14282) && HasSpell(3044)) learnSpell(14282, false); //Чародейский выстрел Уровень 3
+		if (level >= 20 && !HasSpell(3111) && HasSpell(136)) learnSpell(3111, false); //Лечение питомца Уровень 2
+		if (level >= 20 && !HasSpell(34074)) learnSpell(34074, false); //Дух гадюки 
+		if (level >= 20 && !HasSpell(674)) learnSpell(674, false); //Бой двумя оружиями Пассивная
+		if (level >= 22 && !HasSpell(3043)) learnSpell(3043, false); //Укус скорпида 
+		if (level >= 22 && !HasSpell(14323) && HasSpell(1130)) learnSpell(14323, false); //Метка охотника Уровень 2
+		if (level >= 24 && !HasSpell(1462)) learnSpell(1462, false); //Знание зверя 
+		if (level >= 24 && !HasSpell(19885)) learnSpell(19885, false); //Выслеживание скрытных 
+		if (level >= 24 && !HasSpell(14262) && HasSpell(2973)) learnSpell(14262, false); //Удар ящера Уровень 4
+		if (level >= 26 && !HasSpell(13551) && HasSpell(1978)) learnSpell(13551, false); //Укус змеи Уровень 4
+		if (level >= 26 && !HasSpell(19880)) learnSpell(19880, false); //Выслеживание элементалей 
+		if (level >= 26 && !HasSpell(14302) && HasSpell(13795)) learnSpell(14302, false); //Обжигающая ловушка Уровень 2
+		if (level >= 26 && !HasSpell(3045)) learnSpell(3045, false); //Быстрая стрельба 
+		if (level >= 28 && !HasSpell(13809)) learnSpell(13809, false); //Ледяная ловушка 
+		if (level >= 28 && !HasSpell(14283) && HasSpell(3044)) learnSpell(14283, false); //Чародейский выстрел Уровень 4
+		if (level >= 28 && !HasSpell(14319) && HasSpell(13165)) learnSpell(14319, false); //Дух ястреба Уровень 3
+		if (level >= 28 && !HasSpell(20900) && HasSpell(19434)) learnSpell(20900, false); //Прицельный выстрел Уровень 2
+		if (level >= 28 && !HasSpell(3661) && HasSpell(136)) learnSpell(3661, false); //Лечение питомца Уровень 3
+		if (level >= 30 && !HasSpell(14288) && HasSpell(2643)) learnSpell(14288, false); //Залп Уровень 2
+		if (level >= 30 && !HasSpell(13161)) learnSpell(13161, false); //Дух зверя 
+		if (level >= 30 && !HasSpell(14326) && HasSpell(1513)) learnSpell(14326, false); //Отпугивание зверя Уровень 2
+		if (level >= 30 && !HasSpell(14269) && HasSpell(1495)) learnSpell(14269, false); //Укус мангуста Уровень 2
+		if (level >= 30 && !HasSpell(5384)) learnSpell(5384, false); //Притвориться мертвым 
+		if (level >= 32 && !HasSpell(1543)) learnSpell(1543, false); //Осветительная ракета 
+		if (level >= 32 && !HasSpell(14263) && HasSpell(2973)) learnSpell(14263, false); //Удар ящера Уровень 5
+		if (level >= 32 && !HasSpell(19878)) learnSpell(19878, false); //Выслеживание демонов 
+		if (level >= 34 && !HasSpell(13813)) learnSpell(13813, false); //Взрывная ловушка Уровень 1
+		if (level >= 34 && !HasSpell(13552) && HasSpell(1978)) learnSpell(13552, false); //Укус змеи Уровень 5
+		if (level >= 36 && !HasSpell(14284) && HasSpell(3044)) learnSpell(14284, false); //Чародейский выстрел Уровень 5
+		if (level >= 36 && !HasSpell(14303) && HasSpell(13795)) learnSpell(14303, false); //Обжигающая ловушка Уровень 3
+		if (level >= 36 && !HasSpell(3034)) learnSpell(3034, false); //Укус гадюки 
+		if (level >= 36 && !HasSpell(3662) && HasSpell(136)) learnSpell(3662, false); //Лечение питомца Уровень 4
+		if (level >= 36 && !HasSpell(20901) && HasSpell(19434)) learnSpell(20901, false); //Прицельный выстрел Уровень 3
+		if (level >= 38 && !HasSpell(14320) && HasSpell(13165)) learnSpell(14320, false); //Дух ястреба Уровень 4
+		if (level >= 40 && !HasSpell(19882)) learnSpell(19882, false); //Выслеживание великанов 
+		if (level >= 40 && !HasSpell(8737)) learnSpell(8737, false); //Кольчужные доспехи 
+		if (level >= 40 && !HasSpell(13159)) learnSpell(13159, false); //Дух стаи 
+		if (level >= 40 && !HasSpell(1510)) learnSpell(1510, false); //Град стрел Уровень 1
+		if (level >= 40 && !HasSpell(14310) && HasSpell(1499)) learnSpell(14310, false); //Замораживающая ловушка Уровень 2
+		if (level >= 40 && !HasSpell(14264) && HasSpell(2973)) learnSpell(14264, false); //Удар ящера Уровень 6
+		if (level >= 40 && !HasSpell(14324) && HasSpell(1130)) learnSpell(14324, false); //Метка охотника Уровень 3
+		if (level >= 42 && !HasSpell(20909) && HasSpell(19306)) learnSpell(20909, false); //Контратака Уровень 2
+		if (level >= 42 && !HasSpell(14289) && HasSpell(2643)) learnSpell(14289, false); //Залп Уровень 3
+		if (level >= 42 && !HasSpell(13553) && HasSpell(1978)) learnSpell(13553, false); //Укус змеи Уровень 6
+		if (level >= 44 && !HasSpell(14285) && HasSpell(3044)) learnSpell(14285, false); //Чародейский выстрел Уровень 6
+		if (level >= 44 && !HasSpell(14270) && HasSpell(1495)) learnSpell(14270, false); //Укус мангуста Уровень 3
+		if (level >= 44 && !HasSpell(20902) && HasSpell(19434)) learnSpell(20902, false); //Прицельный выстрел Уровень 4
+		if (level >= 44 && !HasSpell(13542) && HasSpell(136)) learnSpell(13542, false); //Лечение питомца Уровень 5
+		if (level >= 44 && !HasSpell(14316) && HasSpell(13813)) learnSpell(14316, false); //Взрывная ловушка Уровень 2
+		if (level >= 46 && !HasSpell(14304) && HasSpell(13795)) learnSpell(14304, false); //Обжигающая ловушка Уровень 4
+		if (level >= 46 && !HasSpell(14327) && HasSpell(1513)) learnSpell(14327, false); //Отпугивание зверя Уровень 3
+		if (level >= 46 && !HasSpell(20043)) learnSpell(20043, false); //Дух дикой природы Уровень 1
+		if (level >= 48 && !HasSpell(14321) && HasSpell(13165)) learnSpell(14321, false); //Дух ястреба Уровень 5
+		if (level >= 48 && !HasSpell(14265) && HasSpell(2973)) learnSpell(14265, false); //Удар ящера Уровень 7
+		if (level >= 50 && !HasSpell(19879)) learnSpell(19879, false); //Выслеживание драконов 
+		if (level >= 50 && !HasSpell(24132) && HasSpell(19386)) learnSpell(24132, false); //Укус виверны Уровень 2
+		if (level >= 50 && !HasSpell(13554) && HasSpell(1978)) learnSpell(13554, false); //Укус змеи Уровень 7
+		if (level >= 50 && !HasSpell(56641)) learnSpell(56641, false); //Верный выстрел Уровень 1
+		if (level >= 50 && !HasSpell(14294) && HasSpell(1510)) learnSpell(14294, false); //Град стрел Уровень 2
+		if (level >= 52 && !HasSpell(13543) && HasSpell(136)) learnSpell(13543, false); //Лечение питомца Уровень 6
+		if (level >= 52 && !HasSpell(20903) && HasSpell(19434)) learnSpell(20903, false); //Прицельный выстрел Уровень 5
+		if (level >= 52 && !HasSpell(14286) && HasSpell(3044)) learnSpell(14286, false); //Чародейский выстрел Уровень 7
+		if (level >= 54 && !HasSpell(14290) && HasSpell(2643)) learnSpell(14290, false); //Залп Уровень 4
+		if (level >= 54 && !HasSpell(14317) && HasSpell(13813)) learnSpell(14317, false); //Взрывная ловушка Уровень 3
+		if (level >= 54 && !HasSpell(20910) && HasSpell(19306)) learnSpell(20910, false); //Контратака Уровень 3
+		if (level >= 56 && !HasSpell(20190) && HasSpell(20043)) learnSpell(20190, false); //Дух дикой природы Уровень 2
+		if (level >= 56 && !HasSpell(14305) && HasSpell(13795)) learnSpell(14305, false); //Обжигающая ловушка Уровень 5
+		if (level >= 56 && !HasSpell(14266) && HasSpell(2973)) learnSpell(14266, false); //Удар ящера Уровень 8
+		if (level >= 57 && !HasSpell(63668) && HasSpell(3674)) learnSpell(63668, false); //Черная стрела Уровень 2
+		if (level >= 58 && !HasSpell(13555) && HasSpell(1978)) learnSpell(13555, false); //Укус змеи Уровень 8
+		if (level >= 58 && !HasSpell(14295) && HasSpell(1510)) learnSpell(14295, false); //Град стрел Уровень 3
+		if (level >= 58 && !HasSpell(14271) && HasSpell(1495)) learnSpell(14271, false); //Укус мангуста Уровень 4
+		if (level >= 58 && !HasSpell(14325) && HasSpell(1130)) learnSpell(14325, false); //Метка охотника Уровень 4
+		if (level >= 58 && !HasSpell(14322) && HasSpell(13165)) learnSpell(14322, false); //Дух ястреба Уровень 6
+		if (level >= 60 && !HasSpell(25294) && HasSpell(2643)) learnSpell(25294, false); //Залп Уровень 5
+		if (level >= 60 && !HasSpell(25295) && HasSpell(1978)) learnSpell(25295, false); //Укус змеи Уровень 9
+		if (level >= 60 && !HasSpell(25296) && HasSpell(13165)) learnSpell(25296, false); //Дух ястреба Уровень 7
+		if (level >= 60 && !HasSpell(24133) && HasSpell(19386)) learnSpell(24133, false); //Укус виверны Уровень 3
+		if (level >= 60 && !HasSpell(20904) && HasSpell(19434)) learnSpell(20904, false); //Прицельный выстрел Уровень 6
+		if (level >= 60 && !HasSpell(14311) && HasSpell(1499)) learnSpell(14311, false); //Замораживающая ловушка Уровень 3
+		if (level >= 60 && !HasSpell(13544) && HasSpell(136)) learnSpell(13544, false); //Лечение питомца Уровень 7
+		if (level >= 60 && !HasSpell(14287) && HasSpell(3044)) learnSpell(14287, false); //Чародейский выстрел Уровень 8
+		if (level >= 60 && !HasSpell(19263)) learnSpell(19263, false); //Сдерживание 
+		if (level >= 60 && !HasSpell(19801)) learnSpell(19801, false); //Усмиряющий выстрел 
+		if (level >= 61 && !HasSpell(27025) && HasSpell(13813)) learnSpell(27025, false); //Взрывная ловушка Уровень 4
+		if (level >= 62 && !HasSpell(34120) && HasSpell(56641)) learnSpell(34120, false); //Верный выстрел Уровень 2
+		if (level >= 63 && !HasSpell(27014) && HasSpell(2973)) learnSpell(27014, false); //Удар ящера Уровень 9
+		if (level >= 63 && !HasSpell(63669) && HasSpell(3674)) learnSpell(63669, false); //Черная стрела Уровень 3
+		if (level >= 65 && !HasSpell(27023) && HasSpell(13795)) learnSpell(27023, false); //Обжигающая ловушка Уровень 6
+		if (level >= 66 && !HasSpell(27067) && HasSpell(19306)) learnSpell(27067, false); //Контратака Уровень 4
+		if (level >= 66 && !HasSpell(34026)) learnSpell(34026, false); //Команда "Взять!" 
+		if (level >= 67 && !HasSpell(27022) && HasSpell(1510)) learnSpell(27022, false); //Град стрел Уровень 4
+		if (level >= 67 && !HasSpell(27021) && HasSpell(2643)) learnSpell(27021, false); //Залп Уровень 6
+		if (level >= 67 && !HasSpell(27016) && HasSpell(1978)) learnSpell(27016, false); //Укус змеи Уровень 10
+		if (level >= 68 && !HasSpell(34600)) learnSpell(34600, false); //Змеиная ловушка 
+		if (level >= 68 && !HasSpell(27046) && HasSpell(136)) learnSpell(27046, false); //Лечение питомца Уровень 8
+		if (level >= 68 && !HasSpell(27045) && HasSpell(20043)) learnSpell(27045, false); //Дух дикой природы Уровень 3
+		if (level >= 68 && !HasSpell(27044) && HasSpell(13165)) learnSpell(27044, false); //Дух ястреба Уровень 8
+		if (level >= 69 && !HasSpell(27019) && HasSpell(3044)) learnSpell(27019, false); //Чародейский выстрел Уровень 9
+		if (level >= 69 && !HasSpell(63670) && HasSpell(3674)) learnSpell(63670, false); //Черная стрела Уровень 4
+		if (level >= 70 && !HasSpell(60051) && HasSpell(53301)) learnSpell(60051, false); //Разрывной выстрел Уровень 2
+		if (level >= 70 && !HasSpell(34477)) learnSpell(34477, false); //Перенаправление 
+		if (level >= 70 && !HasSpell(27068) && HasSpell(19386)) learnSpell(27068, false); //Укус виверны Уровень 4
+		if (level >= 70 && !HasSpell(27065) && HasSpell(19434)) learnSpell(27065, false); //Прицельный выстрел Уровень 7
+		if (level >= 70 && !HasSpell(36916) && HasSpell(1495)) learnSpell(36916, false); //Укус мангуста Уровень 5
+		if (level >= 71 && !HasSpell(53351)) learnSpell(53351, false); //Убийственный выстрел Уровень 1
+		if (level >= 71 && !HasSpell(49066) && HasSpell(13813)) learnSpell(49066, false); // unk
+		if (level >= 71 && !HasSpell(49051) && HasSpell(56641)) learnSpell(49051, false); // unk
+		if (level >= 71 && !HasSpell(48995) && HasSpell(2973)) learnSpell(48995, false); // unk
+		if (level >= 72 && !HasSpell(49055) && HasSpell(13795)) learnSpell(49055, false); // unk
+		if (level >= 72 && !HasSpell(48998) && HasSpell(19306)) learnSpell(48998, false); // unk
+		if (level >= 73 && !HasSpell(49000) && HasSpell(1978)) learnSpell(49000, false); // unk
+		if (level >= 73 && !HasSpell(49044) && HasSpell(3044)) learnSpell(49044, false); // unk
+		if (level >= 74 && !HasSpell(49047) && HasSpell(2643)) learnSpell(49047, false); // unk
+		if (level >= 74 && !HasSpell(61846)) learnSpell(61846, false); //Дух дракондора Уровень 1
+		if (level >= 74 && !HasSpell(48989) && HasSpell(136)) learnSpell(48989, false); // unk
+		if (level >= 74 && !HasSpell(58431) && HasSpell(1510)) learnSpell(58431, false); //Град стрел Уровень 5
+		if (level >= 75 && !HasSpell(61005) && HasSpell(53351)) learnSpell(61005, false); //Убийственный выстрел Уровень 2
+		if (level >= 75 && !HasSpell(63671) && HasSpell(3674)) learnSpell(63671, false); //Черная стрела Уровень 5
+		if (level >= 75 && !HasSpell(60052) && HasSpell(53301)) learnSpell(60052, false); //Разрывной выстрел Уровень 3
+		if (level >= 75 && !HasSpell(53271)) learnSpell(53271, false); //Приказ хозяина 
+		if (level >= 75 && !HasSpell(49049) && HasSpell(19434)) learnSpell(49049, false); // unk
+		if (level >= 75 && !HasSpell(49011) && HasSpell(19386)) learnSpell(49011, false); // unk
+		if (level >= 76 && !HasSpell(49071) && HasSpell(20043)) learnSpell(49071, false); // unk
+		if (level >= 76 && !HasSpell(53338) && HasSpell(1130)) learnSpell(53338, false); //Метка охотника Уровень 5
+		if (level >= 77 && !HasSpell(48996) && HasSpell(2973)) learnSpell(48996, false); // unk
+		if (level >= 77 && !HasSpell(49052) && HasSpell(56641)) learnSpell(49052, false); // unk
+		if (level >= 77 && !HasSpell(49067) && HasSpell(13813)) learnSpell(49067, false); // unk
+		if (level >= 78 && !HasSpell(48999) && HasSpell(19306)) learnSpell(48999, false); // unk
+		if (level >= 78 && !HasSpell(49056) && HasSpell(13795)) learnSpell(49056, false); // unk
+		if (level >= 79 && !HasSpell(49001) && HasSpell(1978)) learnSpell(49001, false); // unk
+		if (level >= 79 && !HasSpell(49045) && HasSpell(3044)) learnSpell(49045, false); // unk
+		if (level >= 80 && !HasSpell(53339) && HasSpell(1495)) learnSpell(53339, false); //Укус мангуста Уровень 6
+		if (level >= 80 && !HasSpell(49012) && HasSpell(19386)) learnSpell(49012, false); // unk
+		if (level >= 80 && !HasSpell(62757)) learnSpell(62757, false); //Призыв питомца из стойл 
+		if (level >= 80 && !HasSpell(61847) && HasSpell(61846)) learnSpell(61847, false); //Дух дракондора Уровень 2
+		if (level >= 80 && !HasSpell(49048) && HasSpell(2643)) learnSpell(49048, false); // unk
+		if (level >= 80 && !HasSpell(61006) && HasSpell(53351)) learnSpell(61006, false); //Убийственный выстрел Уровень 3
+		if (level >= 80 && !HasSpell(49050) && HasSpell(19434)) learnSpell(49050, false); // unk
+		if (level >= 80 && !HasSpell(60192)) learnSpell(60192, false); //Замораживающая стрела Уровень 1
+		if (level >= 80 && !HasSpell(60053) && HasSpell(53301)) learnSpell(60053, false); //Разрывной выстрел Уровень 4
+		if (level >= 80 && !HasSpell(48990) && HasSpell(136)) learnSpell(48990, false); // unk
+		if (level >= 80 && !HasSpell(58434) && HasSpell(1510)) learnSpell(58434, false); //Град стрел Уровень 6
+		if (level >= 80 && !HasSpell(63672) && HasSpell(3674)) learnSpell(63672, false); //Черная стрела Уровень 6
+	}
+
+	if (getClass() == CLASS_SHAMAN)
+	{
+		if (level >= 1 && !HasSpell(8017)) learnSpell(8017, false); //Оружие камнедробителя Уровень 1
+		if (level >= 4 && !HasSpell(8042)) learnSpell(8042, false); //Земной шок Уровень 1
+		if (level >= 6 && !HasSpell(332) && HasSpell(331)) learnSpell(332, false); //Волна исцеления Уровень 2
+		if (level >= 6 && !HasSpell(2484)) learnSpell(2484, false); //Тотем оков земли 
+		if (level >= 8 && !HasSpell(5730)) learnSpell(5730, false); //Тотем каменного когтя Уровень 1
+		if (level >= 8 && !HasSpell(8044) && HasSpell(8042)) learnSpell(8044, false); //Земной шок Уровень 2
+		if (level >= 8 && !HasSpell(529) && HasSpell(403)) learnSpell(529, false); //Молния Уровень 2
+		if (level >= 8 && !HasSpell(8018) && HasSpell(8017)) learnSpell(8018, false); //Оружие камнедробителя Уровень 2
+		if (level >= 8 && !HasSpell(324)) learnSpell(324, false); //Щит молний Уровень 1
+		if (level >= 10 && !HasSpell(8050)) learnSpell(8050, false); //Огненный шок Уровень 1
+		if (level >= 10 && !HasSpell(8024)) learnSpell(8024, false); //Оружие языка пламени Уровень 1
+		if (level >= 10 && !HasSpell(8075)) learnSpell(8075, false); //Тотем силы земли Уровень 1
+		if (level >= 12 && !HasSpell(1535)) learnSpell(1535, false); //Кольцо огня Уровень 1
+		if (level >= 12 && !HasSpell(370)) learnSpell(370, false); //Развеивание магии Уровень 1
+		if (level >= 12 && !HasSpell(547) && HasSpell(331)) learnSpell(547, false); //Волна исцеления Уровень 3
+		if (level >= 12 && !HasSpell(2008)) learnSpell(2008, false); //Дух предков Уровень 1
+		if (level >= 14 && !HasSpell(8045) && HasSpell(8042)) learnSpell(8045, false); //Земной шок Уровень 3
+		if (level >= 14 && !HasSpell(8154) && HasSpell(8071)) learnSpell(8154, false); //Тотем каменной кожи Уровень 2
+		if (level >= 14 && !HasSpell(548) && HasSpell(403)) learnSpell(548, false); //Молния Уровень 3
+		if (level >= 16 && !HasSpell(2645)) learnSpell(2645, false); //Призрачный волк 
+		if (level >= 16 && !HasSpell(8019) && HasSpell(8017)) learnSpell(8019, false); //Оружие камнедробителя Уровень 3
+		if (level >= 16 && !HasSpell(57994)) learnSpell(57994, false); //Пронизывающий ветер 
+		if (level >= 16 && !HasSpell(526)) learnSpell(526, false); //Оздоровление 
+		if (level >= 16 && !HasSpell(325) && HasSpell(324)) learnSpell(325, false); //Щит молний Уровень 2
+		if (level >= 18 && !HasSpell(6390) && HasSpell(5730)) learnSpell(6390, false); //Тотем каменного когтя Уровень 2
+		if (level >= 18 && !HasSpell(913) && HasSpell(331)) learnSpell(913, false); //Волна исцеления Уровень 4
+		if (level >= 18 && !HasSpell(8027) && HasSpell(8024)) learnSpell(8027, false); //Оружие языка пламени Уровень 2
+		if (level >= 18 && !HasSpell(8143)) learnSpell(8143, false); //Тотем трепета 
+		if (level >= 18 && !HasSpell(8052) && HasSpell(8050)) learnSpell(8052, false); //Огненный шок Уровень 2
+		if (level >= 20 && !HasSpell(8004)) learnSpell(8004, false); //Малая волна исцеления Уровень 1
+		if (level >= 20 && !HasSpell(915) && HasSpell(403)) learnSpell(915, false); //Молния Уровень 4
+		if (level >= 20 && !HasSpell(8033)) learnSpell(8033, false); //Оружие ледяного клейма Уровень 1
+		if (level >= 20 && !HasSpell(6363) && HasSpell(3599)) learnSpell(6363, false); //Опаляющий тотем Уровень 2
+		if (level >= 20 && !HasSpell(52127)) learnSpell(52127, false); // unk
+		if (level >= 20 && !HasSpell(8056)) learnSpell(8056, false); //Ледяной шок Уровень 1
+		if (level >= 22 && !HasSpell(131)) learnSpell(131, false); //Подводное дыхание 
+		if (level >= 22 && !HasSpell(8498) && HasSpell(1535)) learnSpell(8498, false); //Кольцо огня Уровень 2
+		if (level >= 24 && !HasSpell(8046) && HasSpell(8042)) learnSpell(8046, false); //Земной шок Уровень 4
+		if (level >= 24 && !HasSpell(905) && HasSpell(324)) learnSpell(905, false); //Щит молний Уровень 3
+		if (level >= 24 && !HasSpell(8160) && HasSpell(8075)) learnSpell(8160, false); //Тотем силы земли Уровень 2
+		if (level >= 24 && !HasSpell(939) && HasSpell(331)) learnSpell(939, false); //Волна исцеления Уровень 5
+		if (level >= 24 && !HasSpell(8181)) learnSpell(8181, false); //Тотем защиты от магии льда Уровень 1
+		if (level >= 24 && !HasSpell(8155) && HasSpell(8071)) learnSpell(8155, false); //Тотем каменной кожи Уровень 3
+		if (level >= 24 && !HasSpell(10399) && HasSpell(8017)) learnSpell(10399, false); //Оружие камнедробителя Уровень 4
+		if (level >= 24 && !HasSpell(20609) && HasSpell(2008)) learnSpell(20609, false); //Дух предков Уровень 2
+		if (level >= 26 && !HasSpell(8030) && HasSpell(8024)) learnSpell(8030, false); //Оружие языка пламени Уровень 3
+		if (level >= 26 && !HasSpell(8190)) learnSpell(8190, false); //Тотем магмы Уровень 1
+		if (level >= 26 && !HasSpell(5675)) learnSpell(5675, false); //Тотем источника маны Уровень 1
+		if (level >= 26 && !HasSpell(6196)) learnSpell(6196, false); //Дальнее зрение 
+		if (level >= 26 && !HasSpell(943) && HasSpell(403)) learnSpell(943, false); //Молния Уровень 5
+		if (level >= 28 && !HasSpell(8038) && HasSpell(8033)) learnSpell(8038, false); //Оружие ледяного клейма Уровень 2
+		if (level >= 28 && !HasSpell(8053) && HasSpell(8050)) learnSpell(8053, false); //Огненный шок Уровень 3
+		if (level >= 28 && !HasSpell(546)) learnSpell(546, false); //Хождение по воде 
+		if (level >= 28 && !HasSpell(52129) && HasSpell(52127)) learnSpell(52129, false); // unk
+		if (level >= 28 && !HasSpell(8227)) learnSpell(8227, false); //Тотем языка пламени Уровень 1
+		if (level >= 28 && !HasSpell(6391) && HasSpell(5730)) learnSpell(6391, false); //Тотем каменного когтя Уровень 3
+		if (level >= 28 && !HasSpell(8008) && HasSpell(8004)) learnSpell(8008, false); //Малая волна исцеления Уровень 2
+		if (level >= 28 && !HasSpell(8184)) learnSpell(8184, false); //Тотем защиты от огня Уровень 1
+		if (level >= 30 && !HasSpell(8232)) learnSpell(8232, false); //Оружие неистовства ветра Уровень 1
+		if (level >= 30 && !HasSpell(66842)) learnSpell(66842, false); //Зов Стихий 
+		if (level >= 30 && !HasSpell(8177)) learnSpell(8177, false); //Тотем заземления 
+		if (level >= 30 && !HasSpell(556)) learnSpell(556, false); //Астральное возвращение 
+		if (level >= 30 && !HasSpell(51730)) learnSpell(51730, false); // unk
+		if (level >= 30 && !HasSpell(36936)) learnSpell(36936, false); //Возвращение тотемов 
+		if (level >= 30 && !HasSpell(6375) && HasSpell(5394)) learnSpell(6375, false); //Тотем исцеляющего потока Уровень 2
+		if (level >= 30 && !HasSpell(10595)) learnSpell(10595, false); //Тотем защиты от сил природы Уровень 1
+		if (level >= 30 && !HasSpell(20608)) learnSpell(20608, false); //Перерождение Пассивная
+		if (level >= 30 && !HasSpell(6364) && HasSpell(3599)) learnSpell(6364, false); //Опаляющий тотем Уровень 3
+		if (level >= 32 && !HasSpell(8512)) learnSpell(8512, false); //Тотем неистовства ветра 
+		if (level >= 32 && !HasSpell(6041) && HasSpell(403)) learnSpell(6041, false); //Молния Уровень 6
+		if (level >= 32 && !HasSpell(421)) learnSpell(421, false); //Цепная молния Уровень 1
+		if (level >= 32 && !HasSpell(8012) && HasSpell(370)) learnSpell(8012, false); //Развеивание магии Уровень 2
+		if (level >= 32 && !HasSpell(959) && HasSpell(331)) learnSpell(959, false); //Волна исцеления Уровень 6
+		if (level >= 32 && !HasSpell(945) && HasSpell(324)) learnSpell(945, false); //Щит молний Уровень 4
+		if (level >= 32 && !HasSpell(8499) && HasSpell(1535)) learnSpell(8499, false); //Кольцо огня Уровень 3
+		if (level >= 34 && !HasSpell(8058) && HasSpell(8056)) learnSpell(8058, false); //Ледяной шок Уровень 2
+		if (level >= 34 && !HasSpell(10406) && HasSpell(8071)) learnSpell(10406, false); //Тотем каменной кожи Уровень 4
+		if (level >= 34 && !HasSpell(6495)) learnSpell(6495, false); //Сторожевой тотем 
+		if (level >= 34 && !HasSpell(52131) && HasSpell(52127)) learnSpell(52131, false); // unk
+		if (level >= 36 && !HasSpell(10495) && HasSpell(5675)) learnSpell(10495, false); //Тотем источника маны Уровень 2
+		if (level >= 36 && !HasSpell(10412) && HasSpell(8042)) learnSpell(10412, false); //Земной шок Уровень 5
+		if (level >= 36 && !HasSpell(10585) && HasSpell(8190)) learnSpell(10585, false); //Тотем магмы Уровень 2
+		if (level >= 36 && !HasSpell(20610) && HasSpell(2008)) learnSpell(20610, false); //Дух предков Уровень 3
+		if (level >= 36 && !HasSpell(16339) && HasSpell(8024)) learnSpell(16339, false); //Оружие языка пламени Уровень 4
+		if (level >= 36 && !HasSpell(8010) && HasSpell(8004)) learnSpell(8010, false); //Малая волна исцеления Уровень 3
+		if (level >= 38 && !HasSpell(8249) && HasSpell(8227)) learnSpell(8249, false); //Тотем языка пламени Уровень 2
+		if (level >= 38 && !HasSpell(6392) && HasSpell(5730)) learnSpell(6392, false); //Тотем каменного когтя Уровень 4
+		if (level >= 38 && !HasSpell(10456) && HasSpell(8033)) learnSpell(10456, false); //Оружие ледяного клейма Уровень 3
+		if (level >= 38 && !HasSpell(8170)) learnSpell(8170, false); //Тотем очищения 
+		if (level >= 38 && !HasSpell(8161) && HasSpell(8075)) learnSpell(8161, false); //Тотем силы земли Уровень 3
+		if (level >= 38 && !HasSpell(10478) && HasSpell(8181)) learnSpell(10478, false); //Тотем защиты от магии льда Уровень 2
+		if (level >= 38 && !HasSpell(10391) && HasSpell(403)) learnSpell(10391, false); //Молния Уровень 7
+		if (level >= 40 && !HasSpell(51988) && HasSpell(51730)) learnSpell(51988, false); // unk
+		if (level >= 40 && !HasSpell(8737)) learnSpell(8737, false); //Кольчужные доспехи 
+		if (level >= 40 && !HasSpell(10447) && HasSpell(8050)) learnSpell(10447, false); //Огненный шок Уровень 4
+		if (level >= 40 && !HasSpell(930) && HasSpell(421)) learnSpell(930, false); //Цепная молния Уровень 2
+		if (level >= 40 && !HasSpell(8005) && HasSpell(331)) learnSpell(8005, false); //Волна исцеления Уровень 7
+		if (level >= 40 && !HasSpell(66843)) learnSpell(66843, false); //Зов Предков 
+		if (level >= 40 && !HasSpell(1064)) learnSpell(1064, false); //Цепное исцеление Уровень 1
+		if (level >= 40 && !HasSpell(6365) && HasSpell(3599)) learnSpell(6365, false); //Опаляющий тотем Уровень 4
+		if (level >= 40 && !HasSpell(8134) && HasSpell(324)) learnSpell(8134, false); //Щит молний Уровень 5
+		if (level >= 40 && !HasSpell(6377) && HasSpell(5394)) learnSpell(6377, false); //Тотем исцеляющего потока Уровень 3
+		if (level >= 40 && !HasSpell(8235) && HasSpell(8232)) learnSpell(8235, false); //Оружие неистовства ветра Уровень 2
+		if (level >= 41 && !HasSpell(52134) && HasSpell(52127)) learnSpell(52134, false); // unk
+		if (level >= 42 && !HasSpell(10537) && HasSpell(8184)) learnSpell(10537, false); //Тотем защиты от огня Уровень 2
+		if (level >= 42 && !HasSpell(11314) && HasSpell(1535)) learnSpell(11314, false); //Кольцо огня Уровень 4
+		if (level >= 44 && !HasSpell(10600) && HasSpell(10595)) learnSpell(10600, false); //Тотем защиты от сил природы Уровень 2
+		if (level >= 44 && !HasSpell(10392) && HasSpell(403)) learnSpell(10392, false); //Молния Уровень 8
+		if (level >= 44 && !HasSpell(10466) && HasSpell(8004)) learnSpell(10466, false); //Малая волна исцеления Уровень 4
+		if (level >= 44 && !HasSpell(10407) && HasSpell(8071)) learnSpell(10407, false); //Тотем каменной кожи Уровень 5
+		if (level >= 46 && !HasSpell(10622) && HasSpell(1064)) learnSpell(10622, false); //Цепное исцеление Уровень 2
+		if (level >= 46 && !HasSpell(10496) && HasSpell(5675)) learnSpell(10496, false); //Тотем источника маны Уровень 3
+		if (level >= 46 && !HasSpell(10586) && HasSpell(8190)) learnSpell(10586, false); //Тотем магмы Уровень 3
+		if (level >= 46 && !HasSpell(10472) && HasSpell(8056)) learnSpell(10472, false); //Ледяной шок Уровень 3
+		if (level >= 46 && !HasSpell(16341) && HasSpell(8024)) learnSpell(16341, false); //Оружие языка пламени Уровень 5
+		if (level >= 48 && !HasSpell(10395) && HasSpell(331)) learnSpell(10395, false); //Волна исцеления Уровень 8
+		if (level >= 48 && !HasSpell(52136) && HasSpell(52127)) learnSpell(52136, false); // unk
+		if (level >= 48 && !HasSpell(10413) && HasSpell(8042)) learnSpell(10413, false); //Земной шок Уровень 6
+		if (level >= 48 && !HasSpell(2860) && HasSpell(421)) learnSpell(2860, false); //Цепная молния Уровень 3
+		if (level >= 48 && !HasSpell(10427) && HasSpell(5730)) learnSpell(10427, false); //Тотем каменного когтя Уровень 5
+		if (level >= 48 && !HasSpell(10431) && HasSpell(324)) learnSpell(10431, false); //Щит молний Уровень 6
+		if (level >= 48 && !HasSpell(10526) && HasSpell(8227)) learnSpell(10526, false); //Тотем языка пламени Уровень 3
+		if (level >= 48 && !HasSpell(16355) && HasSpell(8033)) learnSpell(16355, false); //Оружие ледяного клейма Уровень 4
+		if (level >= 48 && !HasSpell(20776) && HasSpell(2008)) learnSpell(20776, false); //Дух предков Уровень 4
+		if (level >= 50 && !HasSpell(51991) && HasSpell(51730)) learnSpell(51991, false); // unk
+		if (level >= 50 && !HasSpell(15207) && HasSpell(403)) learnSpell(15207, false); //Молния Уровень 9
+		if (level >= 50 && !HasSpell(10486) && HasSpell(8232)) learnSpell(10486, false); //Оружие неистовства ветра Уровень 3
+		if (level >= 50 && !HasSpell(66844)) learnSpell(66844, false); //Зов Духов 
+		if (level >= 50 && !HasSpell(10462) && HasSpell(5394)) learnSpell(10462, false); //Тотем исцеляющего потока Уровень 4
+		if (level >= 50 && !HasSpell(10437) && HasSpell(3599)) learnSpell(10437, false); //Опаляющий тотем Уровень 5
+		if (level >= 52 && !HasSpell(11315) && HasSpell(1535)) learnSpell(11315, false); //Кольцо огня Уровень 5
+		if (level >= 52 && !HasSpell(10448) && HasSpell(8050)) learnSpell(10448, false); //Огненный шок Уровень 5
+		if (level >= 52 && !HasSpell(10467) && HasSpell(8004)) learnSpell(10467, false); //Малая волна исцеления Уровень 5
+		if (level >= 52 && !HasSpell(10442) && HasSpell(8075)) learnSpell(10442, false); //Тотем силы земли Уровень 4
+		if (level >= 54 && !HasSpell(10623) && HasSpell(1064)) learnSpell(10623, false); //Цепное исцеление Уровень 3
+		if (level >= 54 && !HasSpell(10408) && HasSpell(8071)) learnSpell(10408, false); //Тотем каменной кожи Уровень 6
+		if (level >= 54 && !HasSpell(10479) && HasSpell(8181)) learnSpell(10479, false); //Тотем защиты от магии льда Уровень 3
+		if (level >= 55 && !HasSpell(52138) && HasSpell(52127)) learnSpell(52138, false); // unk
+		if (level >= 56 && !HasSpell(10605) && HasSpell(421)) learnSpell(10605, false); //Цепная молния Уровень 4
+		if (level >= 56 && !HasSpell(10396) && HasSpell(331)) learnSpell(10396, false); //Волна исцеления Уровень 9
+		if (level >= 56 && !HasSpell(10497) && HasSpell(5675)) learnSpell(10497, false); //Тотем источника маны Уровень 4
+		if (level >= 56 && !HasSpell(16342) && HasSpell(8024)) learnSpell(16342, false); //Оружие языка пламени Уровень 6
+		if (level >= 56 && !HasSpell(10587) && HasSpell(8190)) learnSpell(10587, false); //Тотем магмы Уровень 4
+		if (level >= 56 && !HasSpell(15208) && HasSpell(403)) learnSpell(15208, false); //Молния Уровень 10
+		if (level >= 56 && !HasSpell(10432) && HasSpell(324)) learnSpell(10432, false); //Щит молний Уровень 7
+		if (level >= 58 && !HasSpell(10538) && HasSpell(8184)) learnSpell(10538, false); //Тотем защиты от огня Уровень 3
+		if (level >= 58 && !HasSpell(10428) && HasSpell(5730)) learnSpell(10428, false); //Тотем каменного когтя Уровень 6
+		if (level >= 58 && !HasSpell(10473) && HasSpell(8056)) learnSpell(10473, false); //Ледяной шок Уровень 4
+		if (level >= 58 && !HasSpell(16387) && HasSpell(8227)) learnSpell(16387, false); //Тотем языка пламени Уровень 4
+		if (level >= 58 && !HasSpell(16356) && HasSpell(8033)) learnSpell(16356, false); //Оружие ледяного клейма Уровень 5
+		if (level >= 60 && !HasSpell(51992) && HasSpell(51730)) learnSpell(51992, false); // unk
+		if (level >= 60 && !HasSpell(10463) && HasSpell(5394)) learnSpell(10463, false); //Тотем исцеляющего потока Уровень 5
+		if (level >= 60 && !HasSpell(32593) && HasSpell(974)) learnSpell(32593, false); //Щит земли Уровень 2
+		if (level >= 60 && !HasSpell(10414) && HasSpell(8042)) learnSpell(10414, false); //Земной шок Уровень 7
+		if (level >= 60 && !HasSpell(10438) && HasSpell(3599)) learnSpell(10438, false); //Опаляющий тотем Уровень 6
+		if (level >= 60 && !HasSpell(29228) && HasSpell(8050)) learnSpell(29228, false); //Огненный шок Уровень 6
+		if (level >= 60 && !HasSpell(57720) && HasSpell(30706)) learnSpell(57720, false); //Тотем гнева Уровень 2
+		if (level >= 60 && !HasSpell(10601) && HasSpell(10595)) learnSpell(10601, false); //Тотем защиты от сил природы Уровень 3
+		if (level >= 60 && !HasSpell(16362) && HasSpell(8232)) learnSpell(16362, false); //Оружие неистовства ветра Уровень 4
+		if (level >= 60 && !HasSpell(10468) && HasSpell(8004)) learnSpell(10468, false); //Малая волна исцеления Уровень 6
+		if (level >= 60 && !HasSpell(20777) && HasSpell(2008)) learnSpell(20777, false); //Дух предков Уровень 5
+		if (level >= 60 && !HasSpell(25357) && HasSpell(331)) learnSpell(25357, false); //Волна исцеления Уровень 10
+		if (level >= 60 && !HasSpell(25361) && HasSpell(8075)) learnSpell(25361, false); //Тотем силы земли Уровень 5
+		if (level >= 61 && !HasSpell(25546) && HasSpell(1535)) learnSpell(25546, false); //Кольцо огня Уровень 6
+		if (level >= 61 && !HasSpell(25422) && HasSpell(1064)) learnSpell(25422, false); //Цепное исцеление Уровень 4
+		if (level >= 62 && !HasSpell(25448) && HasSpell(403)) learnSpell(25448, false); //Молния Уровень 11
+		if (level >= 62 && !HasSpell(24398) && HasSpell(52127)) learnSpell(24398, false); //Водный щит Уровень 7
+		if (level >= 63 && !HasSpell(25439) && HasSpell(421)) learnSpell(25439, false); //Цепная молния Уровень 5
+		if (level >= 63 && !HasSpell(25508) && HasSpell(8071)) learnSpell(25508, false); //Тотем каменной кожи Уровень 7
+		if (level >= 63 && !HasSpell(25469) && HasSpell(324)) learnSpell(25469, false); //Щит молний Уровень 8
+		if (level >= 63 && !HasSpell(25391) && HasSpell(331)) learnSpell(25391, false); //Волна исцеления Уровень 11
+		if (level >= 64 && !HasSpell(25489) && HasSpell(8024)) learnSpell(25489, false); //Оружие языка пламени Уровень 7
+		if (level >= 64 && !HasSpell(3738)) learnSpell(3738, false); //Тотем гнева воздуха 
+		if (level >= 65 && !HasSpell(25528) && HasSpell(8075)) learnSpell(25528, false); //Тотем силы земли Уровень 6
+		if (level >= 65 && !HasSpell(25552) && HasSpell(8190)) learnSpell(25552, false); //Тотем магмы Уровень 5
+		if (level >= 65 && !HasSpell(25570) && HasSpell(5675)) learnSpell(25570, false); //Тотем источника маны Уровень 5
+		if (level >= 66 && !HasSpell(2062)) learnSpell(2062, false); //Тотем элементаля земли 
+		if (level >= 66 && !HasSpell(25500) && HasSpell(8033)) learnSpell(25500, false); //Оружие ледяного клейма Уровень 6
+		if (level >= 66 && !HasSpell(25420) && HasSpell(8004)) learnSpell(25420, false); //Малая волна исцеления Уровень 7
+		if (level >= 67 && !HasSpell(25449) && HasSpell(403)) learnSpell(25449, false); //Молния Уровень 12
+		if (level >= 67 && !HasSpell(25560) && HasSpell(8181)) learnSpell(25560, false); //Тотем защиты от магии льда Уровень 4
+		if (level >= 67 && !HasSpell(25525) && HasSpell(5730)) learnSpell(25525, false); //Тотем каменного когтя Уровень 7
+		if (level >= 67 && !HasSpell(25557) && HasSpell(8227)) learnSpell(25557, false); //Тотем языка пламени Уровень 5
+		if (level >= 68 && !HasSpell(25464) && HasSpell(8056)) learnSpell(25464, false); //Ледяной шок Уровень 5
+		if (level >= 68 && !HasSpell(25505) && HasSpell(8232)) learnSpell(25505, false); //Оружие неистовства ветра Уровень 5
+		if (level >= 68 && !HasSpell(25423) && HasSpell(1064)) learnSpell(25423, false); //Цепное исцеление Уровень 5
+		if (level >= 68 && !HasSpell(25563) && HasSpell(8184)) learnSpell(25563, false); //Тотем защиты от огня Уровень 4
+		if (level >= 68 && !HasSpell(2894)) learnSpell(2894, false); //Тотем элементаля огня 
+		if (level >= 69 && !HasSpell(25574) && HasSpell(10595)) learnSpell(25574, false); //Тотем защиты от сил природы Уровень 4
+		if (level >= 69 && !HasSpell(25454) && HasSpell(8042)) learnSpell(25454, false); //Земной шок Уровень 8
+		if (level >= 69 && !HasSpell(25533) && HasSpell(3599)) learnSpell(25533, false); //Опаляющий тотем Уровень 7
+		if (level >= 69 && !HasSpell(25590) && HasSpell(2008)) learnSpell(25590, false); //Дух предков Уровень 6
+		if (level >= 69 && !HasSpell(25567) && HasSpell(5394)) learnSpell(25567, false); //Тотем исцеляющего потока Уровень 6
+		if (level >= 69 && !HasSpell(33736) && HasSpell(52127)) learnSpell(33736, false); //Водный щит Уровень 8
+		if (level >= 70 && !HasSpell(32594) && HasSpell(974)) learnSpell(32594, false); //Щит земли Уровень 3
+		if (level >= 70 && !HasSpell(25547) && HasSpell(1535)) learnSpell(25547, false); //Кольцо огня Уровень 7
+		if (level >= 70 && !HasSpell(32182)) learnSpell(32182, false); //Героизм 
+		if (level >= 70 && !HasSpell(51993) && HasSpell(51730)) learnSpell(51993, false); // unk
+		if (level >= 70 && !HasSpell(25509) && HasSpell(8071)) learnSpell(25509, false); //Тотем каменной кожи Уровень 8
+		if (level >= 70 && !HasSpell(25472) && HasSpell(324)) learnSpell(25472, false); //Щит молний Уровень 9
+		if (level >= 70 && !HasSpell(59156) && HasSpell(51490)) learnSpell(59156, false); //Гром и молния Уровень 2
+		if (level >= 70 && !HasSpell(2825)) learnSpell(2825, false); //Жажда крови 
+		if (level >= 70 && !HasSpell(25396) && HasSpell(331)) learnSpell(25396, false); //Волна исцеления Уровень 12
+		if (level >= 70 && !HasSpell(57721) && HasSpell(30706)) learnSpell(57721, false); //Тотем гнева Уровень 3
+		if (level >= 70 && !HasSpell(61299) && HasSpell(61295)) learnSpell(61299, false); //Быстрина Уровень 2
+		if (level >= 70 && !HasSpell(25442) && HasSpell(421)) learnSpell(25442, false); //Цепная молния Уровень 6
+		if (level >= 70 && !HasSpell(25457) && HasSpell(8050)) learnSpell(25457, false); //Огненный шок Уровень 7
+		if (level >= 71 && !HasSpell(58699) && HasSpell(3599)) learnSpell(58699, false); //Опаляющий тотем Уровень 8
+		if (level >= 71 && !HasSpell(58580) && HasSpell(5730)) learnSpell(58580, false); //Тотем каменного когтя Уровень 8
+		if (level >= 71 && !HasSpell(58649) && HasSpell(8227)) learnSpell(58649, false); //Тотем языка пламени Уровень 6
+		if (level >= 71 && !HasSpell(58755) && HasSpell(5394)) learnSpell(58755, false); //Тотем исцеляющего потока Уровень 7
+		if (level >= 71 && !HasSpell(58801) && HasSpell(8232)) learnSpell(58801, false); //Оружие неистовства ветра Уровень 6
+		if (level >= 71 && !HasSpell(58771) && HasSpell(5675)) learnSpell(58771, false); //Тотем источника маны Уровень 6
+		if (level >= 71 && !HasSpell(58794) && HasSpell(8033)) learnSpell(58794, false); //Оружие ледяного клейма Уровень 7
+		if (level >= 71 && !HasSpell(58785) && HasSpell(8024)) learnSpell(58785, false); //Оружие языка пламени Уровень 8
+		if (level >= 72 && !HasSpell(49275) && HasSpell(8004)) learnSpell(49275, false); // unk
+		if (level >= 73 && !HasSpell(49235) && HasSpell(8056)) learnSpell(49235, false); // unk
+		if (level >= 73 && !HasSpell(58751) && HasSpell(8071)) learnSpell(58751, false); //Тотем каменной кожи Уровень 9
+		if (level >= 73 && !HasSpell(49237) && HasSpell(403)) learnSpell(49237, false); // unk
+		if (level >= 73 && !HasSpell(58731) && HasSpell(8190)) learnSpell(58731, false); //Тотем магмы Уровень 6
+		if (level >= 74 && !HasSpell(55458) && HasSpell(1064)) learnSpell(55458, false); //Цепное исцеление Уровень 6
+		if (level >= 74 && !HasSpell(49230) && HasSpell(8042)) learnSpell(49230, false); // unk
+		if (level >= 74 && !HasSpell(49270) && HasSpell(421)) learnSpell(49270, false); // unk
+		if (level >= 75 && !HasSpell(61649) && HasSpell(1535)) learnSpell(61649, false); //Кольцо огня Уровень 8
+		if (level >= 75 && !HasSpell(58652) && HasSpell(8227)) learnSpell(58652, false); //Тотем языка пламени Уровень 7
+		if (level >= 75 && !HasSpell(58703) && HasSpell(3599)) learnSpell(58703, false); //Опаляющий тотем Уровень 9
+		if (level >= 75 && !HasSpell(59158) && HasSpell(51490)) learnSpell(59158, false); //Гром и молния Уровень 3
+		if (level >= 75 && !HasSpell(61300) && HasSpell(61295)) learnSpell(61300, false); //Быстрина Уровень 3
+		if (level >= 75 && !HasSpell(58737) && HasSpell(8184)) learnSpell(58737, false); //Тотем защиты от огня Уровень 5
+		if (level >= 75 && !HasSpell(58741) && HasSpell(8181)) learnSpell(58741, false); //Тотем защиты от магии льда Уровень 5
+		if (level >= 75 && !HasSpell(58746) && HasSpell(10595)) learnSpell(58746, false); //Тотем защиты от сил природы Уровень 5
+		if (level >= 75 && !HasSpell(49283) && HasSpell(974)) learnSpell(49283, false); // unk
+		if (level >= 75 && !HasSpell(51505)) learnSpell(51505, false); // unk
+		if (level >= 75 && !HasSpell(49280) && HasSpell(324)) learnSpell(49280, false); // unk
+		if (level >= 75 && !HasSpell(49272) && HasSpell(331)) learnSpell(49272, false); // unk
+		if (level >= 75 && !HasSpell(49232) && HasSpell(8050)) learnSpell(49232, false); // unk
+		if (level >= 75 && !HasSpell(57622) && HasSpell(8075)) learnSpell(57622, false); //Тотем силы земли Уровень 7
+		if (level >= 75 && !HasSpell(58581) && HasSpell(5730)) learnSpell(58581, false); //Тотем каменного когтя Уровень 9
+		if (level >= 76 && !HasSpell(58789) && HasSpell(8024)) learnSpell(58789, false); //Оружие языка пламени Уровень 9
+		if (level >= 76 && !HasSpell(58803) && HasSpell(8232)) learnSpell(58803, false); //Оружие неистовства ветра Уровень 7
+		if (level >= 76 && !HasSpell(57960) && HasSpell(52127)) learnSpell(57960, false); //Водный щит Уровень 9
+		if (level >= 76 && !HasSpell(58756) && HasSpell(5394)) learnSpell(58756, false); //Тотем исцеляющего потока Уровень 8
+		if (level >= 76 && !HasSpell(58773) && HasSpell(5675)) learnSpell(58773, false); //Тотем источника маны Уровень 7
+		if (level >= 76 && !HasSpell(58795) && HasSpell(8033)) learnSpell(58795, false); //Оружие ледяного клейма Уровень 8
+		if (level >= 77 && !HasSpell(49276) && HasSpell(8004)) learnSpell(49276, false); // unk
+		if (level >= 78 && !HasSpell(58753) && HasSpell(8071)) learnSpell(58753, false); //Тотем каменной кожи Уровень 10
+		if (level >= 78 && !HasSpell(58734) && HasSpell(8190)) learnSpell(58734, false); //Тотем магмы Уровень 7
+		if (level >= 78 && !HasSpell(58582) && HasSpell(5730)) learnSpell(58582, false); //Тотем каменного когтя Уровень 10
+		if (level >= 78 && !HasSpell(49236) && HasSpell(8056)) learnSpell(49236, false); // unk
+		if (level >= 79 && !HasSpell(49238) && HasSpell(403)) learnSpell(49238, false); // unk
+		if (level >= 79 && !HasSpell(49231) && HasSpell(8042)) learnSpell(49231, false); // unk
+		if (level >= 80 && !HasSpell(58790) && HasSpell(8024)) learnSpell(58790, false); //Оружие языка пламени Уровень 10
+		if (level >= 80 && !HasSpell(49273) && HasSpell(331)) learnSpell(49273, false); // unk
+		if (level >= 80 && !HasSpell(61657) && HasSpell(1535)) learnSpell(61657, false); //Кольцо огня Уровень 9
+		if (level >= 80 && !HasSpell(58804) && HasSpell(8232)) learnSpell(58804, false); //Оружие неистовства ветра Уровень 8
+		if (level >= 80 && !HasSpell(59159) && HasSpell(51490)) learnSpell(59159, false); //Гром и молния Уровень 4
+		if (level >= 80 && !HasSpell(49233) && HasSpell(8050)) learnSpell(49233, false); // unk
+		if (level >= 80 && !HasSpell(49271) && HasSpell(421)) learnSpell(49271, false); // unk
+		if (level >= 80 && !HasSpell(61301) && HasSpell(61295)) learnSpell(61301, false); //Быстрина Уровень 4
+		if (level >= 80 && !HasSpell(60043) && HasSpell(51505)) learnSpell(60043, false); //Выброс лавы Уровень 2
+		if (level >= 80 && !HasSpell(58796) && HasSpell(8033)) learnSpell(58796, false); //Оружие ледяного клейма Уровень 9
+		if (level >= 80 && !HasSpell(49281) && HasSpell(324)) learnSpell(49281, false); // unk
+		if (level >= 80 && !HasSpell(58656) && HasSpell(8227)) learnSpell(58656, false); //Тотем языка пламени Уровень 8
+		if (level >= 80 && !HasSpell(58704) && HasSpell(3599)) learnSpell(58704, false); //Опаляющий тотем Уровень 10
+		if (level >= 80 && !HasSpell(55459) && HasSpell(1064)) learnSpell(55459, false); //Цепное исцеление Уровень 7
+		if (level >= 80 && !HasSpell(51994) && HasSpell(51730)) learnSpell(51994, false); // unk
+		if (level >= 80 && !HasSpell(58739) && HasSpell(8184)) learnSpell(58739, false); //Тотем защиты от огня Уровень 6
+		if (level >= 80 && !HasSpell(51514)) learnSpell(51514, false); // unk
+		if (level >= 80 && !HasSpell(58745) && HasSpell(8181)) learnSpell(58745, false); //Тотем защиты от магии льда Уровень 6
+		if (level >= 80 && !HasSpell(49284) && HasSpell(974)) learnSpell(49284, false); // unk
+		if (level >= 80 && !HasSpell(58749) && HasSpell(10595)) learnSpell(58749, false); //Тотем защиты от сил природы Уровень 6
+		if (level >= 80 && !HasSpell(58757) && HasSpell(5394)) learnSpell(58757, false); //Тотем исцеляющего потока Уровень 9
+		if (level >= 80 && !HasSpell(57722) && HasSpell(30706)) learnSpell(57722, false); //Тотем гнева Уровень 4
+		if (level >= 80 && !HasSpell(58774) && HasSpell(5675)) learnSpell(58774, false); //Тотем источника маны Уровень 8
+		if (level >= 80 && !HasSpell(49277) && HasSpell(2008)) learnSpell(49277, false); // unk
+		if (level >= 80 && !HasSpell(58643) && HasSpell(8075)) learnSpell(58643, false); //Тотем силы земли Уровень 8
+	}
+
+	if (getClass() == CLASS_WARRIOR)
+	{
+		if (level >= 1 && !HasSpell(6673)) learnSpell(6673, false); //Боевой крик Уровень 1
+		if (level >= 4 && !HasSpell(100)) learnSpell(100, false); //Рывок Уровень 1
+		if (level >= 4 && !HasSpell(772)) learnSpell(772, false); //Кровопускание Уровень 1
+		if (level >= 6 && !HasSpell(3127)) learnSpell(3127, false); //Парирование Пассивная
+		if (level >= 6 && !HasSpell(6343)) learnSpell(6343, false); //Удар грома Уровень 1
+		if (level >= 6 && !HasSpell(34428)) learnSpell(34428, false); //Победный раж 
+		if (level >= 8 && !HasSpell(1715)) learnSpell(1715, false); //Подрезать сухожилия 
+		if (level >= 8 && !HasSpell(284) && HasSpell(78)) learnSpell(284, false); //Удар героя Уровень 2
+		if (level >= 10 && !HasSpell(71)) learnSpell(71, false);
+		if (level >= 10 && !HasSpell(7386)) learnSpell(7386, false);
+		if (level >= 10 && !HasSpell(355)) learnSpell(355, false);
+		if (level >= 10 && !HasSpell(6546) && HasSpell(772)) learnSpell(6546, false); //Кровопускание Уровень 2
+		if (level >= 10 && !HasSpell(2687)) learnSpell(2687, false); //Кровавая ярость 
+		if (level >= 12 && !HasSpell(5242) && HasSpell(6673)) learnSpell(5242, false); //Боевой крик Уровень 2
+		if (level >= 12 && !HasSpell(7384)) learnSpell(7384, false); //Превосходство 
+		if (level >= 12 && !HasSpell(72)) learnSpell(72, false); //Удар щитом 
+		if (level >= 14 && !HasSpell(6572)) learnSpell(6572, false); //Реванш Уровень 1
+		if (level >= 14 && !HasSpell(1160)) learnSpell(1160, false); //Деморализующий крик Уровень 1
+		if (level >= 16 && !HasSpell(2565)) learnSpell(2565, false); //Блок щитом 
+		if (level >= 16 && !HasSpell(285) && HasSpell(78)) learnSpell(285, false); //Удар героя Уровень 3
+		if (level >= 16 && !HasSpell(694)) learnSpell(694, false); //Дразнящий удар 
+		if (level >= 18 && !HasSpell(676)) learnSpell(676, false); //Разоружение 
+		if (level >= 18 && !HasSpell(8198) && HasSpell(6343)) learnSpell(8198, false); //Удар грома Уровень 2
+		if (level >= 20 && !HasSpell(12678)) learnSpell(12678, false); //Знание боевых стоек Пассивная
+		if (level >= 20 && !HasSpell(674)) learnSpell(674, false); //Бой двумя оружиями Пассивная
+		if (level >= 20 && !HasSpell(20230)) learnSpell(20230, false); //Возмездие 
+		if (level >= 20 && !HasSpell(6547) && HasSpell(772)) learnSpell(6547, false); //Кровопускание Уровень 3
+		if (level >= 20 && !HasSpell(845)) learnSpell(845, false); //Рассекающий удар Уровень 1
+		if (level >= 22 && !HasSpell(6192) && HasSpell(6673)) learnSpell(6192, false); //Боевой крик Уровень 3
+		if (level >= 22 && !HasSpell(5246)) learnSpell(5246, false); //Устрашающий крик 
+		if (level >= 24 && !HasSpell(1608) && HasSpell(78)) learnSpell(1608, false); //Удар героя Уровень 4
+		if (level >= 24 && !HasSpell(6190) && HasSpell(1160)) learnSpell(6190, false); //Деморализующий крик Уровень 2
+		if (level >= 24 && !HasSpell(6574) && HasSpell(6572)) learnSpell(6574, false); //Реванш Уровень 2
+		if (level >= 24 && !HasSpell(5308)) learnSpell(5308, false); //Казнь Уровень 1
+		if (level >= 26 && !HasSpell(6178) && HasSpell(100)) learnSpell(6178, false); //Рывок Уровень 2
+		if (level >= 26 && !HasSpell(1161)) learnSpell(1161, false); //Вызывающий крик 
+		if (level >= 28 && !HasSpell(8204) && HasSpell(6343)) learnSpell(8204, false); //Удар грома Уровень 3
+		if (level >= 28 && !HasSpell(871)) learnSpell(871, false); //Глухая оборона
+		if (level >= 30 && !HasSpell(20252)) learnSpell(20252, false); //Перехват
+		if (level >= 30 && !HasSpell(2458)) learnSpell(2458, false); //Стойка берсерка
+		if (level >= 30 && !HasSpell(7369) && HasSpell(845)) learnSpell(7369, false); //Рассекающий удар Уровень 2
+		if (level >= 30 && !HasSpell(20252)) learnSpell(20252, false); //Перехват 
+		if (level >= 30 && !HasSpell(6548) && HasSpell(772)) learnSpell(6548, false); //Кровопускание Уровень 4
+		if (level >= 30 && !HasSpell(1464)) learnSpell(1464, false); //Мощный удар Уровень 1
+		if (level >= 32 && !HasSpell(18499)) learnSpell(18499, false); //Ярость берсерка 
+		if (level >= 32 && !HasSpell(20658) && HasSpell(5308)) learnSpell(20658, false); //Казнь Уровень 2
+		if (level >= 32 && !HasSpell(11549) && HasSpell(6673)) learnSpell(11549, false); //Боевой крик Уровень 4
+		if (level >= 32 && !HasSpell(11564) && HasSpell(78)) learnSpell(11564, false); //Удар героя Уровень 5
+		if (level >= 34 && !HasSpell(11554) && HasSpell(1160)) learnSpell(11554, false); //Деморализующий крик Уровень 3
+		if (level >= 34 && !HasSpell(7379) && HasSpell(6572)) learnSpell(7379, false); //Реванш Уровень 3
+		if (level >= 36 && !HasSpell(1680)) learnSpell(1680, false); //Вихрь 
+		if (level >= 38 && !HasSpell(8820) && HasSpell(1464)) learnSpell(8820, false); //Мощный удар Уровень 2
+		if (level >= 38 && !HasSpell(8205) && HasSpell(6343)) learnSpell(8205, false); //Удар грома Уровень 4
+		if (level >= 38 && !HasSpell(6552)) learnSpell(6552, false); //Зуботычина 
+		if (level >= 40 && !HasSpell(11572) && HasSpell(772)) learnSpell(11572, false); //Кровопускание Уровень 5
+		if (level >= 40 && !HasSpell(23922)) learnSpell(23922, false); //Мощный удар щитом Уровень 1
+		if (level >= 40 && !HasSpell(11565) && HasSpell(78)) learnSpell(11565, false); //Удар героя Уровень 6
+		if (level >= 40 && !HasSpell(750)) learnSpell(750, false); //Латы 
+		if (level >= 40 && !HasSpell(11608) && HasSpell(845)) learnSpell(11608, false); //Рассекающий удар Уровень 3
+		if (level >= 40 && !HasSpell(20660) && HasSpell(5308)) learnSpell(20660, false); //Казнь Уровень 3
+		if (level >= 42 && !HasSpell(11550) && HasSpell(6673)) learnSpell(11550, false); //Боевой крик Уровень 5
+		if (level >= 44 && !HasSpell(11555) && HasSpell(1160)) learnSpell(11555, false); //Деморализующий крик Уровень 4
+		if (level >= 44 && !HasSpell(11600) && HasSpell(6572)) learnSpell(11600, false); //Реванш Уровень 4
+		if (level >= 46 && !HasSpell(11604) && HasSpell(1464)) learnSpell(11604, false); //Мощный удар Уровень 3
+		if (level >= 46 && !HasSpell(11578) && HasSpell(100)) learnSpell(11578, false); //Рывок Уровень 3
+		if (level >= 48 && !HasSpell(23923) && HasSpell(23922)) learnSpell(23923, false); //Мощный удар щитом Уровень 2
+		if (level >= 48 && !HasSpell(20661) && HasSpell(5308)) learnSpell(20661, false); //Казнь Уровень 4
+		if (level >= 48 && !HasSpell(21551) && HasSpell(12294)) learnSpell(21551, false); //Смертельный удар Уровень 2
+		if (level >= 48 && !HasSpell(11566) && HasSpell(78)) learnSpell(11566, false); //Удар героя Уровень 7
+		if (level >= 48 && !HasSpell(11580) && HasSpell(6343)) learnSpell(11580, false); //Удар грома Уровень 5
+		if (level >= 50 && !HasSpell(11609) && HasSpell(845)) learnSpell(11609, false); //Рассекающий удар Уровень 4
+		if (level >= 50 && !HasSpell(11573) && HasSpell(772)) learnSpell(11573, false); //Кровопускание Уровень 6
+		if (level >= 50 && !HasSpell(1719)) learnSpell(1719, false); //Безрассудство 
+		if (level >= 52 && !HasSpell(11551) && HasSpell(6673)) learnSpell(11551, false); //Боевой крик Уровень 6
+		if (level >= 54 && !HasSpell(21552) && HasSpell(12294)) learnSpell(21552, false); //Смертельный удар Уровень 3
+		if (level >= 54 && !HasSpell(23924) && HasSpell(23922)) learnSpell(23924, false); //Мощный удар щитом Уровень 3
+		if (level >= 54 && !HasSpell(11556) && HasSpell(1160)) learnSpell(11556, false); //Деморализующий крик Уровень 5
+		if (level >= 54 && !HasSpell(11601) && HasSpell(6572)) learnSpell(11601, false); //Реванш Уровень 5
+		if (level >= 54 && !HasSpell(11605) && HasSpell(1464)) learnSpell(11605, false); //Мощный удар Уровень 4
+		if (level >= 56 && !HasSpell(20662) && HasSpell(5308)) learnSpell(20662, false); //Казнь Уровень 5
+		if (level >= 56 && !HasSpell(11567) && HasSpell(78)) learnSpell(11567, false); //Удар героя Уровень 8
+		if (level >= 58 && !HasSpell(11581) && HasSpell(6343)) learnSpell(11581, false); //Удар грома Уровень 6
+		if (level >= 60 && !HasSpell(23925) && HasSpell(23922)) learnSpell(23925, false); //Мощный удар щитом Уровень 4
+		if (level >= 60 && !HasSpell(25286) && HasSpell(78)) learnSpell(25286, false); //Удар героя Уровень 9
+		if (level >= 60 && !HasSpell(25288) && HasSpell(6572)) learnSpell(25288, false); //Реванш Уровень 6
+		if (level >= 60 && !HasSpell(21553) && HasSpell(12294)) learnSpell(21553, false); //Смертельный удар Уровень 4
+		if (level >= 60 && !HasSpell(11574) && HasSpell(772)) learnSpell(11574, false); //Кровопускание Уровень 7
+		if (level >= 60 && !HasSpell(25289) && HasSpell(6673)) learnSpell(25289, false); //Боевой крик Уровень 7
+		if (level >= 60 && !HasSpell(20569) && HasSpell(845)) learnSpell(20569, false); //Рассекающий удар Уровень 5
+		if (level >= 60 && !HasSpell(30016) && HasSpell(20243)) learnSpell(30016, false); //Сокрушение Уровень 2
+		if (level >= 61 && !HasSpell(25241) && HasSpell(1464)) learnSpell(25241, false); //Мощный удар Уровень 5
+		if (level >= 62 && !HasSpell(25202) && HasSpell(1160)) learnSpell(25202, false); //Деморализующий крик Уровень 6
+		if (level >= 63 && !HasSpell(25269) && HasSpell(6572)) learnSpell(25269, false); //Реванш Уровень 7
+		if (level >= 64 && !HasSpell(23920)) learnSpell(23920, false); //Отражение заклинания 
+		if (level >= 65 && !HasSpell(25234) && HasSpell(5308)) learnSpell(25234, false); //Казнь Уровень 6
+		if (level >= 66 && !HasSpell(25258) && HasSpell(23922)) learnSpell(25258, false); //Мощный удар щитом Уровень 5
+		if (level >= 66 && !HasSpell(29707) && HasSpell(78)) learnSpell(29707, false); //Удар героя Уровень 10
+		if (level >= 66 && !HasSpell(25248) && HasSpell(12294)) learnSpell(25248, false); //Смертельный удар Уровень 5
+		if (level >= 67 && !HasSpell(25264) && HasSpell(6343)) learnSpell(25264, false); //Удар грома Уровень 7
+		if (level >= 68 && !HasSpell(469)) learnSpell(469, false); //Командирский крик Уровень 1
+		if (level >= 68 && !HasSpell(25231) && HasSpell(845)) learnSpell(25231, false); //Рассекающий удар Уровень 6
+		if (level >= 68 && !HasSpell(25208) && HasSpell(772)) learnSpell(25208, false); //Кровопускание Уровень 8
+		if (level >= 69 && !HasSpell(25242) && HasSpell(1464)) learnSpell(25242, false); //Мощный удар Уровень 6
+		if (level >= 69 && !HasSpell(2048) && HasSpell(6673)) learnSpell(2048, false); //Боевой крик Уровень 8
+		if (level >= 70 && !HasSpell(30330) && HasSpell(12294)) learnSpell(30330, false); //Смертельный удар Уровень 6
+		if (level >= 70 && !HasSpell(30356) && HasSpell(23922)) learnSpell(30356, false); //Мощный удар щитом Уровень 6
+		if (level >= 70 && !HasSpell(30357) && HasSpell(6572)) learnSpell(30357, false); //Реванш Уровень 8
+		if (level >= 70 && !HasSpell(30324) && HasSpell(78)) learnSpell(30324, false); //Удар героя Уровень 11
+		if (level >= 70 && !HasSpell(30022) && HasSpell(20243)) learnSpell(30022, false); //Сокрушение Уровень 3
+		if (level >= 70 && !HasSpell(25203) && HasSpell(1160)) learnSpell(25203, false); //Деморализующий крик Уровень 7
+		if (level >= 70 && !HasSpell(25236) && HasSpell(5308)) learnSpell(25236, false); //Казнь Уровень 7
+		if (level >= 70 && !HasSpell(3411)) learnSpell(3411, false); //Вмешательство 
+		if (level >= 71 && !HasSpell(46845) && HasSpell(772)) learnSpell(46845, false); //Кровопускание Уровень 9
+		if (level >= 71 && !HasSpell(64382)) learnSpell(64382, false); //Сокрушительный бросок 
+		if (level >= 72 && !HasSpell(47449) && HasSpell(78)) learnSpell(47449, false); // unk
+		if (level >= 72 && !HasSpell(47519) && HasSpell(845)) learnSpell(47519, false); // unk
+		if (level >= 73 && !HasSpell(47470) && HasSpell(5308)) learnSpell(47470, false); // unk
+		if (level >= 73 && !HasSpell(47501) && HasSpell(6343)) learnSpell(47501, false); // unk
+		if (level >= 74 && !HasSpell(47439) && HasSpell(469)) learnSpell(47439, false); // unk
+		if (level >= 74 && !HasSpell(47474) && HasSpell(1464)) learnSpell(47474, false); // unk
+		if (level >= 75 && !HasSpell(55694)) learnSpell(55694, false); //Безудержное восстановление 
+		if (level >= 75 && !HasSpell(47485) && HasSpell(12294)) learnSpell(47485, false); // unk
+		if (level >= 75 && !HasSpell(47497) && HasSpell(20243)) learnSpell(47497, false); // unk
+		if (level >= 75 && !HasSpell(47487) && HasSpell(23922)) learnSpell(47487, false); // unk
+		if (level >= 76 && !HasSpell(47450) && HasSpell(78)) learnSpell(47450, false); // unk
+		if (level >= 76 && !HasSpell(47465) && HasSpell(772)) learnSpell(47465, false); // unk
+		if (level >= 77 && !HasSpell(47520) && HasSpell(845)) learnSpell(47520, false); // unk
+		if (level >= 78 && !HasSpell(47502) && HasSpell(6343)) learnSpell(47502, false); // unk
+		if (level >= 78 && !HasSpell(47436) && HasSpell(6673)) learnSpell(47436, false); // unk
+		if (level >= 79 && !HasSpell(47475) && HasSpell(1464)) learnSpell(47475, false); // unk
+		if (level >= 79 && !HasSpell(47437) && HasSpell(1160)) learnSpell(47437, false); // unk
+		if (level >= 80 && !HasSpell(47498) && HasSpell(20243)) learnSpell(47498, false); // unk
+		if (level >= 80 && !HasSpell(47488) && HasSpell(23922)) learnSpell(47488, false); // unk
+		if (level >= 80 && !HasSpell(47486) && HasSpell(12294)) learnSpell(47486, false); // unk
+		if (level >= 80 && !HasSpell(47440) && HasSpell(469)) learnSpell(47440, false); // unk
+		if (level >= 80 && !HasSpell(57755)) learnSpell(57755, false); //Героический бросок 
+		if (level >= 80 && !HasSpell(57823) && HasSpell(6572)) learnSpell(57823, false); //Реванш Уровень 9
+		if (level >= 80 && !HasSpell(47471) && HasSpell(5308)) learnSpell(47471, false); // unk
+	}
+
+	if (getClass() == CLASS_PALADIN)
+	{
+		if (level >= 1 && !HasSpell(465)) learnSpell(465, false); //Аура благочестия Уровень 1
+		if (level >= 4 && !HasSpell(19740)) learnSpell(19740, false); //Благословение могущества Уровень 1
+		if (level >= 4 && !HasSpell(20271)) learnSpell(20271, false); //Правосудие света 
+		if (level >= 6 && !HasSpell(498)) learnSpell(498, false); //Божественная защита 
+		if (level >= 6 && !HasSpell(639) && HasSpell(635)) learnSpell(639, false); //Свет небес Уровень 2
+		if (level >= 8 && !HasSpell(853)) learnSpell(853, false); //Молот правосудия Уровень 1
+		if (level >= 8 && !HasSpell(3127)) learnSpell(3127, false); //Парирование Пассивная
+		if (level >= 8 && !HasSpell(1152)) learnSpell(1152, false); //Омовение 
+		if (level >= 10 && !HasSpell(633)) learnSpell(633, false); //Возложение рук Уровень 1
+		if (level >= 10 && !HasSpell(10290) && HasSpell(465)) learnSpell(10290, false); //Аура благочестия Уровень 2
+		if (level >= 10 && !HasSpell(1022)) learnSpell(1022, false); //Длань защиты Уровень 1
+		if (level >= 12 && !HasSpell(53408)) learnSpell(53408, false); //Правосудие мудрости 
+		if (level >= 12 && !HasSpell(19834) && HasSpell(19740)) learnSpell(19834, false); //Благословение могущества Уровень 2
+		if (level >= 14 && !HasSpell(19742)) learnSpell(19742, false); //Благословение мудрости Уровень 1
+		if (level >= 14 && !HasSpell(31789)) learnSpell(31789, false); //Праведная защита 
+		if (level >= 14 && !HasSpell(647) && HasSpell(635)) learnSpell(647, false); //Свет небес Уровень 3
+		if (level >= 16 && !HasSpell(25780)) learnSpell(25780, false); //Праведное неистовство 
+		if (level >= 16 && !HasSpell(7294)) learnSpell(7294, false); //Аура воздаяния Уровень 1
+		if (level >= 16 && !HasSpell(62124)) learnSpell(62124, false); //Длань возмездия 
+		if (level >= 18 && !HasSpell(1044)) learnSpell(1044, false); //Длань свободы 
+		if (level >= 20 && !HasSpell(19750)) learnSpell(19750, false); //Вспышка Света Уровень 1
+		if (level >= 20 && !HasSpell(5502)) learnSpell(5502, false); //Чутье на нежить 
+		if (level >= 20 && !HasSpell(20217)) learnSpell(20217, false); //Благословение королей 
+		if (level >= 20 && !HasSpell(643) && HasSpell(465)) learnSpell(643, false); //Аура благочестия Уровень 3
+		if (level >= 20 && !HasSpell(26573)) learnSpell(26573, false); //Освящение Уровень 1
+		if (level >= 20 && !HasSpell(879)) learnSpell(879, false); //Экзорцизм Уровень 1
+		if (level >= 22 && !HasSpell(19835) && HasSpell(19740)) learnSpell(19835, false); //Благословение могущества Уровень 3
+		if (level >= 22 && !HasSpell(20164)) learnSpell(20164, false); //Печать справедливости 
+		if (level >= 22 && !HasSpell(1026) && HasSpell(635)) learnSpell(1026, false); //Свет небес Уровень 4
+		if (level >= 22 && !HasSpell(19746)) learnSpell(19746, false); //Аура сосредоточенности 
+		if (level >= 24 && !HasSpell(10322) && HasSpell(7328)) learnSpell(10322, false); //Искупление Уровень 2
+		if (level >= 24 && !HasSpell(5599) && HasSpell(1022)) learnSpell(5599, false); //Длань защиты Уровень 2
+		if (level >= 24 && !HasSpell(10326)) learnSpell(10326, false); //Изгнание зла 
+		if (level >= 24 && !HasSpell(5588) && HasSpell(853)) learnSpell(5588, false); //Молот правосудия Уровень 2
+		if (level >= 24 && !HasSpell(19850) && HasSpell(19742)) learnSpell(19850, false); //Благословение мудрости Уровень 2
+		if (level >= 26 && !HasSpell(10298) && HasSpell(7294)) learnSpell(10298, false); //Аура воздаяния Уровень 2
+		if (level >= 26 && !HasSpell(1038)) learnSpell(1038, false); //Длань спасения 
+		if (level >= 26 && !HasSpell(19939) && HasSpell(19750)) learnSpell(19939, false); //Вспышка Света Уровень 2
+		if (level >= 28 && !HasSpell(53407)) learnSpell(53407, false); //Правосудие справедливости 
+		if (level >= 28 && !HasSpell(19876)) learnSpell(19876, false); //Аура защиты от темной магии Уровень 1
+		if (level >= 28 && !HasSpell(5614) && HasSpell(879)) learnSpell(5614, false); //Экзорцизм Уровень 2
+		if (level >= 30 && !HasSpell(19752)) learnSpell(19752, false); //Божественное вмешательство 
+		if (level >= 30 && !HasSpell(20165)) learnSpell(20165, false); //Печать Света 
+		if (level >= 30 && !HasSpell(2800) && HasSpell(633)) learnSpell(2800, false); //Возложение рук Уровень 2
+		if (level >= 30 && !HasSpell(10291) && HasSpell(465)) learnSpell(10291, false); //Аура благочестия Уровень 4
+		if (level >= 30 && !HasSpell(1042) && HasSpell(635)) learnSpell(1042, false); //Свет небес Уровень 5
+		if (level >= 30 && !HasSpell(20116) && HasSpell(26573)) learnSpell(20116, false); //Освящение Уровень 2
+		if (level >= 32 && !HasSpell(19836) && HasSpell(19740)) learnSpell(19836, false); //Благословение могущества Уровень 4
+		if (level >= 32 && !HasSpell(19888)) learnSpell(19888, false); //Аура защиты от магии льда Уровень 1
+		if (level >= 34 && !HasSpell(19852) && HasSpell(19742)) learnSpell(19852, false); //Благословение мудрости Уровень 3
+		if (level >= 34 && !HasSpell(19940) && HasSpell(19750)) learnSpell(19940, false); //Вспышка Света Уровень 3
+		if (level >= 34 && !HasSpell(642)) learnSpell(642, false); //Божественный щит 
+		if (level >= 36 && !HasSpell(19891)) learnSpell(19891, false); //Аура защиты от огня Уровень 1
+		if (level >= 36 && !HasSpell(5615) && HasSpell(879)) learnSpell(5615, false); //Экзорцизм Уровень 3
+		if (level >= 36 && !HasSpell(10324) && HasSpell(7328)) learnSpell(10324, false); //Искупление Уровень 3
+		if (level >= 36 && !HasSpell(10299) && HasSpell(7294)) learnSpell(10299, false); //Аура воздаяния Уровень 3
+		if (level >= 38 && !HasSpell(10278) && HasSpell(1022)) learnSpell(10278, false); //Длань защиты Уровень 3
+		if (level >= 38 && !HasSpell(20166)) learnSpell(20166, false); //Печать мудрости 
+		if (level >= 38 && !HasSpell(3472) && HasSpell(635)) learnSpell(3472, false); //Свет небес Уровень 6
+		if (level >= 40 && !HasSpell(19895) && HasSpell(19876)) learnSpell(19895, false); //Аура защиты от темной магии Уровень 2
+		if (level >= 40 && !HasSpell(750)) learnSpell(750, false); //Латы 
+		if (level >= 40 && !HasSpell(1032) && HasSpell(465)) learnSpell(1032, false); //Аура благочестия Уровень 5
+		if (level >= 40 && !HasSpell(20922) && HasSpell(26573)) learnSpell(20922, false); //Освящение Уровень 3
+		if (level >= 40 && !HasSpell(5589) && HasSpell(853)) learnSpell(5589, false); //Молот правосудия Уровень 3
+		if (level >= 42 && !HasSpell(19941) && HasSpell(19750)) learnSpell(19941, false); //Вспышка Света Уровень 4
+		if (level >= 42 && !HasSpell(19837) && HasSpell(19740)) learnSpell(19837, false); //Благословение могущества Уровень 5
+		if (level >= 42 && !HasSpell(4987)) learnSpell(4987, false); //Очищение 
+		if (level >= 44 && !HasSpell(24275)) learnSpell(24275, false); //Молот гнева Уровень 1
+		if (level >= 44 && !HasSpell(19897) && HasSpell(19888)) learnSpell(19897, false); //Аура защиты от магии льда Уровень 2
+		if (level >= 44 && !HasSpell(10312) && HasSpell(879)) learnSpell(10312, false); //Экзорцизм Уровень 4
+		if (level >= 44 && !HasSpell(19853) && HasSpell(19742)) learnSpell(19853, false); //Благословение мудрости Уровень 4
+		if (level >= 46 && !HasSpell(10300) && HasSpell(7294)) learnSpell(10300, false); //Аура воздаяния Уровень 4
+		if (level >= 46 && !HasSpell(6940)) learnSpell(6940, false); //Длань жертвенности 
+		if (level >= 46 && !HasSpell(10328) && HasSpell(635)) learnSpell(10328, false); //Свет небес Уровень 7
+		if (level >= 48 && !HasSpell(19899) && HasSpell(19891)) learnSpell(19899, false); //Аура защиты от огня Уровень 2
+		if (level >= 48 && !HasSpell(20929) && HasSpell(20473)) learnSpell(20929, false); //Шок небес Уровень 2
+		if (level >= 48 && !HasSpell(20772) && HasSpell(7328)) learnSpell(20772, false); //Искупление Уровень 4
+		if (level >= 50 && !HasSpell(20923) && HasSpell(26573)) learnSpell(20923, false); //Освящение Уровень 4
+		if (level >= 50 && !HasSpell(20927) && HasSpell(20925)) learnSpell(20927, false); //Щит небес Уровень 2
+		if (level >= 50 && !HasSpell(2812)) learnSpell(2812, false); //Гнев небес Уровень 1
+		if (level >= 50 && !HasSpell(10292) && HasSpell(465)) learnSpell(10292, false); //Аура благочестия Уровень 6
+		if (level >= 50 && !HasSpell(10310) && HasSpell(633)) learnSpell(10310, false); //Возложение рук Уровень 3
+		if (level >= 50 && !HasSpell(19942) && HasSpell(19750)) learnSpell(19942, false); //Вспышка Света Уровень 5
+		if (level >= 52 && !HasSpell(25782)) learnSpell(25782, false); //Великое благословение могущества Ур. 1
+		if (level >= 52 && !HasSpell(19896) && HasSpell(19876)) learnSpell(19896, false); //Аура защиты от темной магии Уровень 3
+		if (level >= 52 && !HasSpell(24274) && HasSpell(24275)) learnSpell(24274, false); //Молот гнева Уровень 2
+		if (level >= 52 && !HasSpell(19838) && HasSpell(19740)) learnSpell(19838, false); //Благословение могущества Уровень 6
+		if (level >= 52 && !HasSpell(10313) && HasSpell(879)) learnSpell(10313, false); //Экзорцизм Уровень 5
+		if (level >= 54 && !HasSpell(10308) && HasSpell(853)) learnSpell(10308, false); //Молот правосудия Уровень 4
+		if (level >= 54 && !HasSpell(25894)) learnSpell(25894, false); //Великое благословение мудрости Ур. 1
+		if (level >= 54 && !HasSpell(10329) && HasSpell(635)) learnSpell(10329, false); //Свет небес Уровень 8
+		if (level >= 54 && !HasSpell(19854) && HasSpell(19742)) learnSpell(19854, false); //Благословение мудрости Уровень 5
+		if (level >= 56 && !HasSpell(20930) && HasSpell(20473)) learnSpell(20930, false); //Шок небес Уровень 3
+		if (level >= 56 && !HasSpell(10301) && HasSpell(7294)) learnSpell(10301, false); //Аура воздаяния Уровень 5
+		if (level >= 56 && !HasSpell(19898) && HasSpell(19888)) learnSpell(19898, false); //Аура защиты от магии льда Уровень 3
+		if (level >= 58 && !HasSpell(19943) && HasSpell(19750)) learnSpell(19943, false); //Вспышка Света Уровень 6
+		if (level >= 60 && !HasSpell(25898)) learnSpell(25898, false); //Великое благословение королей 
+		if (level >= 60 && !HasSpell(25899)) learnSpell(25899, false); //Великое благословение неприкосновенности 
+		if (level >= 60 && !HasSpell(25916) && HasSpell(25782)) learnSpell(25916, false); //Великое благословение могущества Ур. 2
+		if (level >= 60 && !HasSpell(32699) && HasSpell(31935)) learnSpell(32699, false); //Щит мстителя Уровень 2
+		if (level >= 60 && !HasSpell(25918) && HasSpell(25894)) learnSpell(25918, false); //Великое благословение мудрости Ур. 2
+		if (level >= 60 && !HasSpell(10293) && HasSpell(465)) learnSpell(10293, false); //Аура благочестия Уровень 7
+		if (level >= 60 && !HasSpell(25292) && HasSpell(635)) learnSpell(25292, false); //Свет небес Уровень 9
+		if (level >= 60 && !HasSpell(10318) && HasSpell(2812)) learnSpell(10318, false); //Гнев небес Уровень 2
+		if (level >= 60 && !HasSpell(20924) && HasSpell(26573)) learnSpell(20924, false); //Освящение Уровень 5
+		if (level >= 60 && !HasSpell(20773) && HasSpell(7328)) learnSpell(20773, false); //Искупление Уровень 5
+		if (level >= 60 && !HasSpell(19900) && HasSpell(19891)) learnSpell(19900, false); //Аура защиты от огня Уровень 3
+		if (level >= 60 && !HasSpell(10314) && HasSpell(879)) learnSpell(10314, false); //Экзорцизм Уровень 6
+		if (level >= 60 && !HasSpell(24239) && HasSpell(24275)) learnSpell(24239, false); //Молот гнева Уровень 3
+		if (level >= 60 && !HasSpell(25290) && HasSpell(19742)) learnSpell(25290, false); //Благословение мудрости Уровень 6
+		if (level >= 60 && !HasSpell(25291) && HasSpell(19740)) learnSpell(25291, false); //Благословение могущества Уровень 7
+		if (level >= 60 && !HasSpell(20928) && HasSpell(20925)) learnSpell(20928, false); //Щит небес Уровень 3
+		if (level >= 62 && !HasSpell(32223)) learnSpell(32223, false); //Аура воина Света 
+		if (level >= 62 && !HasSpell(27135) && HasSpell(635)) learnSpell(27135, false); //Свет небес Уровень 10
+		if (level >= 63 && !HasSpell(27151) && HasSpell(19876)) learnSpell(27151, false); //Аура защиты от темной магии Уровень 4
+		if (level >= 64 && !HasSpell(27174) && HasSpell(20473)) learnSpell(27174, false); //Шок небес Уровень 4
+		if (level >= 65 && !HasSpell(27142) && HasSpell(19742)) learnSpell(27142, false); //Благословение мудрости Уровень 7
+		if (level >= 65 && !HasSpell(27143) && HasSpell(25894)) learnSpell(27143, false); //Великое благословение мудрости Ур. 3
+		if (level >= 66 && !HasSpell(53720)) learnSpell(53720, false); //Печать мученика 
+		if (level >= 66 && !HasSpell(27137) && HasSpell(19750)) learnSpell(27137, false); //Вспышка Света Уровень 7
+		if (level >= 66 && !HasSpell(27150) && HasSpell(7294)) learnSpell(27150, false); //Аура воздаяния Уровень 6
+		if (level >= 68 && !HasSpell(27180) && HasSpell(24275)) learnSpell(27180, false); //Молот гнева Уровень 4
+		if (level >= 68 && !HasSpell(27152) && HasSpell(19888)) learnSpell(27152, false); //Аура защиты от магии льда Уровень 4
+		if (level >= 68 && !HasSpell(27138) && HasSpell(879)) learnSpell(27138, false); //Экзорцизм Уровень 7
+		if (level >= 69 && !HasSpell(27139) && HasSpell(2812)) learnSpell(27139, false); //Гнев небес Уровень 3
+		if (level >= 69 && !HasSpell(27154) && HasSpell(633)) learnSpell(27154, false); //Возложение рук Уровень 4
+		if (level >= 70 && !HasSpell(32700) && HasSpell(31935)) learnSpell(32700, false); //Щит мстителя Уровень 3
+		if (level >= 70 && !HasSpell(33072) && HasSpell(20473)) learnSpell(33072, false); //Шок небес Уровень 5
+		if (level >= 70 && !HasSpell(31884)) learnSpell(31884, false); //Гнев карателя 
+		if (level >= 70 && !HasSpell(27136) && HasSpell(635)) learnSpell(27136, false); //Свет небес Уровень 11
+		if (level >= 70 && !HasSpell(27141) && HasSpell(25782)) learnSpell(27141, false); //Великое благословение могущества Ур. 3
+		if (level >= 70 && !HasSpell(27140) && HasSpell(19740)) learnSpell(27140, false); //Благословение могущества Уровень 8
+		if (level >= 70 && !HasSpell(27149) && HasSpell(465)) learnSpell(27149, false); //Аура благочестия Уровень 8
+		if (level >= 70 && !HasSpell(27153) && HasSpell(19891)) learnSpell(27153, false); //Аура защиты от огня Уровень 4
+		if (level >= 70 && !HasSpell(27173) && HasSpell(26573)) learnSpell(27173, false); //Освящение Уровень 6
+		if (level >= 70 && !HasSpell(27179) && HasSpell(20925)) learnSpell(27179, false); //Щит небес Уровень 4
+		if (level >= 71 && !HasSpell(48935) && HasSpell(19742)) learnSpell(48935, false); // unk
+		if (level >= 71 && !HasSpell(48937) && HasSpell(25894)) learnSpell(48937, false); // unk
+		if (level >= 71 && !HasSpell(54428)) learnSpell(54428, false); //Святая клятва 
+		if (level >= 72 && !HasSpell(48949) && HasSpell(7328)) learnSpell(48949, false); // unk
+		if (level >= 72 && !HasSpell(48816) && HasSpell(2812)) learnSpell(48816, false); // unk
+		if (level >= 73 && !HasSpell(48800) && HasSpell(879)) learnSpell(48800, false); // unk
+		if (level >= 73 && !HasSpell(48933) && HasSpell(25782)) learnSpell(48933, false); // unk
+		if (level >= 73 && !HasSpell(48931) && HasSpell(19740)) learnSpell(48931, false); // unk
+		if (level >= 74 && !HasSpell(48941) && HasSpell(465)) learnSpell(48941, false); // unk
+		if (level >= 74 && !HasSpell(48805) && HasSpell(24275)) learnSpell(48805, false); // unk
+		if (level >= 74 && !HasSpell(48784) && HasSpell(19750)) learnSpell(48784, false); // unk
+		if (level >= 75 && !HasSpell(48951) && HasSpell(20925)) learnSpell(48951, false); // unk
+		if (level >= 75 && !HasSpell(53600)) learnSpell(53600, false); //Щит праведности Уровень 1
+		if (level >= 75 && !HasSpell(48826) && HasSpell(31935)) learnSpell(48826, false); // unk
+		if (level >= 75 && !HasSpell(48781) && HasSpell(635)) learnSpell(48781, false); // unk
+		if (level >= 75 && !HasSpell(48818) && HasSpell(26573)) learnSpell(48818, false); // unk
+		if (level >= 75 && !HasSpell(48824) && HasSpell(20473)) learnSpell(48824, false); // unk
+		if (level >= 76 && !HasSpell(54043) && HasSpell(7294)) learnSpell(54043, false); //Аура воздаяния Уровень 7
+		if (level >= 76 && !HasSpell(48943) && HasSpell(19876)) learnSpell(48943, false); // unk
+		if (level >= 77 && !HasSpell(48938) && HasSpell(25894)) learnSpell(48938, false); // unk
+		if (level >= 77 && !HasSpell(48936) && HasSpell(19742)) learnSpell(48936, false); // unk
+		if (level >= 77 && !HasSpell(48945) && HasSpell(19888)) learnSpell(48945, false); // unk
+		if (level >= 78 && !HasSpell(48947) && HasSpell(19891)) learnSpell(48947, false); // unk
+		if (level >= 78 && !HasSpell(48788) && HasSpell(633)) learnSpell(48788, false); // unk
+		if (level >= 78 && !HasSpell(48817) && HasSpell(2812)) learnSpell(48817, false); // unk
+		if (level >= 79 && !HasSpell(48950) && HasSpell(7328)) learnSpell(48950, false); // unk
+		if (level >= 79 && !HasSpell(48932) && HasSpell(19740)) learnSpell(48932, false); // unk
+		if (level >= 79 && !HasSpell(48942) && HasSpell(465)) learnSpell(48942, false); // unk
+		if (level >= 79 && !HasSpell(48785) && HasSpell(19750)) learnSpell(48785, false); // unk
+		if (level >= 79 && !HasSpell(48934) && HasSpell(25782)) learnSpell(48934, false); // unk
+		if (level >= 79 && !HasSpell(48801) && HasSpell(879)) learnSpell(48801, false); // unk
+		if (level >= 80 && !HasSpell(61411) && HasSpell(53600)) learnSpell(61411, false); //Щит праведности Уровень 2
+		if (level >= 80 && !HasSpell(48782) && HasSpell(635)) learnSpell(48782, false); // unk
+		if (level >= 80 && !HasSpell(48806) && HasSpell(24275)) learnSpell(48806, false); // unk
+		if (level >= 80 && !HasSpell(48819) && HasSpell(26573)) learnSpell(48819, false); // unk
+		if (level >= 80 && !HasSpell(48827) && HasSpell(31935)) learnSpell(48827, false); // unk
+		if (level >= 80 && !HasSpell(48952) && HasSpell(20925)) learnSpell(48952, false); // unk
+		if (level >= 80 && !HasSpell(48825) && HasSpell(20473)) learnSpell(48825, false); // unk
+		if (level >= 80 && !HasSpell(53601)) learnSpell(53601, false); //Священный щит Уровень 1
+	}
+
+	if (getClass() == CLASS_PRIEST)
+	{
+		if (level >= 1 && !HasSpell(1243)) learnSpell(1243, false); //Слово силы: Стойкость Уровень 1
+		if (level >= 4 && !HasSpell(589)) learnSpell(589, false); //Слово Тьмы: Боль Уровень 1
+		if (level >= 4 && !HasSpell(2052) && HasSpell(2050)) learnSpell(2052, false); //Малое исцеление Уровень 2
+		if (level >= 6 && !HasSpell(17)) learnSpell(17, false); //Слово силы: Щит Уровень 1
+		if (level >= 6 && !HasSpell(591) && HasSpell(585)) learnSpell(591, false); //Кара Уровень 2
+		if (level >= 8 && !HasSpell(139)) learnSpell(139, false); //Обновление Уровень 1
+		if (level >= 8 && !HasSpell(586)) learnSpell(586, false); //Уход в тень 
+		if (level >= 10 && !HasSpell(594) && HasSpell(589)) learnSpell(594, false); //Слово Тьмы: Боль Уровень 2
+		if (level >= 10 && !HasSpell(2006)) learnSpell(2006, false); //Воскрешение Уровень 1
+		if (level >= 10 && !HasSpell(8092)) learnSpell(8092, false); //Взрыв разума Уровень 1
+		if (level >= 10 && !HasSpell(2053) && HasSpell(2050)) learnSpell(2053, false); //Малое исцеление Уровень 3
+		if (level >= 12 && !HasSpell(588)) learnSpell(588, false); //Внутренний огонь Уровень 1
+		if (level >= 12 && !HasSpell(1244) && HasSpell(1243)) learnSpell(1244, false); //Слово силы: Стойкость Уровень 2
+		if (level >= 12 && !HasSpell(592) && HasSpell(17)) learnSpell(592, false); //Слово силы: Щит Уровень 2
+		if (level >= 14 && !HasSpell(8122)) learnSpell(8122, false); //Ментальный крик Уровень 1
+		if (level >= 14 && !HasSpell(598) && HasSpell(585)) learnSpell(598, false); //Кара Уровень 3
+		if (level >= 14 && !HasSpell(6074) && HasSpell(139)) learnSpell(6074, false); //Обновление Уровень 2
+		if (level >= 14 && !HasSpell(528)) learnSpell(528, false); //Излечение болезни 
+		if (level >= 16 && !HasSpell(8102) && HasSpell(8092)) learnSpell(8102, false); //Взрыв разума Уровень 2
+		if (level >= 16 && !HasSpell(2054)) learnSpell(2054, false); //Исцеление Уровень 1
+		if (level >= 18 && !HasSpell(970) && HasSpell(589)) learnSpell(970, false); //Слово Тьмы: Боль Уровень 3
+		if (level >= 18 && !HasSpell(527)) learnSpell(527, false); //Рассеивание заклинаний Уровень 1
+		if (level >= 18 && !HasSpell(600) && HasSpell(17)) learnSpell(600, false); //Слово силы: Щит Уровень 3
+		if (level >= 20 && !HasSpell(2061)) learnSpell(2061, false); //Быстрое исцеление Уровень 1
+		if (level >= 20 && !HasSpell(6075) && HasSpell(139)) learnSpell(6075, false); //Обновление Уровень 3
+		if (level >= 20 && !HasSpell(453)) learnSpell(453, false); //Усмирение 
+		if (level >= 20 && !HasSpell(9484)) learnSpell(9484, false); //Сковывание нежити Уровень 1
+		if (level >= 20 && !HasSpell(2944)) learnSpell(2944, false); //Всепожирающая чума Уровень 1
+		if (level >= 20 && !HasSpell(14914)) learnSpell(14914, false); //Священный огонь Уровень 1
+		if (level >= 20 && !HasSpell(7128) && HasSpell(588)) learnSpell(7128, false); //Внутренний огонь Уровень 2
+		if (level >= 20 && !HasSpell(6346)) learnSpell(6346, false); //Защита от страха 
+		if (level >= 20 && !HasSpell(15237)) learnSpell(15237, false); //Кольцо света Уровень 1
+		if (level >= 22 && !HasSpell(8103) && HasSpell(8092)) learnSpell(8103, false); //Взрыв разума Уровень 3
+		if (level >= 22 && !HasSpell(2096)) learnSpell(2096, false); //Внутреннее зрение Уровень 1
+		if (level >= 22 && !HasSpell(2055) && HasSpell(2054)) learnSpell(2055, false); //Исцеление Уровень 2
+		if (level >= 22 && !HasSpell(984) && HasSpell(585)) learnSpell(984, false); //Кара Уровень 4
+		if (level >= 22 && !HasSpell(2010) && HasSpell(2006)) learnSpell(2010, false); //Воскрешение Уровень 2
+		if (level >= 24 && !HasSpell(8129)) learnSpell(8129, false); //Сожжение маны 
+		if (level >= 24 && !HasSpell(1245) && HasSpell(1243)) learnSpell(1245, false); //Слово силы: Стойкость Уровень 3
+		if (level >= 24 && !HasSpell(15262) && HasSpell(14914)) learnSpell(15262, false); //Священный огонь Уровень 2
+		if (level >= 24 && !HasSpell(3747) && HasSpell(17)) learnSpell(3747, false); //Слово силы: Щит Уровень 4
+		if (level >= 26 && !HasSpell(9472) && HasSpell(2061)) learnSpell(9472, false); //Быстрое исцеление Уровень 2
+		if (level >= 26 && !HasSpell(992) && HasSpell(589)) learnSpell(992, false); //Слово Тьмы: Боль Уровень 4
+		if (level >= 26 && !HasSpell(19238) && HasSpell(19236)) learnSpell(19238, false); //Молитва отчаяния Уровень 2
+		if (level >= 26 && !HasSpell(6076) && HasSpell(139)) learnSpell(6076, false); //Обновление Уровень 4
+		if (level >= 28 && !HasSpell(17311) && HasSpell(15407)) learnSpell(17311, false); //Пытка разума Уровень 2
+		if (level >= 28 && !HasSpell(19276) && HasSpell(2944)) learnSpell(19276, false); //Всепожирающая чума Уровень 2
+		if (level >= 28 && !HasSpell(8104) && HasSpell(8092)) learnSpell(8104, false); //Взрыв разума Уровень 4
+		if (level >= 28 && !HasSpell(15430) && HasSpell(15237)) learnSpell(15430, false); //Кольцо света Уровень 2
+		if (level >= 28 && !HasSpell(8124) && HasSpell(8122)) learnSpell(8124, false); //Ментальный крик Уровень 2
+		if (level >= 28 && !HasSpell(6063) && HasSpell(2054)) learnSpell(6063, false); //Исцеление Уровень 3
+		if (level >= 30 && !HasSpell(602) && HasSpell(588)) learnSpell(602, false); //Внутренний огонь Уровень 3
+		if (level >= 30 && !HasSpell(14752)) learnSpell(14752, false); //Божественный дух Уровень 1
+		if (level >= 30 && !HasSpell(15263) && HasSpell(14914)) learnSpell(15263, false); //Священный огонь Уровень 3
+		if (level >= 30 && !HasSpell(976)) learnSpell(976, false); //Защита от темной магии Уровень 1
+		if (level >= 30 && !HasSpell(6065) && HasSpell(17)) learnSpell(6065, false); //Слово силы: Щит Уровень 5
+		if (level >= 30 && !HasSpell(1004) && HasSpell(585)) learnSpell(1004, false); //Кара Уровень 5
+		if (level >= 30 && !HasSpell(605)) learnSpell(605, false); //Контроль над разумом 
+		if (level >= 30 && !HasSpell(596)) learnSpell(596, false); //Молитва исцеления Уровень 1
+		if (level >= 32 && !HasSpell(552)) learnSpell(552, false); //Устранение болезни 
+		if (level >= 32 && !HasSpell(6077) && HasSpell(139)) learnSpell(6077, false); //Обновление Уровень 5
+		if (level >= 32 && !HasSpell(9473) && HasSpell(2061)) learnSpell(9473, false); //Быстрое исцеление Уровень 3
+		if (level >= 34 && !HasSpell(1706)) learnSpell(1706, false); //Левитация 
+		if (level >= 34 && !HasSpell(10880) && HasSpell(2006)) learnSpell(10880, false); //Воскрешение Уровень 3
+		if (level >= 34 && !HasSpell(19240) && HasSpell(19236)) learnSpell(19240, false); //Молитва отчаяния Уровень 3
+		if (level >= 34 && !HasSpell(6064) && HasSpell(2054)) learnSpell(6064, false); //Исцеление Уровень 4
+		if (level >= 34 && !HasSpell(2767) && HasSpell(589)) learnSpell(2767, false); //Слово Тьмы: Боль Уровень 5
+		if (level >= 34 && !HasSpell(8105) && HasSpell(8092)) learnSpell(8105, false); //Взрыв разума Уровень 5
+		if (level >= 36 && !HasSpell(6066) && HasSpell(17)) learnSpell(6066, false); //Слово силы: Щит Уровень 6
+		if (level >= 36 && !HasSpell(19277) && HasSpell(2944)) learnSpell(19277, false); //Всепожирающая чума Уровень 3
+		if (level >= 36 && !HasSpell(17312) && HasSpell(15407)) learnSpell(17312, false); //Пытка разума Уровень 3
+		if (level >= 36 && !HasSpell(988) && HasSpell(527)) learnSpell(988, false); //Рассеивание заклинаний Уровень 2
+		if (level >= 36 && !HasSpell(15431) && HasSpell(15237)) learnSpell(15431, false); //Кольцо света Уровень 3
+		if (level >= 36 && !HasSpell(2791) && HasSpell(1243)) learnSpell(2791, false); //Слово силы: Стойкость Уровень 4
+		if (level >= 36 && !HasSpell(15264) && HasSpell(14914)) learnSpell(15264, false); //Священный огонь Уровень 4
+		if (level >= 38 && !HasSpell(6060) && HasSpell(585)) learnSpell(6060, false); //Кара Уровень 6
+		if (level >= 38 && !HasSpell(9474) && HasSpell(2061)) learnSpell(9474, false); //Быстрое исцеление Уровень 4
+		if (level >= 38 && !HasSpell(6078) && HasSpell(139)) learnSpell(6078, false); //Обновление Уровень 6
+		if (level >= 40 && !HasSpell(2060)) learnSpell(2060, false); //Великое исцеление Уровень 1
+		if (level >= 40 && !HasSpell(1006) && HasSpell(588)) learnSpell(1006, false); //Внутренний огонь Уровень 4
+		if (level >= 40 && !HasSpell(9485) && HasSpell(9484)) learnSpell(9485, false); //Сковывание нежити Уровень 2
+		if (level >= 40 && !HasSpell(996) && HasSpell(596)) learnSpell(996, false); //Молитва исцеления Уровень 2
+		if (level >= 40 && !HasSpell(14818) && HasSpell(14752)) learnSpell(14818, false); //Божественный дух Уровень 2
+		if (level >= 40 && !HasSpell(8106) && HasSpell(8092)) learnSpell(8106, false); //Взрыв разума Уровень 6
+		if (level >= 42 && !HasSpell(19241) && HasSpell(19236)) learnSpell(19241, false); //Молитва отчаяния Уровень 4
+		if (level >= 42 && !HasSpell(10957) && HasSpell(976)) learnSpell(10957, false); //Защита от темной магии Уровень 2
+		if (level >= 42 && !HasSpell(15265) && HasSpell(14914)) learnSpell(15265, false); //Священный огонь Уровень 5
+		if (level >= 42 && !HasSpell(10888) && HasSpell(8122)) learnSpell(10888, false); //Ментальный крик Уровень 3
+		if (level >= 42 && !HasSpell(10898) && HasSpell(17)) learnSpell(10898, false); //Слово силы: Щит Уровень 7
+		if (level >= 42 && !HasSpell(10892) && HasSpell(589)) learnSpell(10892, false); //Слово Тьмы: Боль Уровень 6
+		if (level >= 44 && !HasSpell(19278) && HasSpell(2944)) learnSpell(19278, false); //Всепожирающая чума Уровень 4
+		if (level >= 44 && !HasSpell(10927) && HasSpell(139)) learnSpell(10927, false); //Обновление Уровень 7
+		if (level >= 44 && !HasSpell(10915) && HasSpell(2061)) learnSpell(10915, false); //Быстрое исцеление Уровень 5
+		if (level >= 44 && !HasSpell(10909) && HasSpell(2096)) learnSpell(10909, false); //Внутреннее зрение Уровень 2
+		if (level >= 44 && !HasSpell(27799) && HasSpell(15237)) learnSpell(27799, false); //Кольцо света Уровень 4
+		if (level >= 44 && !HasSpell(17313) && HasSpell(15407)) learnSpell(17313, false); //Пытка разума Уровень 4
+		if (level >= 46 && !HasSpell(10963) && HasSpell(2060)) learnSpell(10963, false); //Великое исцеление Уровень 2
+		if (level >= 46 && !HasSpell(10945) && HasSpell(8092)) learnSpell(10945, false); //Взрыв разума Уровень 7
+		if (level >= 46 && !HasSpell(10933) && HasSpell(585)) learnSpell(10933, false); //Кара Уровень 7
+		if (level >= 46 && !HasSpell(10881) && HasSpell(2006)) learnSpell(10881, false); //Воскрешение Уровень 4
+		if (level >= 48 && !HasSpell(15266) && HasSpell(14914)) learnSpell(15266, false); //Священный огонь Уровень 6
+		if (level >= 48 && !HasSpell(10937) && HasSpell(1243)) learnSpell(10937, false); //Слово силы: Стойкость Уровень 5
+		if (level >= 48 && !HasSpell(10899) && HasSpell(17)) learnSpell(10899, false); //Слово силы: Щит Уровень 8
+		if (level >= 48 && !HasSpell(21562)) learnSpell(21562, false); //Молитва стойкости Уровень 1
+		if (level >= 50 && !HasSpell(10960) && HasSpell(596)) learnSpell(10960, false); //Молитва исцеления Уровень 3
+		if (level >= 50 && !HasSpell(10893) && HasSpell(589)) learnSpell(10893, false); //Слово Тьмы: Боль Уровень 7
+		if (level >= 50 && !HasSpell(14819) && HasSpell(14752)) learnSpell(14819, false); //Божественный дух Уровень 3
+		if (level >= 50 && !HasSpell(10916) && HasSpell(2061)) learnSpell(10916, false); //Быстрое исцеление Уровень 6
+		if (level >= 50 && !HasSpell(10928) && HasSpell(139)) learnSpell(10928, false); //Обновление Уровень 8
+		if (level >= 50 && !HasSpell(19242) && HasSpell(19236)) learnSpell(19242, false); //Молитва отчаяния Уровень 5
+		if (level >= 50 && !HasSpell(10951) && HasSpell(588)) learnSpell(10951, false); //Внутренний огонь Уровень 5
+		if (level >= 50 && !HasSpell(27870) && HasSpell(724)) learnSpell(27870, false); //Колодец Света Уровень 2
+		if (level >= 52 && !HasSpell(19279) && HasSpell(2944)) learnSpell(19279, false); //Всепожирающая чума Уровень 5
+		if (level >= 52 && !HasSpell(27800) && HasSpell(15237)) learnSpell(27800, false); //Кольцо света Уровень 5
+		if (level >= 52 && !HasSpell(17314) && HasSpell(15407)) learnSpell(17314, false); //Пытка разума Уровень 5
+		if (level >= 52 && !HasSpell(10946) && HasSpell(8092)) learnSpell(10946, false); //Взрыв разума Уровень 8
+		if (level >= 52 && !HasSpell(10964) && HasSpell(2060)) learnSpell(10964, false); //Великое исцеление Уровень 3
+		if (level >= 54 && !HasSpell(15267) && HasSpell(14914)) learnSpell(15267, false); //Священный огонь Уровень 7
+		if (level >= 54 && !HasSpell(10900) && HasSpell(17)) learnSpell(10900, false); //Слово силы: Щит Уровень 9
+		if (level >= 54 && !HasSpell(10934) && HasSpell(585)) learnSpell(10934, false); //Кара Уровень 8
+		if (level >= 56 && !HasSpell(10958) && HasSpell(976)) learnSpell(10958, false); //Защита от темной магии Уровень 3
+		if (level >= 56 && !HasSpell(10929) && HasSpell(139)) learnSpell(10929, false); //Обновление Уровень 9
+		if (level >= 56 && !HasSpell(27683)) learnSpell(27683, false); //Молитва защиты от темной магии Ур. 1
+		if (level >= 56 && !HasSpell(10917) && HasSpell(2061)) learnSpell(10917, false); //Быстрое исцеление Уровень 7
+		if (level >= 56 && !HasSpell(34863) && HasSpell(34861)) learnSpell(34863, false); //Круг исцеления Уровень 2
+		if (level >= 56 && !HasSpell(10890) && HasSpell(8122)) learnSpell(10890, false); //Ментальный крик Уровень 4
+		if (level >= 58 && !HasSpell(20770) && HasSpell(2006)) learnSpell(20770, false); //Воскрешение Уровень 5
+		if (level >= 58 && !HasSpell(10894) && HasSpell(589)) learnSpell(10894, false); //Слово Тьмы: Боль Уровень 8
+		if (level >= 58 && !HasSpell(19243) && HasSpell(19236)) learnSpell(19243, false); //Молитва отчаяния Уровень 6
+		if (level >= 58 && !HasSpell(10947) && HasSpell(8092)) learnSpell(10947, false); //Взрыв разума Уровень 9
+		if (level >= 58 && !HasSpell(10965) && HasSpell(2060)) learnSpell(10965, false); //Великое исцеление Уровень 4
+		if (level >= 60 && !HasSpell(25314) && HasSpell(2060)) learnSpell(25314, false); //Великое исцеление Уровень 5
+		if (level >= 60 && !HasSpell(25315) && HasSpell(139)) learnSpell(25315, false); //Обновление Уровень 10
+		if (level >= 60 && !HasSpell(27841) && HasSpell(14752)) learnSpell(27841, false); //Божественный дух Уровень 4
+		if (level >= 60 && !HasSpell(27801) && HasSpell(15237)) learnSpell(27801, false); //Кольцо света Уровень 6
+		if (level >= 60 && !HasSpell(27681)) learnSpell(27681, false); //Молитва духа Уровень 1
+		if (level >= 60 && !HasSpell(25316) && HasSpell(596)) learnSpell(25316, false); //Молитва исцеления Уровень 5
+		if (level >= 60 && !HasSpell(27871) && HasSpell(724)) learnSpell(27871, false); //Колодец Света Уровень 3
+		if (level >= 60 && !HasSpell(34864) && HasSpell(34861)) learnSpell(34864, false); //Круг исцеления Уровень 3
+		if (level >= 60 && !HasSpell(15261) && HasSpell(14914)) learnSpell(15261, false); //Священный огонь Уровень 8
+		if (level >= 60 && !HasSpell(10961) && HasSpell(596)) learnSpell(10961, false); //Молитва исцеления Уровень 4
+		if (level >= 60 && !HasSpell(18807) && HasSpell(15407)) learnSpell(18807, false); //Пытка разума Уровень 6
+		if (level >= 60 && !HasSpell(10952) && HasSpell(588)) learnSpell(10952, false); //Внутренний огонь Уровень 6
+		if (level >= 60 && !HasSpell(10938) && HasSpell(1243)) learnSpell(10938, false); //Слово силы: Стойкость Уровень 6
+		if (level >= 60 && !HasSpell(10955) && HasSpell(9484)) learnSpell(10955, false); //Сковывание нежити Уровень 3
+		if (level >= 60 && !HasSpell(19280) && HasSpell(2944)) learnSpell(19280, false); //Всепожирающая чума Уровень 6
+		if (level >= 60 && !HasSpell(10901) && HasSpell(17)) learnSpell(10901, false); //Слово силы: Щит Уровень 10
+		if (level >= 60 && !HasSpell(21564) && HasSpell(21562)) learnSpell(21564, false); //Молитва стойкости Уровень 2
+		if (level >= 60 && !HasSpell(34916) && HasSpell(34914)) learnSpell(34916, false); //Прикосновение вампира Уровень 2
+		if (level >= 61 && !HasSpell(25233) && HasSpell(2061)) learnSpell(25233, false); //Быстрое исцеление Уровень 8
+		if (level >= 61 && !HasSpell(25363) && HasSpell(585)) learnSpell(25363, false); //Кара Уровень 9
+		if (level >= 62 && !HasSpell(32379)) learnSpell(32379, false); //Слово Тьмы: Смерть Уровень 1
+		if (level >= 63 && !HasSpell(25372) && HasSpell(8092)) learnSpell(25372, false); //Взрыв разума Уровень 10
+		if (level >= 63 && !HasSpell(25210) && HasSpell(2060)) learnSpell(25210, false); //Великое исцеление Уровень 6
+		if (level >= 64 && !HasSpell(32546)) learnSpell(32546, false); //Связующее исцеление Уровень 1
+		if (level >= 65 && !HasSpell(25217) && HasSpell(17)) learnSpell(25217, false); //Слово силы: Щит Уровень 11
+		if (level >= 65 && !HasSpell(25367) && HasSpell(589)) learnSpell(25367, false); //Слово Тьмы: Боль Уровень 9
+		if (level >= 65 && !HasSpell(34865) && HasSpell(34861)) learnSpell(34865, false); //Круг исцеления Уровень 4
+		if (level >= 65 && !HasSpell(25221) && HasSpell(139)) learnSpell(25221, false); //Обновление Уровень 11
+		if (level >= 66 && !HasSpell(34433)) learnSpell(34433, false); //Исчадие Тьмы 
+		if (level >= 66 && !HasSpell(25437) && HasSpell(19236)) learnSpell(25437, false); //Молитва отчаяния Уровень 7
+		if (level >= 66 && !HasSpell(25384) && HasSpell(14914)) learnSpell(25384, false); //Священный огонь Уровень 9
+		if (level >= 67 && !HasSpell(25235) && HasSpell(2061)) learnSpell(25235, false); //Быстрое исцеление Уровень 9
+		if (level >= 68 && !HasSpell(25213) && HasSpell(2060)) learnSpell(25213, false); //Великое исцеление Уровень 7
+		if (level >= 68 && !HasSpell(25467) && HasSpell(2944)) learnSpell(25467, false); //Всепожирающая чума Уровень 7
+		if (level >= 68 && !HasSpell(33076)) learnSpell(33076, false); //Молитва восстановления Уровень 1
+		if (level >= 68 && !HasSpell(25308) && HasSpell(596)) learnSpell(25308, false); //Молитва исцеления Уровень 6
+		if (level >= 68 && !HasSpell(25387) && HasSpell(15407)) learnSpell(25387, false); //Пытка разума Уровень 7
+		if (level >= 68 && !HasSpell(25331) && HasSpell(15237)) learnSpell(25331, false); //Кольцо света Уровень 7
+		if (level >= 68 && !HasSpell(25433) && HasSpell(976)) learnSpell(25433, false); //Защита от темной магии Уровень 4
+		if (level >= 68 && !HasSpell(25435) && HasSpell(2006)) learnSpell(25435, false); //Воскрешение Уровень 6
+		if (level >= 69 && !HasSpell(25364) && HasSpell(585)) learnSpell(25364, false); //Кара Уровень 10
+		if (level >= 69 && !HasSpell(25431) && HasSpell(588)) learnSpell(25431, false); //Внутренний огонь Уровень 7
+		if (level >= 69 && !HasSpell(25375) && HasSpell(8092)) learnSpell(25375, false); //Взрыв разума Уровень 11
+		if (level >= 70 && !HasSpell(34917) && HasSpell(34914)) learnSpell(34917, false); //Прикосновение вампира Уровень 3
+		if (level >= 70 && !HasSpell(53005) && HasSpell(47540)) learnSpell(53005, false); // unk
+		if (level >= 70 && !HasSpell(39374) && HasSpell(27683)) learnSpell(39374, false); //Молитва защиты от темной магии Ур. 2
+		if (level >= 70 && !HasSpell(34866) && HasSpell(34861)) learnSpell(34866, false); //Круг исцеления Уровень 5
+		if (level >= 70 && !HasSpell(32999) && HasSpell(27681)) learnSpell(32999, false); //Молитва духа Уровень 2
+		if (level >= 70 && !HasSpell(25218) && HasSpell(17)) learnSpell(25218, false); //Слово силы: Щит Уровень 12
+		if (level >= 70 && !HasSpell(25222) && HasSpell(139)) learnSpell(25222, false); //Обновление Уровень 12
+		if (level >= 70 && !HasSpell(25312) && HasSpell(14752)) learnSpell(25312, false); //Божественный дух Уровень 5
+		if (level >= 70 && !HasSpell(25368) && HasSpell(589)) learnSpell(25368, false); //Слово Тьмы: Боль Уровень 10
+		if (level >= 70 && !HasSpell(25389) && HasSpell(1243)) learnSpell(25389, false); //Слово силы: Стойкость Уровень 7
+		if (level >= 70 && !HasSpell(25392) && HasSpell(21562)) learnSpell(25392, false); //Молитва стойкости Уровень 3
+		if (level >= 70 && !HasSpell(28275) && HasSpell(724)) learnSpell(28275, false); //Колодец Света Уровень 4
+		if (level >= 70 && !HasSpell(32375)) learnSpell(32375, false); //Массовое рассеивание 
+		if (level >= 70 && !HasSpell(32996) && HasSpell(32379)) learnSpell(32996, false); //Слово Тьмы: Смерть Уровень 2
+		if (level >= 71 && !HasSpell(48040) && HasSpell(588)) learnSpell(48040, false); // unk
+		if (level >= 72 && !HasSpell(48134) && HasSpell(14914)) learnSpell(48134, false); // unk
+		if (level >= 72 && !HasSpell(48119) && HasSpell(32546)) learnSpell(48119, false); // unk
+		if (level >= 73 && !HasSpell(48070) && HasSpell(2061)) learnSpell(48070, false); // unk
+		if (level >= 73 && !HasSpell(48299) && HasSpell(2944)) learnSpell(48299, false); // unk
+		if (level >= 73 && !HasSpell(48172) && HasSpell(19236)) learnSpell(48172, false); // unk
+		if (level >= 73 && !HasSpell(48062) && HasSpell(2060)) learnSpell(48062, false); // unk
+		if (level >= 74 && !HasSpell(48112) && HasSpell(33076)) learnSpell(48112, false); // unk
+		if (level >= 74 && !HasSpell(48155) && HasSpell(15407)) learnSpell(48155, false); // unk
+		if (level >= 74 && !HasSpell(48126) && HasSpell(8092)) learnSpell(48126, false); // unk
+		if (level >= 74 && !HasSpell(48122) && HasSpell(585)) learnSpell(48122, false); // unk
+		if (level >= 75 && !HasSpell(53006) && HasSpell(47540)) learnSpell(53006, false); // unk
+		if (level >= 75 && !HasSpell(48086) && HasSpell(724)) learnSpell(48086, false); // unk
+		if (level >= 75 && !HasSpell(48124) && HasSpell(589)) learnSpell(48124, false); // unk
+		if (level >= 75 && !HasSpell(48157) && HasSpell(32379)) learnSpell(48157, false); // unk
+		if (level >= 75 && !HasSpell(48159) && HasSpell(34914)) learnSpell(48159, false); // unk
+		if (level >= 75 && !HasSpell(48088) && HasSpell(34861)) learnSpell(48088, false); // unk
+		if (level >= 75 && !HasSpell(48067) && HasSpell(139)) learnSpell(48067, false); // unk
+		if (level >= 75 && !HasSpell(48065) && HasSpell(17)) learnSpell(48065, false); // unk
+		if (level >= 75 && !HasSpell(48077) && HasSpell(15237)) learnSpell(48077, false); // unk
+		if (level >= 75 && !HasSpell(48045)) learnSpell(48045, false); // unk
+		if (level >= 76 && !HasSpell(48169) && HasSpell(976)) learnSpell(48169, false); // unk
+		if (level >= 76 && !HasSpell(48072) && HasSpell(596)) learnSpell(48072, false); // unk
+		if (level >= 77 && !HasSpell(48170) && HasSpell(27683)) learnSpell(48170, false); // unk
+		if (level >= 77 && !HasSpell(48168) && HasSpell(588)) learnSpell(48168, false); // unk
+		if (level >= 78 && !HasSpell(48063) && HasSpell(2060)) learnSpell(48063, false); // unk
+		if (level >= 78 && !HasSpell(48171) && HasSpell(2006)) learnSpell(48171, false); // unk
+		if (level >= 78 && !HasSpell(48120) && HasSpell(32546)) learnSpell(48120, false); // unk
+		if (level >= 78 && !HasSpell(48135) && HasSpell(14914)) learnSpell(48135, false); // unk
+		if (level >= 79 && !HasSpell(48071) && HasSpell(2061)) learnSpell(48071, false); // unk
+		if (level >= 79 && !HasSpell(48300) && HasSpell(2944)) learnSpell(48300, false); // unk
+		if (level >= 79 && !HasSpell(48127) && HasSpell(8092)) learnSpell(48127, false); // unk
+		if (level >= 79 && !HasSpell(48113) && HasSpell(33076)) learnSpell(48113, false); // unk
+		if (level >= 79 && !HasSpell(48123) && HasSpell(585)) learnSpell(48123, false); // unk
+		if (level >= 80 && !HasSpell(53007) && HasSpell(47540)) learnSpell(53007, false); // unk
+		if (level >= 80 && !HasSpell(64843)) learnSpell(64843, false); //Божественный гимн Уровень 1
+		if (level >= 80 && !HasSpell(53023) && HasSpell(48045)) learnSpell(53023, false); // unk
+		if (level >= 80 && !HasSpell(48173) && HasSpell(19236)) learnSpell(48173, false); // unk
+		if (level >= 80 && !HasSpell(48162) && HasSpell(21562)) learnSpell(48162, false); // unk
+		if (level >= 80 && !HasSpell(48066) && HasSpell(17)) learnSpell(48066, false); // unk
+		if (level >= 80 && !HasSpell(48087) && HasSpell(724)) learnSpell(48087, false); // unk
+		if (level >= 80 && !HasSpell(48078) && HasSpell(15237)) learnSpell(48078, false); // unk
+		if (level >= 80 && !HasSpell(48074) && HasSpell(27681)) learnSpell(48074, false); // unk
+		if (level >= 80 && !HasSpell(48073) && HasSpell(14752)) learnSpell(48073, false); // unk
+		if (level >= 80 && !HasSpell(48125) && HasSpell(589)) learnSpell(48125, false); // unk
+		if (level >= 80 && !HasSpell(48156) && HasSpell(15407)) learnSpell(48156, false); // unk
+		if (level >= 80 && !HasSpell(48068) && HasSpell(139)) learnSpell(48068, false); // unk
+		if (level >= 80 && !HasSpell(48158) && HasSpell(32379)) learnSpell(48158, false); // unk
+		if (level >= 80 && !HasSpell(48089) && HasSpell(34861)) learnSpell(48089, false); // unk
+		if (level >= 80 && !HasSpell(48160) && HasSpell(34914)) learnSpell(48160, false); // unk
+		if (level >= 80 && !HasSpell(48161) && HasSpell(1243)) learnSpell(48161, false); // unk
+		if (level >= 80 && !HasSpell(64901)) learnSpell(64901, false); //Гимн надежды 
+	}
+
+	if (getClass() == CLASS_DEATH_KNIGHT)
+	{
+		if (!HasSpell(53343)) learnSpell(53343, false); //Руна ледяного жара 
+		if (!HasSpell(53341)) learnSpell(53341, false); //Руна оплавленного ледника 
+		if (!HasSpell(46584)) learnSpell(46584, false); //Воскрешение мертвых 
+
+		if (level < 56) return;
+
+		if (!HasSpell(50842)) learnSpell(50842, false); //Мор
+		if (!HasSpell(49998)) learnSpell(49998, false); //Удар смерти
+
+		if (level < 57) return;
+
+		if (!HasSpell(48263)) learnSpell(48263, false); //Власть крови
+		if (!HasSpell(53342)) learnSpell(53342, false); //Руна сокрушения чар 
+		if (!HasSpell(47528)) learnSpell(47528, false); //Заморозка разума
+		if (!HasSpell(54447)) learnSpell(54447, false); //Руна разрушения чар 
+
+		if (level < 58) return;
+		
+		if (!HasSpell(48721)) learnSpell(48721, false); //Вскипание крови
+		if (!HasSpell(45524)) learnSpell(45524, false); //Ледяные оковы 
+
+		if (level< 59) return;
+		
+		if (!HasSpell(55258) && HasSpell(55050)) learnSpell(55258, false); //Удар в сердце Уровень 2
+		if (!HasSpell(47476)) learnSpell(47476, false); //Удушение
+		if (!HasSpell(49926) && HasSpell(45902)) learnSpell(49926, false); //Кровавый удар Уровень 2
+
+		if (level < 60) return;
+		
+		if (!HasSpell(51416) && HasSpell(49143)) learnSpell(51416, false); //Ледяной Удар Уровень 2
+		if (!HasSpell(53331)) learnSpell(53331, false); //Руна проклятия Плети 
+		if (!HasSpell(49917) && HasSpell(45462)) learnSpell(49917, false); //Удар чумы Уровень 2
+		if (!HasSpell(43265)) learnSpell(43265, false); //Смерть и разложение Уровень 1
+		if (!HasSpell(51325) && HasSpell(49158)) learnSpell(51325, false); //Взрыв трупа Уровень 2
+		
+		if (level < 61) return;
+
+		if (!HasSpell(49020)) learnSpell(49020, false); //Уничтожение
+		if (!HasSpell(49896) && HasSpell(45477)) learnSpell(49896, false); //Ледяное прикосновение Уровень 2
+		if (!HasSpell(3714)) learnSpell(3714, false); //Льдистый путь 
+		if (!HasSpell(49892) && HasSpell(47541)) learnSpell(49892, false); //Лик смерти Уровень 2
+
+		if (level < 62) return;
+
+		// if (!HasSpell(51426)) learnSpell(51426, false); //Мор Уровень 2
+		if (!HasSpell(48792)) learnSpell(48792, false); //Незыблемость льда
+
+		if (level < 63) return;
+
+		if (!HasSpell(49999) && HasSpell(49998)) learnSpell(49999, false); //Удар смерти Уровень 2
+		if (!HasSpell(53323)) learnSpell(53323, false); //Руна расколотых мечей 
+		if (!HasSpell(54446)) learnSpell(54446, false); //Руна сломанных мечей 
+
+		if (level < 64) return;
+
+		if (!HasSpell(45529)) learnSpell(45529, false); //Кровоотвод 
+		if (!HasSpell(49927) && HasSpell(45902)) learnSpell(49927, false); //Кровавый удар Уровень 3
+		if (!HasSpell(55259) && HasSpell(55050)) learnSpell(55259, false); //Удар в сердце Уровень 3
+
+		if (level < 65) return;
+		
+		if (!HasSpell(49918) && HasSpell(45462)) learnSpell(49918, false); //Удар чумы Уровень 3
+		if (!HasSpell(51417) && HasSpell(49143)) learnSpell(51417, false); //Ледяной Удар Уровень 3
+		if (!HasSpell(57330)) learnSpell(57330, false); //Зимний горн Уровень 1
+		if (!HasSpell(56222)) learnSpell(56222, false); //Темная власть 
+		//if (!HasSpell(49913)) learnSpell(49913, false); //Удушение Уровень 2
+
+		if (level < 66) return;
+		
+		if (!HasSpell(49939) && HasSpell(48721)) learnSpell(49939, false); //Вскипание крови Уровень 1
+		if (!HasSpell(48743)) learnSpell(48743, false); //Смертельный союз
+
+		if (level < 67) return;
+		
+		if (!HasSpell(56815)) learnSpell(56815, false); //Рунический удар 
+		if (!HasSpell(51423) && HasSpell(49020)) learnSpell(51423, false); //Уничтожение Уровень 1
+		if (!HasSpell(49936) && HasSpell(43265)) learnSpell(49936, false); //Смерть и разложение Уровень 2
+		if (!HasSpell(49903) && HasSpell(45477)) learnSpell(49903, false); //Ледяное прикосновение Уровень 3
+		if (!HasSpell(55265) && HasSpell(55090)) learnSpell(55265, false); //Удар Плети Уровень 2
+
+		if (level < 68) return;
+		
+		if (!HasSpell(49893) && HasSpell(47541)) learnSpell(49893, false); //Ли к смерти Уровень 1
+		if (!HasSpell(48707)) learnSpell(48707, false); //Антимагический панцирь
+		//if (!HasSpell(51427)) learnSpell(51427, false); //Мор Уровень 3
+
+		if (level < 69) return;
+		
+		if (!HasSpell(49928) && HasSpell(45902)) learnSpell(49928, false); //Кровавый удвар Уровень 4
+		if (!HasSpell(55260) && HasSpell(55050)) learnSpell(55260, false); //Удар в сердце Уровень 4
+		//if (!HasSpell(49914)) learnSpell(49914, false); //Удушение Уровень 3
+
+		if (level < 70) return;
+		
+		if (level >= 70 && !HasSpell(51418) && HasSpell(49143)) learnSpell(51418, false); //Ледяной Удар Уровень 4
+		if (level >= 70 && !HasSpell(53344)) learnSpell(53344, false); //Руна павшего рыцаря 
+		if (level >= 70 && !HasSpell(51409) && HasSpell(49184)) learnSpell(51409, false); //Воющий ветер Уровень 2
+		if (level >= 70 && !HasSpell(49919) && HasSpell(45462)) learnSpell(49919, false); //Удар чумы Уровень 4
+		if (level >= 70 && !HasSpell(51326) && HasSpell(49158)) learnSpell(51326, false); //Взрыв трупа Уровень 3
+		if (level >= 70 && !HasSpell(48265)) learnSpell(48265, false); //Власть нечестивости
+		if (level >= 70 && !HasSpell(45463) && HasSpell(49998)) learnSpell(45463, false); //Удар смерти Уровень 3
+		if (level >= 72 && !HasSpell(61999)) learnSpell(61999, false); //Воскрешение союзника 
+		if (level >= 72 && !HasSpell(62158)) learnSpell(62158, false); //Руна каменной горгульи 
+		if (level >= 72 && !HasSpell(70164)) learnSpell(70164, false); //Руна нерубского панциря 
+		if (level >= 72 && !HasSpell(49940) && HasSpell(48721)) learnSpell(49940, false); //Вскипание крови Уровень 3
+		if (level >= 73 && !HasSpell(49937) && HasSpell(43265)) learnSpell(49937, false); //Смерть и разложение Уровень 3
+		if (level >= 73 && !HasSpell(49904) && HasSpell(45477)) learnSpell(49904, false); //Ледяное прикосновение Уровень 4
+		if (level >= 73 && !HasSpell(51424) && HasSpell(49020)) learnSpell(51424, false); //Уничтожение Уровень 3
+		if (level >= 73 && !HasSpell(55270) && HasSpell(55090)) learnSpell(55270, false); //Удар Плети Уровень 3
+
+		// if (level >= 74 && !HasSpell(49915)) learnSpell(49915, false); //Удушение Уровень 4
+
+		if (level >= 74 && !HasSpell(55261) && HasSpell(55050)) learnSpell(55261, false); //Удар в сердце Уровень 5
+		//if (level >= 74 && !HasSpell(51428)) learnSpell(51428, false); //Мор Уровень 4
+		if (level >= 74 && !HasSpell(49929) && HasSpell(45902)) learnSpell(49929, false); // unk
+		if (level >= 75 && !HasSpell(49920) && HasSpell(45462)) learnSpell(49920, false); // unk
+		if (level >= 75 && !HasSpell(49923) && HasSpell(49998)) learnSpell(49923, false); // unk
+		if (level >= 75 && !HasSpell(57623) && HasSpell(57330)) learnSpell(57623, false); //Зимний горн Уровень 2
+		if (level >= 75 && !HasSpell(51419) && HasSpell(49143)) learnSpell(51419, false); // unk
+		if (level >= 75 && !HasSpell(51327) && HasSpell(49158)) learnSpell(51327, false); // unk
+		if (level >= 75 && !HasSpell(47568)) learnSpell(47568, false); //Усиление рунического оружия
+		if (level >= 75 && !HasSpell(51410) && HasSpell(49184)) learnSpell(51410, false); // unk
+		if (level >= 76 && !HasSpell(49894) && HasSpell(47541)) learnSpell(49894, false); // unk
+		if (level >= 78 && !HasSpell(49941) && HasSpell(48721)) learnSpell(49941, false); // unk
+		if (level >= 78 && !HasSpell(49909) && HasSpell(45477)) learnSpell(49909, false); // unk
+		//if (level >= 79 && !HasSpell(49916)) learnSpell(49916, false); //Удушение Уровень 5
+		if (level >= 79 && !HasSpell(55271) && HasSpell(55090)) learnSpell(55271, false); //Удар Плети Уровень 4
+		//if (level >= 79 && !HasSpell(51429)) learnSpell(51429, false); //Мор Уровень 5
+		if (level >= 79 && !HasSpell(51425) && HasSpell(49020)) learnSpell(51425, false); // unk
+		if (level >= 80 && !HasSpell(49895) && HasSpell(47541)) learnSpell(49895, false); // unk
+		if (level >= 80 && !HasSpell(42650)) learnSpell(42650, false); //Войско мертвых 
+		if (level >= 80 && !HasSpell(49924) && HasSpell(49998)) learnSpell(49924, false); // unk
+		if (level >= 80 && !HasSpell(55268) && HasSpell(49143)) learnSpell(55268, false); //Ледяной удар Уровень 6
+		if (level >= 80 && !HasSpell(49921) && HasSpell(45462)) learnSpell(49921, false); // unk
+		if (level >= 80 && !HasSpell(49930) && HasSpell(45902)) learnSpell(49930, false); // unk
+		if (level >= 80 && !HasSpell(49938) && HasSpell(43265)) learnSpell(49938, false); // unk
+		if (level >= 80 && !HasSpell(51328) && HasSpell(49158)) learnSpell(51328, false); // unk
+		if (level >= 80 && !HasSpell(51411) && HasSpell(49184)) learnSpell(51411, false); // unk
+		if (level >= 80 && !HasSpell(55262) && HasSpell(55050)) learnSpell(55262, false); //Удар в сердце Уровень 6
+
+		return;
+	}
+
+	if (getClass() == CLASS_MAGE)
+	{
+		if (level >= 1 && !HasSpell(1459)) learnSpell(1459, false); //Чародейский интеллект Уровень 1
+		if (level >= 4 && !HasSpell(116)) learnSpell(116, false); //Ледяная стрела Уровень 1
+		if (level >= 4 && !HasSpell(5504)) learnSpell(5504, false); //Сотворение воды Уровень 1
+		if (level >= 6 && !HasSpell(143) && HasSpell(133)) learnSpell(143, false); //Огненный шар Уровень 2
+		if (level >= 6 && !HasSpell(587)) learnSpell(587, false); //Сотворение пищи Уровень 1
+		if (level >= 6 && !HasSpell(2136)) learnSpell(2136, false); //Огненный взрыв Уровень 1
+		if (level >= 8 && !HasSpell(5143)) learnSpell(5143, false); //Чародейские стрелы Уровень 1
+		if (level >= 8 && !HasSpell(205) && HasSpell(116)) learnSpell(205, false); //Ледяная стрела Уровень 2
+		if (level >= 8 && !HasSpell(118)) learnSpell(118, false); //Превращение Уровень 1
+		if (level >= 10 && !HasSpell(7300) && HasSpell(168)) learnSpell(7300, false); //Морозный доспех Уровень 2
+		if (level >= 10 && !HasSpell(122)) learnSpell(122, false); //Кольцо льда Уровень 1
+		if (level >= 10 && !HasSpell(5505) && HasSpell(5504)) learnSpell(5505, false); //Сотворение воды Уровень 2
+		if (level >= 12 && !HasSpell(130)) learnSpell(130, false); //Замедленное падение 
+		if (level >= 12 && !HasSpell(145) && HasSpell(133)) learnSpell(145, false); //Огненный шар Уровень 3
+		if (level >= 12 && !HasSpell(604)) learnSpell(604, false); //Ослабление магии Уровень 1
+		if (level >= 12 && !HasSpell(597) && HasSpell(587)) learnSpell(597, false); //Сотворение пищи Уровень 2
+		if (level >= 14 && !HasSpell(1449)) learnSpell(1449, false); //Чародейский взрыв Уровень 1
+		if (level >= 14 && !HasSpell(1460) && HasSpell(1459)) learnSpell(1460, false); //Чародейский интеллект Уровень 2
+		if (level >= 14 && !HasSpell(2137) && HasSpell(2136)) learnSpell(2137, false); //Огненный взрыв Уровень 2
+		if (level >= 14 && !HasSpell(837) && HasSpell(116)) learnSpell(837, false); //Ледяная стрела Уровень 3
+		if (level >= 16 && !HasSpell(5144) && HasSpell(5143)) learnSpell(5144, false); //Чародейские стрелы Уровень 2
+		if (level >= 16 && !HasSpell(2120)) learnSpell(2120, false); //Огненный столб Уровень 1
+		if (level >= 18 && !HasSpell(3140) && HasSpell(133)) learnSpell(3140, false); //Огненный шар Уровень 4
+		if (level >= 18 && !HasSpell(1008)) learnSpell(1008, false); //Усиление магии Уровень 1
+		if (level >= 18 && !HasSpell(475)) learnSpell(475, false); //Снятие проклятия 
+		if (level >= 20 && !HasSpell(7301) && HasSpell(168)) learnSpell(7301, false); //Морозный доспех Уровень 3
+		if (level >= 20 && !HasSpell(5506) && HasSpell(5504)) learnSpell(5506, false); //Сотворение воды Уровень 3
+		if (level >= 20 && !HasSpell(1953)) learnSpell(1953, false); //Скачок 
+		if (level >= 20 && !HasSpell(1463)) learnSpell(1463, false); //Щит маны Уровень 1
+		if (level >= 20 && !HasSpell(12824) && HasSpell(118)) learnSpell(12824, false); //Превращение Уровень 2
+		if (level >= 20 && !HasSpell(10)) learnSpell(10, false); //Снежная буря Уровень 1
+		if (level >= 20 && !HasSpell(543)) learnSpell(543, false); //Защита от огня Уровень 1
+		if (level >= 20 && !HasSpell(12051)) learnSpell(12051, false); //Прилив сил 
+		if (level >= 20 && !HasSpell(7322) && HasSpell(116)) learnSpell(7322, false); //Ледяная стрела Уровень 4
+		if (level >= 22 && !HasSpell(2948)) learnSpell(2948, false); //Ожог Уровень 1
+		if (level >= 22 && !HasSpell(6143)) learnSpell(6143, false); //Защита от магии льда Уровень 1
+		if (level >= 22 && !HasSpell(2138) && HasSpell(2136)) learnSpell(2138, false); //Огненный взрыв Уровень 3
+		if (level >= 22 && !HasSpell(8437) && HasSpell(1449)) learnSpell(8437, false); //Чародейский взрыв Уровень 2
+		if (level >= 22 && !HasSpell(990) && HasSpell(587)) learnSpell(990, false); //Сотворение пищи Уровень 3
+		if (level >= 24 && !HasSpell(5145) && HasSpell(5143)) learnSpell(5145, false); //Чародейские стрелы Уровень 3
+		if (level >= 24 && !HasSpell(2121) && HasSpell(2120)) learnSpell(2121, false); //Огненный столб Уровень 2
+		if (level >= 24 && !HasSpell(8400) && HasSpell(133)) learnSpell(8400, false); //Огненный шар Уровень 5
+		if (level >= 24 && !HasSpell(8450) && HasSpell(604)) learnSpell(8450, false); //Ослабление магии Уровень 2
+		if (level >= 24 && !HasSpell(2139)) learnSpell(2139, false); //Антимагия 
+		if (level >= 24 && !HasSpell(12505) && HasSpell(11366)) learnSpell(12505, false); //Огненная глыба Уровень 2
+		if (level >= 26 && !HasSpell(865) && HasSpell(122)) learnSpell(865, false); //Кольцо льда Уровень 2
+		if (level >= 26 && !HasSpell(120)) learnSpell(120, false); //Конус холода Уровень 1
+		if (level >= 26 && !HasSpell(8406) && HasSpell(116)) learnSpell(8406, false); //Ледяная стрела Уровень 5
+		if (level >= 28 && !HasSpell(8494) && HasSpell(1463)) learnSpell(8494, false); //Щит маны Уровень 2
+		if (level >= 28 && !HasSpell(8444) && HasSpell(2948)) learnSpell(8444, false); //Ожог Уровень 2
+		if (level >= 28 && !HasSpell(6141) && HasSpell(10)) learnSpell(6141, false); //Снежная буря Уровень 2
+		if (level >= 28 && !HasSpell(1461) && HasSpell(1459)) learnSpell(1461, false); //Чародейский интеллект Уровень 3
+		if (level >= 28 && !HasSpell(759)) learnSpell(759, false); //Сотворение самоцвета маны Уровень 1
+		if (level >= 30 && !HasSpell(45438)) learnSpell(45438, false); //Ледяная глыба 
+		if (level >= 30 && !HasSpell(12522) && HasSpell(11366)) learnSpell(12522, false); //Огненная глыба Уровень 3
+		if (level >= 30 && !HasSpell(8457) && HasSpell(543)) learnSpell(8457, false); //Защита от огня Уровень 2
+		if (level >= 30 && !HasSpell(8455) && HasSpell(1008)) learnSpell(8455, false); //Усиление магии Уровень 2
+		if (level >= 30 && !HasSpell(6127) && HasSpell(5504)) learnSpell(6127, false); //Сотворение воды Уровень 4
+		if (level >= 30 && !HasSpell(8438) && HasSpell(1449)) learnSpell(8438, false); //Чародейский взрыв Уровень 3
+		if (level >= 30 && !HasSpell(7302)) learnSpell(7302, false); //Ледяной доспех Уровень 1
+		if (level >= 30 && !HasSpell(8412) && HasSpell(2136)) learnSpell(8412, false); //Огненный взрыв Уровень 4
+		if (level >= 30 && !HasSpell(8401) && HasSpell(133)) learnSpell(8401, false); //Огненный шар Уровень 6
+		if (level >= 32 && !HasSpell(8416) && HasSpell(5143)) learnSpell(8416, false); //Чародейские стрелы Уровень 4
+		if (level >= 32 && !HasSpell(8461) && HasSpell(6143)) learnSpell(8461, false); //Защита от магии льда Уровень 2
+		if (level >= 32 && !HasSpell(8407) && HasSpell(116)) learnSpell(8407, false); //Ледяная стрела Уровень 6
+		if (level >= 32 && !HasSpell(6129) && HasSpell(587)) learnSpell(6129, false); //Сотворение пищи Уровень 4
+		if (level >= 32 && !HasSpell(8422) && HasSpell(2120)) learnSpell(8422, false); //Огненный столб Уровень 3
+		if (level >= 34 && !HasSpell(8492) && HasSpell(120)) learnSpell(8492, false); //Конус холода Уровень 2
+		if (level >= 34 && !HasSpell(6117)) learnSpell(6117, false); //Магический доспех Уровень 1
+		if (level >= 34 && !HasSpell(8445) && HasSpell(2948)) learnSpell(8445, false); //Ожог Уровень 3
+		if (level >= 36 && !HasSpell(13018) && HasSpell(11113)) learnSpell(13018, false); //Взрывная волна Уровень 2
+		if (level >= 36 && !HasSpell(8427) && HasSpell(10)) learnSpell(8427, false); //Снежная буря Уровень 3
+		if (level >= 36 && !HasSpell(8451) && HasSpell(604)) learnSpell(8451, false); //Ослабление магии Уровень 3
+		if (level >= 36 && !HasSpell(8402) && HasSpell(133)) learnSpell(8402, false); //Огненный шар Уровень 7
+		if (level >= 36 && !HasSpell(8495) && HasSpell(1463)) learnSpell(8495, false); //Щит маны Уровень 3
+		if (level >= 36 && !HasSpell(12523) && HasSpell(11366)) learnSpell(12523, false); //Огненная глыба Уровень 4
+		if (level >= 38 && !HasSpell(3552) && HasSpell(759)) learnSpell(3552, false); //Сотворение самоцвета маны Уровень 2
+		if (level >= 38 && !HasSpell(8408) && HasSpell(116)) learnSpell(8408, false); //Ледяная стрела Уровень 7
+		if (level >= 38 && !HasSpell(8439) && HasSpell(1449)) learnSpell(8439, false); //Чародейский взрыв Уровень 4
+		if (level >= 38 && !HasSpell(8413) && HasSpell(2136)) learnSpell(8413, false); //Огненный взрыв Уровень 5
+		if (level >= 40 && !HasSpell(10138) && HasSpell(5504)) learnSpell(10138, false); //Сотворение воды Уровень 5
+		if (level >= 40 && !HasSpell(12825) && HasSpell(118)) learnSpell(12825, false); //Превращение Уровень 3
+		if (level >= 40 && !HasSpell(8423) && HasSpell(2120)) learnSpell(8423, false); //Огненный столб Уровень 4
+		if (level >= 40 && !HasSpell(8446) && HasSpell(2948)) learnSpell(8446, false); //Ожог Уровень 4
+		if (level >= 40 && !HasSpell(8458) && HasSpell(543)) learnSpell(8458, false); //Защита от огня Уровень 3
+		if (level >= 40 && !HasSpell(6131) && HasSpell(122)) learnSpell(6131, false); //Кольцо льда Уровень 3
+		if (level >= 40 && !HasSpell(8417) && HasSpell(5143)) learnSpell(8417, false); //Чародейские стрелы Уровень 5
+		if (level >= 40 && !HasSpell(7320) && HasSpell(7302)) learnSpell(7320, false); //Ледяной доспех Уровень 2
+		if (level >= 42 && !HasSpell(10159) && HasSpell(120)) learnSpell(10159, false); //Конус холода Уровень 3
+		if (level >= 42 && !HasSpell(12524) && HasSpell(11366)) learnSpell(12524, false); //Огненная глыба Уровень 5
+		if (level >= 42 && !HasSpell(10169) && HasSpell(1008)) learnSpell(10169, false); //Усиление магии Уровень 3
+		if (level >= 42 && !HasSpell(10156) && HasSpell(1459)) learnSpell(10156, false); //Чародейский интеллект Уровень 4
+		if (level >= 42 && !HasSpell(8462) && HasSpell(6143)) learnSpell(8462, false); //Защита от магии льда Уровень 3
+		if (level >= 42 && !HasSpell(10148) && HasSpell(133)) learnSpell(10148, false); //Огненный шар Уровень 8
+		if (level >= 42 && !HasSpell(10144) && HasSpell(587)) learnSpell(10144, false); //Сотворение пищи Уровень 5
+		if (level >= 44 && !HasSpell(10179) && HasSpell(116)) learnSpell(10179, false); //Ледяная стрела Уровень 8
+		if (level >= 44 && !HasSpell(10185) && HasSpell(10)) learnSpell(10185, false); //Снежная буря Уровень 4
+		if (level >= 44 && !HasSpell(10191) && HasSpell(1463)) learnSpell(10191, false); //Щит маны Уровень 4
+		if (level >= 44 && !HasSpell(13019) && HasSpell(11113)) learnSpell(13019, false); //Взрывная волна Уровень 3
+		if (level >= 46 && !HasSpell(13031) && HasSpell(11426)) learnSpell(13031, false); //Ледяная преграда Уровень 2
+		if (level >= 46 && !HasSpell(10201) && HasSpell(1449)) learnSpell(10201, false); //Чародейский взрыв Уровень 5
+		if (level >= 46 && !HasSpell(10197) && HasSpell(2136)) learnSpell(10197, false); //Огненный взрыв Уровень 6
+		if (level >= 46 && !HasSpell(22782) && HasSpell(6117)) learnSpell(22782, false); //Магический доспех Уровень 2
+		if (level >= 46 && !HasSpell(10205) && HasSpell(2948)) learnSpell(10205, false); //Ожог Уровень 5
+		if (level >= 48 && !HasSpell(10215) && HasSpell(2120)) learnSpell(10215, false); //Огненный столб Уровень 5
+		if (level >= 48 && !HasSpell(10211) && HasSpell(5143)) learnSpell(10211, false); //Чародейские стрелы Уровень 6
+		if (level >= 48 && !HasSpell(10149) && HasSpell(133)) learnSpell(10149, false); //Огненный шар Уровень 9
+		if (level >= 48 && !HasSpell(10173) && HasSpell(604)) learnSpell(10173, false); //Ослабление магии Уровень 4
+		if (level >= 48 && !HasSpell(12525) && HasSpell(11366)) learnSpell(12525, false); //Огненная глыба Уровень 6
+		if (level >= 48 && !HasSpell(10053) && HasSpell(759)) learnSpell(10053, false); //Сотворение самоцвета маны Уровень 3
+		if (level >= 50 && !HasSpell(10223) && HasSpell(543)) learnSpell(10223, false); //Защита от огня Уровень 4
+		if (level >= 50 && !HasSpell(10139) && HasSpell(5504)) learnSpell(10139, false); //Сотворение воды Уровень 6
+		if (level >= 50 && !HasSpell(10180) && HasSpell(116)) learnSpell(10180, false); //Ледяная стрела Уровень 9
+		if (level >= 50 && !HasSpell(10160) && HasSpell(120)) learnSpell(10160, false); //Конус холода Уровень 4
+		if (level >= 50 && !HasSpell(10219) && HasSpell(7302)) learnSpell(10219, false); //Ледяной доспех Уровень 3
+		if (level >= 52 && !HasSpell(10177) && HasSpell(6143)) learnSpell(10177, false); //Защита от магии льда Уровень 4
+		if (level >= 52 && !HasSpell(13020) && HasSpell(11113)) learnSpell(13020, false); //Взрывная волна Уровень 4
+		if (level >= 52 && !HasSpell(10145) && HasSpell(587)) learnSpell(10145, false); //Сотворение пищи Уровень 6
+		if (level >= 52 && !HasSpell(10206) && HasSpell(2948)) learnSpell(10206, false); //Ожог Уровень 6
+		if (level >= 52 && !HasSpell(10186) && HasSpell(10)) learnSpell(10186, false); //Снежная буря Уровень 5
+		if (level >= 52 && !HasSpell(13032) && HasSpell(11426)) learnSpell(13032, false); //Ледяная преграда Уровень 3
+		if (level >= 52 && !HasSpell(10192) && HasSpell(1463)) learnSpell(10192, false); //Щит маны Уровень 5
+		if (level >= 54 && !HasSpell(10150) && HasSpell(133)) learnSpell(10150, false); //Огненный шар Уровень 10
+		if (level >= 54 && !HasSpell(12526) && HasSpell(11366)) learnSpell(12526, false); //Огненная глыба Уровень 7
+		if (level >= 54 && !HasSpell(10170) && HasSpell(1008)) learnSpell(10170, false); //Усиление магии Уровень 4
+		if (level >= 54 && !HasSpell(10230) && HasSpell(122)) learnSpell(10230, false); //Кольцо льда Уровень 4
+		if (level >= 54 && !HasSpell(10199) && HasSpell(2136)) learnSpell(10199, false); //Огненный взрыв Уровень 7
+		if (level >= 54 && !HasSpell(10202) && HasSpell(1449)) learnSpell(10202, false); //Чародейский взрыв Уровень 6
+		if (level >= 56 && !HasSpell(10157) && HasSpell(1459)) learnSpell(10157, false); //Чародейский интеллект Уровень 5
+		if (level >= 56 && !HasSpell(10181) && HasSpell(116)) learnSpell(10181, false); //Ледяная стрела Уровень 10
+		if (level >= 56 && !HasSpell(33041) && HasSpell(31661)) learnSpell(33041, false); //Дыхание дракона Уровень 2
+		if (level >= 56 && !HasSpell(10216) && HasSpell(2120)) learnSpell(10216, false); //Огненный столб Уровень 6
+		if (level >= 56 && !HasSpell(23028)) learnSpell(23028, false); //Чародейская гениальность Уровень 1
+		if (level >= 56 && !HasSpell(10212) && HasSpell(5143)) learnSpell(10212, false); //Чародейские стрелы Уровень 7
+		if (level >= 58 && !HasSpell(22783) && HasSpell(6117)) learnSpell(22783, false); //Магический доспех Уровень 3
+		if (level >= 58 && !HasSpell(13033) && HasSpell(11426)) learnSpell(13033, false); //Ледяная преграда Уровень 4
+		if (level >= 58 && !HasSpell(10207) && HasSpell(2948)) learnSpell(10207, false); //Ожог Уровень 7
+		if (level >= 58 && !HasSpell(10161) && HasSpell(120)) learnSpell(10161, false); //Конус холода Уровень 5
+		if (level >= 58 && !HasSpell(10054) && HasSpell(759)) learnSpell(10054, false); //Сотворение самоцвета маны Уровень 4
+		if (level >= 60 && !HasSpell(28609) && HasSpell(6143)) learnSpell(28609, false); //Защита от магии льда Уровень 5
+		if (level >= 60 && !HasSpell(28612) && HasSpell(587)) learnSpell(28612, false); //Сотворение пищи Уровень 7
+		if (level >= 60 && !HasSpell(25345) && HasSpell(5143)) learnSpell(25345, false); //Чародейские стрелы Уровень 8
+		if (level >= 60 && !HasSpell(25304) && HasSpell(116)) learnSpell(25304, false); //Ледяная стрела Уровень 11
+		if (level >= 60 && !HasSpell(10140) && HasSpell(5504)) learnSpell(10140, false); //Сотворение воды Уровень 7
+		if (level >= 60 && !HasSpell(10151) && HasSpell(133)) learnSpell(10151, false); //Огненный шар Уровень 11
+		if (level >= 60 && !HasSpell(10174) && HasSpell(604)) learnSpell(10174, false); //Ослабление магии Уровень 5
+		if (level >= 60 && !HasSpell(18809) && HasSpell(11366)) learnSpell(18809, false); //Огненная глыба Уровень 8
+		if (level >= 60 && !HasSpell(10220) && HasSpell(7302)) learnSpell(10220, false); //Ледяной доспех Уровень 4
+		if (level >= 60 && !HasSpell(10225) && HasSpell(543)) learnSpell(10225, false); //Защита от огня Уровень 5
+		if (level >= 60 && !HasSpell(12826) && HasSpell(118)) learnSpell(12826, false); //Превращение Уровень 4
+		if (level >= 60 && !HasSpell(10193) && HasSpell(1463)) learnSpell(10193, false); //Щит маны Уровень 6
+		if (level >= 60 && !HasSpell(10187) && HasSpell(10)) learnSpell(10187, false); //Снежная буря Уровень 6
+		if (level >= 60 && !HasSpell(13021) && HasSpell(11113)) learnSpell(13021, false); //Взрывная волна Уровень 5
+		if (level >= 61 && !HasSpell(27078) && HasSpell(2136)) learnSpell(27078, false); //Огненный взрыв Уровень 8
+		if (level >= 62 && !HasSpell(25306) && HasSpell(133)) learnSpell(25306, false); //Огненный шар Уровень 12
+		if (level >= 62 && !HasSpell(30482)) learnSpell(30482, false); //Раскаленный доспех Уровень 1
+		if (level >= 62 && !HasSpell(27080) && HasSpell(1449)) learnSpell(27080, false); //Чародейский взрыв Уровень 7
+		if (level >= 63 && !HasSpell(27075) && HasSpell(5143)) learnSpell(27075, false); //Чародейские стрелы Уровень 9
+		if (level >= 63 && !HasSpell(27130) && HasSpell(1008)) learnSpell(27130, false); //Усиление магии Уровень 5
+		if (level >= 63 && !HasSpell(27071) && HasSpell(116)) learnSpell(27071, false); //Ледяная стрела Уровень 12
+		if (level >= 64 && !HasSpell(30451)) learnSpell(30451, false); //Чародейская вспышка Уровень 1
+		if (level >= 64 && !HasSpell(27134) && HasSpell(11426)) learnSpell(27134, false); //Ледяная преграда Уровень 5
+		if (level >= 64 && !HasSpell(33042) && HasSpell(31661)) learnSpell(33042, false); //Дыхание дракона Уровень 3
+		if (level >= 64 && !HasSpell(27086) && HasSpell(2120)) learnSpell(27086, false); //Огненный столб Уровень 7
+		if (level >= 65 && !HasSpell(27087) && HasSpell(120)) learnSpell(27087, false); //Конус холода Уровень 6
+		if (level >= 65 && !HasSpell(27133) && HasSpell(11113)) learnSpell(27133, false); //Взрывная волна Уровень 6
+		if (level >= 65 && !HasSpell(27073) && HasSpell(2948)) learnSpell(27073, false); //Ожог Уровень 8
+		if (level >= 65 && !HasSpell(37420) && HasSpell(5504)) learnSpell(37420, false); //Сотворение воды Уровень 8
+		if (level >= 66 && !HasSpell(27070) && HasSpell(133)) learnSpell(27070, false); //Огненный шар Уровень 13
+		if (level >= 66 && !HasSpell(30455)) learnSpell(30455, false); //Ледяное копье Уровень 1
+		if (level >= 66 && !HasSpell(27132) && HasSpell(11366)) learnSpell(27132, false); //Огненная глыба Уровень 9
+		if (level >= 67 && !HasSpell(33944) && HasSpell(604)) learnSpell(33944, false); //Ослабление магии Уровень 6
+		if (level >= 67 && !HasSpell(27088) && HasSpell(122)) learnSpell(27088, false); //Кольцо льда Уровень 5
+		if (level >= 68 && !HasSpell(66)) learnSpell(66, false); //Невидимость 
+		if (level >= 68 && !HasSpell(27085) && HasSpell(10)) learnSpell(27085, false); //Снежная буря Уровень 7
+		if (level >= 68 && !HasSpell(27101) && HasSpell(759)) learnSpell(27101, false); //Сотворение самоцвета маны Уровень 5
+		if (level >= 68 && !HasSpell(27131) && HasSpell(1463)) learnSpell(27131, false); //Щит маны Уровень 7
+		if (level >= 69 && !HasSpell(38699) && HasSpell(5143)) learnSpell(38699, false); //Чародейские стрелы Уровень 10
+		if (level >= 69 && !HasSpell(33946) && HasSpell(1008)) learnSpell(33946, false); //Усиление магии Уровень 6
+		if (level >= 69 && !HasSpell(27124) && HasSpell(7302)) learnSpell(27124, false); //Ледяной доспех Уровень 5
+		if (level >= 69 && !HasSpell(27128) && HasSpell(543)) learnSpell(27128, false); //Защита от огня Уровень 6
+		if (level >= 69 && !HasSpell(27072) && HasSpell(116)) learnSpell(27072, false); //Ледяная стрела Уровень 13
+		if (level >= 69 && !HasSpell(27125) && HasSpell(6117)) learnSpell(27125, false); //Магический доспех Уровень 4
+		if (level >= 70 && !HasSpell(27079) && HasSpell(2136)) learnSpell(27079, false); //Огненный взрыв Уровень 9
+		if (level >= 70 && !HasSpell(38692) && HasSpell(133)) learnSpell(38692, false); //Огненный шар Уровень 14
+		if (level >= 70 && !HasSpell(38697) && HasSpell(116)) learnSpell(38697, false); //Ледяная стрела Уровень 14
+		if (level >= 70 && !HasSpell(27074) && HasSpell(2948)) learnSpell(27074, false); //Ожог Уровень 9
+		if (level >= 70 && !HasSpell(38704) && HasSpell(5143)) learnSpell(38704, false); //Чародейские стрелы Уровень 11
+		if (level >= 70 && !HasSpell(30449)) learnSpell(30449, false); //Чарокрад 
+		if (level >= 70 && !HasSpell(55359) && HasSpell(44457)) learnSpell(55359, false); //Живая бомба Уровень 2
+		if (level >= 70 && !HasSpell(44780) && HasSpell(44425)) learnSpell(44780, false); //Чародейский обстрел Уровень 2
+		if (level >= 70 && !HasSpell(27082) && HasSpell(1449)) learnSpell(27082, false); //Чародейский взрыв Уровень 8
+		if (level >= 70 && !HasSpell(27090) && HasSpell(5504)) learnSpell(27090, false); //Сотворение воды Уровень 9
+		if (level >= 70 && !HasSpell(27127) && HasSpell(23028)) learnSpell(27127, false); //Чародейская гениальность Уровень 2
+		if (level >= 70 && !HasSpell(27126) && HasSpell(1459)) learnSpell(27126, false); //Чародейский интеллект Уровень 6
+		if (level >= 70 && !HasSpell(32796) && HasSpell(6143)) learnSpell(32796, false); //Защита от магии льда Уровень 6
+		if (level >= 70 && !HasSpell(33043) && HasSpell(31661)) learnSpell(33043, false); //Дыхание дракона Уровень 4
+		if (level >= 70 && !HasSpell(33405) && HasSpell(11426)) learnSpell(33405, false); //Ледяная преграда Уровень 6
+		if (level >= 70 && !HasSpell(43987)) learnSpell(43987, false); //Обряд сотворения яств Уровень 1
+		if (level >= 70 && !HasSpell(33938) && HasSpell(11366)) learnSpell(33938, false); //Огненная глыба Уровень 10
+		if (level >= 70 && !HasSpell(33933) && HasSpell(11113)) learnSpell(33933, false); //Взрывная волна Уровень 7
+		if (level >= 70 && !HasSpell(33717) && HasSpell(587)) learnSpell(33717, false); //Сотворение пищи Уровень 8
+		if (level >= 71 && !HasSpell(43045) && HasSpell(30482)) learnSpell(43045, false); //Раскаленный доспех Уровень 2
+		if (level >= 71 && !HasSpell(43023) && HasSpell(6117)) learnSpell(43023, false); //Магический доспех Уровень 5
+		if (level >= 71 && !HasSpell(42894) && HasSpell(30451)) learnSpell(42894, false); //Чародейская вспышка Уровень 2
+		if (level >= 72 && !HasSpell(42930) && HasSpell(120)) learnSpell(42930, false); //Конус холода Уровень 7
+		if (level >= 72 && !HasSpell(42913) && HasSpell(30455)) learnSpell(42913, false); //Ледяное копье Уровень 2
+		if (level >= 72 && !HasSpell(42925) && HasSpell(2120)) learnSpell(42925, false); //Огненный столб Уровень 8
+		if (level >= 73 && !HasSpell(43019) && HasSpell(1463)) learnSpell(43019, false); //Щит маны Уровень 8
+		if (level >= 73 && !HasSpell(42858) && HasSpell(2948)) learnSpell(42858, false); //Ожог Уровень 10
+		if (level >= 73 && !HasSpell(42890) && HasSpell(11366)) learnSpell(42890, false); //Огненная глыба Уровень 11
+		if (level >= 74 && !HasSpell(42872) && HasSpell(2136)) learnSpell(42872, false); //Огненный взрыв Уровень 10
+		if (level >= 74 && !HasSpell(42939) && HasSpell(10)) learnSpell(42939, false); //Снежная буря Уровень 8
+		if (level >= 74 && !HasSpell(42832) && HasSpell(133)) learnSpell(42832, false); //Огненный шар Уровень 15
+		if (level >= 75 && !HasSpell(43038) && HasSpell(11426)) learnSpell(43038, false); //Ледяная преграда Уровень 7
+		if (level >= 75 && !HasSpell(42955)) learnSpell(42955, false); //Сотворение яств Уровень 1
+		if (level >= 75 && !HasSpell(44614)) learnSpell(44614, false); //Стрела ледяного огня Уровень 1
+		if (level >= 75 && !HasSpell(42944) && HasSpell(11113)) learnSpell(42944, false); //Взрывная волна Уровень 8
+		if (level >= 75 && !HasSpell(42949) && HasSpell(31661)) learnSpell(42949, false); //Дыхание дракона Уровень 5
+		if (level >= 75 && !HasSpell(42841) && HasSpell(116)) learnSpell(42841, false); //Ледяная стрела Уровень 15
+		if (level >= 75 && !HasSpell(42843) && HasSpell(5143)) learnSpell(42843, false); //Чародейские стрелы Уровень 12
+		if (level >= 75 && !HasSpell(42917) && HasSpell(122)) learnSpell(42917, false); //Кольцо льда Уровень 6
+		if (level >= 76 && !HasSpell(43015) && HasSpell(604)) learnSpell(43015, false); //Ослабление магии Уровень 7
+		if (level >= 76 && !HasSpell(42896) && HasSpell(30451)) learnSpell(42896, false); //Чародейская вспышка Уровень 3
+		if (level >= 76 && !HasSpell(42920) && HasSpell(1449)) learnSpell(42920, false); //Чародейский взрыв Уровень 9
+		if (level >= 77 && !HasSpell(42891) && HasSpell(11366)) learnSpell(42891, false); //Огненная глыба Уровень 12
+		if (level >= 77 && !HasSpell(42985) && HasSpell(759)) learnSpell(42985, false); //Сотворение самоцвета маны Уровень 6
+		if (level >= 77 && !HasSpell(43017) && HasSpell(1008)) learnSpell(43017, false); //Усиление магии Уровень 7
+		if (level >= 78 && !HasSpell(42859) && HasSpell(2948)) learnSpell(42859, false); //Ожог Уровень 11
+		if (level >= 78 && !HasSpell(42914) && HasSpell(30455)) learnSpell(42914, false); //Ледяное копье Уровень 3
+		if (level >= 78 && !HasSpell(43010) && HasSpell(543)) learnSpell(43010, false); //Защита от огня Уровень 7
+		if (level >= 78 && !HasSpell(42833) && HasSpell(133)) learnSpell(42833, false); //Огненный шар Уровень 16
+		if (level >= 79 && !HasSpell(43046) && HasSpell(30482)) learnSpell(43046, false); //Раскаленный доспех Уровень 3
+		if (level >= 79 && !HasSpell(42842) && HasSpell(116)) learnSpell(42842, false); //Ледяная стрела Уровень 16
+		if (level >= 79 && !HasSpell(43020) && HasSpell(1463)) learnSpell(43020, false); //Щит маны Уровень 9
+		if (level >= 79 && !HasSpell(42931) && HasSpell(120)) learnSpell(42931, false); //Конус холода Уровень 8
+		if (level >= 79 && !HasSpell(42926) && HasSpell(2120)) learnSpell(42926, false); //Огненный столб Уровень 9
+		if (level >= 79 && !HasSpell(43012) && HasSpell(6143)) learnSpell(43012, false); //Защита от магии льда Уровень 7
+		if (level >= 79 && !HasSpell(43008) && HasSpell(7302)) learnSpell(43008, false); //Ледяной доспех Уровень 6
+		if (level >= 79 && !HasSpell(42846) && HasSpell(5143)) learnSpell(42846, false); //Чародейские стрелы Уровень 13
+		if (level >= 79 && !HasSpell(43024) && HasSpell(6117)) learnSpell(43024, false); //Магический доспех Уровень 6
+		if (level >= 80 && !HasSpell(42940) && HasSpell(10)) learnSpell(42940, false); //Снежная буря Уровень 9
+		if (level >= 80 && !HasSpell(44781) && HasSpell(44425)) learnSpell(44781, false); //Чародейский обстрел Уровень 3
+		if (level >= 80 && !HasSpell(55360) && HasSpell(44457)) learnSpell(55360, false); //Живая бомба Уровень 3
+		if (level >= 80 && !HasSpell(47610) && HasSpell(44614)) learnSpell(47610, false); // unk
+		if (level >= 80 && !HasSpell(55342)) learnSpell(55342, false); //Зеркальное изображение 
+		if (level >= 80 && !HasSpell(43039) && HasSpell(11426)) learnSpell(43039, false); //Ледяная преграда Уровень 8
+		if (level >= 80 && !HasSpell(42956) && HasSpell(42955)) learnSpell(42956, false); //Сотворение яств Уровень 2
+		if (level >= 80 && !HasSpell(42921) && HasSpell(1449)) learnSpell(42921, false); //Чародейский взрыв Уровень 10
+		if (level >= 80 && !HasSpell(42995) && HasSpell(1459)) learnSpell(42995, false); //Чародейский интеллект Уровень 7
+		if (level >= 80 && !HasSpell(43002) && HasSpell(23028)) learnSpell(43002, false); //Чародейская гениальность Уровень 3
+		if (level >= 80 && !HasSpell(42897) && HasSpell(30451)) learnSpell(42897, false); //Чародейская вспышка Уровень 4
+		if (level >= 80 && !HasSpell(42873) && HasSpell(2136)) learnSpell(42873, false); //Огненный взрыв Уровень 11
+		if (level >= 80 && !HasSpell(42945) && HasSpell(11113)) learnSpell(42945, false); //Взрывная волна Уровень 9
+		if (level >= 80 && !HasSpell(42950) && HasSpell(31661)) learnSpell(42950, false); //Дыхание дракона Уровень 6
+		if (level >= 80 && !HasSpell(58659) && HasSpell(43987)) learnSpell(58659, false); //Обряд сотворения яств Уровень 2
+	}
+
+	if (getClass() == CLASS_WARLOCK)
+	{
+		if (!HasSpell(348)) learnSpell(348, false); //Жертвенный огонь Уровень 1
+		if (!HasSpell(688)) learnSpell(688, false); //Призыв беса Призыв
+
+		if (level >= 4 && !HasSpell(172)) learnSpell(172, false); //Порча Уровень 1
+		if (level >= 4 && !HasSpell(702)) learnSpell(702, false); //Проклятие слабости Уровень 1
+		if (level >= 6 && !HasSpell(695) && HasSpell(686)) learnSpell(695, false); //Стрела Тьмы Уровень 2
+		if (level >= 6 && !HasSpell(1454)) learnSpell(1454, false); //Жизнеотвод Уровень 1
+		if (level >= 8 && !HasSpell(980)) learnSpell(980, false); //Проклятие агонии Уровень 1
+		if (level >= 8 && !HasSpell(5782)) learnSpell(5782, false); //Страх Уровень 1
+
+		if (level < 10) return;
+
+		if (!HasSpell(697)) learnSpell(697, false); //Призыв демона Бездны
+
+		if (!HasSpell(6201)) learnSpell(6201, false); //Создание камня здоровья Уровень 1
+		if (!HasSpell(707) && HasSpell(348)) learnSpell(707, false); //Жертвенный огонь Уровень 2
+		if (!HasSpell(696) && HasSpell(687)) learnSpell(696, false); //Шкура демона Уровень 2
+		if (!HasSpell(1120)) learnSpell(1120, false); //Похищение души Уровень 1
+
+		if (level >= 12 && !HasSpell(1108) && HasSpell(702)) learnSpell(1108, false); //Проклятие слабости Уровень 2
+		if (level >= 12 && !HasSpell(705) && HasSpell(686)) learnSpell(705, false); //Стрела Тьмы Уровень 3
+		if (level >= 12 && !HasSpell(755)) learnSpell(755, false); //Канал здоровья Уровень 1
+		if (level >= 14 && !HasSpell(6222) && HasSpell(172)) learnSpell(6222, false); //Порча Уровень 2
+		if (level >= 14 && !HasSpell(689)) learnSpell(689, false); //Похищение жизни Уровень 1
+		if (level >= 16 && !HasSpell(1455) && HasSpell(1454)) learnSpell(1455, false); //Жизнеотвод Уровень 2
+		if (level >= 16 && !HasSpell(5697)) learnSpell(5697, false); //Бесконечное дыхание 
+		if (level >= 18 && !HasSpell(5676)) learnSpell(5676, false); //Жгучая боль Уровень 1
+		if (level >= 18 && !HasSpell(1014) && HasSpell(980)) learnSpell(1014, false); //Проклятие агонии Уровень 2
+		if (level >= 18 && !HasSpell(693)) learnSpell(693, false); //Создание камня души Уровень 1
+
+		if (level < 20) return;
+
+		if (!HasSpell(712)) learnSpell(712, false); //Призыв суккуба
+
+		if (!HasSpell(706)) learnSpell(706, false); //Демонический доспех Уровень 1
+		if (!HasSpell(1710)) learnSpell(1710, false); //Призывание коня Скверны Призыв
+		if (!HasSpell(5740)) learnSpell(5740, false); //Огненный ливень Уровень 1
+		if (!HasSpell(1094) && HasSpell(348)) learnSpell(1094, false); //Жертвенный огонь Уровень 3
+		if (!HasSpell(1088) && HasSpell(686)) learnSpell(1088, false); //Стрела Тьмы Уровень 4
+		if (!HasSpell(3698) && HasSpell(755)) learnSpell(3698, false); //Канал здоровья Уровень 2
+		if (!HasSpell(698)) learnSpell(698, false); //Ритуал призыва 
+		
+		
+		if (level >= 22 && !HasSpell(126)) learnSpell(126, false); //Око Килрогга Призыв
+		if (level >= 22 && !HasSpell(699) && HasSpell(689)) learnSpell(699, false); //Похищение жизни Уровень 2
+		if (level >= 22 && !HasSpell(6202) && HasSpell(6201)) learnSpell(6202, false); //Создание камня здоровья Уровень 2
+		if (level >= 22 && !HasSpell(6205) && HasSpell(702)) learnSpell(6205, false); //Проклятие слабости Уровень 3
+		if (level >= 24 && !HasSpell(5500)) learnSpell(5500, false); //Чутье на демонов 
+		if (level >= 24 && !HasSpell(18867) && HasSpell(17877)) learnSpell(18867, false); //Ожог Тьмы Уровень 2
+		if (level >= 24 && !HasSpell(5138)) learnSpell(5138, false); //Похищение маны 
+		if (level >= 24 && !HasSpell(6223) && HasSpell(172)) learnSpell(6223, false); //Порча Уровень 3
+		if (level >= 24 && !HasSpell(8288) && HasSpell(1120)) learnSpell(8288, false); //Похищение души Уровень 2
+		if (level >= 26 && !HasSpell(1714)) learnSpell(1714, false); //Проклятие косноязычия Уровень 1
+		if (level >= 26 && !HasSpell(17919) && HasSpell(5676)) learnSpell(17919, false); //Жгучая боль Уровень 2
+		if (level >= 26 && !HasSpell(132)) learnSpell(132, false); //Обнаружение невидимости 
+		if (level >= 26 && !HasSpell(1456) && HasSpell(1454)) learnSpell(1456, false); //Жизнеотвод Уровень 3
+		if (level >= 28 && !HasSpell(6217) && HasSpell(980)) learnSpell(6217, false); //Проклятие агонии Уровень 3
+		if (level >= 28 && !HasSpell(6366)) learnSpell(6366, false); //Создание камня огня Уровень 1
+		if (level >= 28 && !HasSpell(3699) && HasSpell(755)) learnSpell(3699, false); //Канал здоровья Уровень 3
+		if (level >= 28 && !HasSpell(1106) && HasSpell(686)) learnSpell(1106, false); //Стрела Тьмы Уровень 5
+		if (level >= 28 && !HasSpell(710)) learnSpell(710, false); //Изгнание Уровень 1
+
+		if (level < 30) return;
+
+		if (!HasSpell(691)) learnSpell(691, false); //Призыв охотника Скверны
+		
+		if (!HasSpell(1098)) learnSpell(1098, false); //Порабощение демона Уровень 1
+		if (!HasSpell(709) && HasSpell(689)) learnSpell(709, false); //Похищение жизни Уровень 3
+		if (!HasSpell(1086) && HasSpell(706)) learnSpell(1086, false); //Демонический доспех Уровень 2
+		if (!HasSpell(1949)) learnSpell(1949, false); //Адское Пламя Уровень 1
+		if (!HasSpell(2941) && HasSpell(348)) learnSpell(2941, false); //Жертвенный огонь Уровень 4
+		if (!HasSpell(20752) && HasSpell(693)) learnSpell(20752, false); //Создание камня души Уровень 2
+		
+		if (level >= 32 && !HasSpell(6229)) learnSpell(6229, false); //Заслон от темной магии Уровень 1
+		if (level >= 32 && !HasSpell(18868) && HasSpell(17877)) learnSpell(18868, false); //Ожог Тьмы Уровень 3
+		if (level >= 32 && !HasSpell(6213) && HasSpell(5782)) learnSpell(6213, false); //Страх Уровень 2
+		if (level >= 32 && !HasSpell(1490)) learnSpell(1490, false); //Проклятие стихий Уровень 1
+		if (level >= 32 && !HasSpell(7646) && HasSpell(702)) learnSpell(7646, false); //Проклятие слабости Уровень 4
+		if (level >= 34 && !HasSpell(7648) && HasSpell(172)) learnSpell(7648, false); //Порча Уровень 4
+		if (level >= 34 && !HasSpell(17920) && HasSpell(5676)) learnSpell(17920, false); //Жгучая боль Уровень 3
+		if (level >= 34 && !HasSpell(6219) && HasSpell(5740)) learnSpell(6219, false); //Огненный ливень Уровень 2
+		if (level >= 34 && !HasSpell(5699) && HasSpell(6201)) learnSpell(5699, false); //Создание камня здоровья Уровень 3
+		if (level >= 36 && !HasSpell(17951) && HasSpell(6366)) learnSpell(17951, false); //Создание камня огня Уровень 2
+		if (level >= 36 && !HasSpell(3700) && HasSpell(755)) learnSpell(3700, false); //Канал здоровья Уровень 4
+		if (level >= 36 && !HasSpell(11687) && HasSpell(1454)) learnSpell(11687, false); //Жизнеотвод Уровень 4
+		if (level >= 36 && !HasSpell(2362)) learnSpell(2362, false); //Создание камня чар Уровень 1
+		if (level >= 36 && !HasSpell(7641) && HasSpell(686)) learnSpell(7641, false); //Стрела Тьмы Уровень 6
+		if (level >= 38 && !HasSpell(8289) && HasSpell(1120)) learnSpell(8289, false); //Похищение души Уровень 3
+		if (level >= 38 && !HasSpell(11711) && HasSpell(980)) learnSpell(11711, false); //Проклятие агонии Уровень 4
+		if (level >= 38 && !HasSpell(7651) && HasSpell(689)) learnSpell(7651, false); //Похищение жизни Уровень 4
+		if (level >= 40 && !HasSpell(11733) && HasSpell(706)) learnSpell(11733, false); //Демонический доспех Уровень 3
+		if (level >= 40 && !HasSpell(5484)) learnSpell(5484, false); //Вой ужаса Уровень 1
+		if (level >= 40 && !HasSpell(11665) && HasSpell(348)) learnSpell(11665, false); //Жертвенный огонь Уровень 5
+		if (level >= 40 && !HasSpell(20755) && HasSpell(693)) learnSpell(20755, false); //Создание камня души Уровень 3
+		if (level >= 40 && !HasSpell(18869) && HasSpell(17877)) learnSpell(18869, false); //Ожог Тьмы Уровень 4
+		if (level >= 40 && !HasSpell(23160)) learnSpell(23160, false); //Изучить призывание коня погибели Призыв
+		if (level >= 42 && !HasSpell(11739) && HasSpell(6229)) learnSpell(11739, false); //Заслон от темной магии Уровень 2
+		if (level >= 42 && !HasSpell(11683) && HasSpell(1949)) learnSpell(11683, false); //Адское Пламя Уровень 2
+		if (level >= 42 && !HasSpell(17921) && HasSpell(5676)) learnSpell(17921, false); //Жгучая боль Уровень 4
+		if (level >= 42 && !HasSpell(11707) && HasSpell(702)) learnSpell(11707, false); //Проклятие слабости Уровень 5
+		if (level >= 42 && !HasSpell(6789)) learnSpell(6789, false); //Лик смерти Уровень 1
+		if (level >= 44 && !HasSpell(11671) && HasSpell(172)) learnSpell(11671, false); //Порча Уровень 5
+		if (level >= 44 && !HasSpell(11725) && HasSpell(1098)) learnSpell(11725, false); //Порабощение демона Уровень 2
+		if (level >= 44 && !HasSpell(11659) && HasSpell(686)) learnSpell(11659, false); //Стрела Тьмы Уровень 7
+		if (level >= 44 && !HasSpell(11693) && HasSpell(755)) learnSpell(11693, false); //Канал здоровья Уровень 5
+		if (level >= 46 && !HasSpell(17952) && HasSpell(6366)) learnSpell(17952, false); //Создание камня огня Уровень 3
+		if (level >= 46 && !HasSpell(11729) && HasSpell(6201)) learnSpell(11729, false); //Создание камня здоровья Уровень 4
+		if (level >= 46 && !HasSpell(11721) && HasSpell(1490)) learnSpell(11721, false); //Проклятие стихий Уровень 2
+		if (level >= 46 && !HasSpell(11688) && HasSpell(1454)) learnSpell(11688, false); //Жизнеотвод Уровень 5
+		if (level >= 46 && !HasSpell(11677) && HasSpell(5740)) learnSpell(11677, false); //Огненный ливень Уровень 3
+		if (level >= 46 && !HasSpell(11699) && HasSpell(689)) learnSpell(11699, false); //Похищение жизни Уровень 5
+		if (level >= 48 && !HasSpell(17727) && HasSpell(2362)) learnSpell(17727, false); //Создание камня чар Уровень 2
+		if (level >= 48 && !HasSpell(18870) && HasSpell(17877)) learnSpell(18870, false); //Ожог Тьмы Уровень 5
+		if (level >= 48 && !HasSpell(18647) && HasSpell(710)) learnSpell(18647, false); //Изгнание Уровень 2
+		if (level >= 48 && !HasSpell(6353)) learnSpell(6353, false); //Ожог души Уровень 1
+		if (level >= 48 && !HasSpell(11712) && HasSpell(980)) learnSpell(11712, false); //Проклятие агонии Уровень 5
+
+		if (level < 50) return;
+
+		if (!HasSpell(1122)) learnSpell(1122, false); //Призыв инфернала
+		
+		if (!HasSpell(17925) && HasSpell(6789)) learnSpell(17925, false); //Лик смерти Уровень 2
+		if (!HasSpell(11734) && HasSpell(706)) learnSpell(11734, false); //Демонический доспех Уровень 4
+		if (!HasSpell(11719) && HasSpell(1714)) learnSpell(11719, false); //Проклятие косноязычия Уровень 2
+		if (!HasSpell(20756) && HasSpell(693)) learnSpell(20756, false); //Создание камня души Уровень 4
+		if (!HasSpell(11667) && HasSpell(348)) learnSpell(11667, false); //Жертвенный огонь Уровень 6
+		if (!HasSpell(18937) && HasSpell(18220)) learnSpell(18937, false); //Темный союз Уровень 2
+		if (!HasSpell(17922) && HasSpell(5676)) learnSpell(17922, false); //Жгучая боль Уровень 5
+		
+		if (level >= 52 && !HasSpell(11740) && HasSpell(6229)) learnSpell(11740, false); //Заслон от темной магии Уровень 3
+		if (level >= 52 && !HasSpell(11660) && HasSpell(686)) learnSpell(11660, false); //Стрела Тьмы Уровень 8
+		if (level >= 52 && !HasSpell(11675) && HasSpell(1120)) learnSpell(11675, false); //Похищение души Уровень 4
+		if (level >= 52 && !HasSpell(11708) && HasSpell(702)) learnSpell(11708, false); //Проклятие слабости Уровень 6
+		if (level >= 52 && !HasSpell(11694) && HasSpell(755)) learnSpell(11694, false); //Канал здоровья Уровень 6
+		if (level >= 54 && !HasSpell(17928) && HasSpell(5484)) learnSpell(17928, false); //Вой ужаса Уровень 2
+		if (level >= 54 && !HasSpell(11672) && HasSpell(172)) learnSpell(11672, false); //Порча Уровень 6
+		if (level >= 54 && !HasSpell(11700) && HasSpell(689)) learnSpell(11700, false); //Похищение жизни Уровень 6
+		if (level >= 54 && !HasSpell(11684) && HasSpell(1949)) learnSpell(11684, false); //Адское Пламя Уровень 3
+		if (level >= 56 && !HasSpell(6215) && HasSpell(5782)) learnSpell(6215, false); //Страх Уровень 3
+		if (level >= 56 && !HasSpell(17924) && HasSpell(6353)) learnSpell(17924, false); //Ожог души Уровень 2
+		if (level >= 56 && !HasSpell(11689) && HasSpell(1454)) learnSpell(11689, false); //Жизнеотвод Уровень 6
+		if (level >= 56 && !HasSpell(17953) && HasSpell(6366)) learnSpell(17953, false); //Создание камня огня Уровень 4
+		if (level >= 56 && !HasSpell(18871) && HasSpell(17877)) learnSpell(18871, false); //Ожог Тьмы Уровень 6
+		if (level >= 58 && !HasSpell(11678) && HasSpell(5740)) learnSpell(11678, false); //Огненный ливень Уровень 4
+		if (level >= 58 && !HasSpell(17923) && HasSpell(5676)) learnSpell(17923, false); //Жгучая боль Уровень 6
+		if (level >= 58 && !HasSpell(17926) && HasSpell(6789)) learnSpell(17926, false); //Лик смерти Уровень 3
+		if (level >= 58 && !HasSpell(11730) && HasSpell(6201)) learnSpell(11730, false); //Создание камня здоровья Уровень 5
+		if (level >= 58 && !HasSpell(11713) && HasSpell(980)) learnSpell(11713, false); //Проклятие агонии Уровень 6
+		if (level >= 58 && !HasSpell(11726) && HasSpell(1098)) learnSpell(11726, false); //Порабощение демона Уровень 3
+		if (level >= 60 && !HasSpell(20757) && HasSpell(693)) learnSpell(20757, false); //Создание камня души Уровень 5
+		if (level >= 60 && !HasSpell(30404) && HasSpell(30108)) learnSpell(30404, false); //Нестабильное колдовство Уровень 2
+		if (level >= 60 && !HasSpell(603)) learnSpell(603, false); //Проклятие рока Уровень 1
+		if (level >= 60 && !HasSpell(28610) && HasSpell(6229)) learnSpell(28610, false); //Заслон от темной магии Уровень 4
+		if (level >= 60 && !HasSpell(25309) && HasSpell(348)) learnSpell(25309, false); //Жертвенный огонь Уровень 8
+		if (level >= 60 && !HasSpell(30413) && HasSpell(30283)) learnSpell(30413, false); //Неистовство Тьмы Уровень 2
+		if (level >= 60 && !HasSpell(25311) && HasSpell(172)) learnSpell(25311, false); //Порча Уровень 7
+		if (level >= 60 && !HasSpell(18938) && HasSpell(18220)) learnSpell(18938, false); //Темный союз Уровень 3
+		if (level >= 60 && !HasSpell(11695) && HasSpell(755)) learnSpell(11695, false); //Канал здоровья Уровень 7
+		if (level >= 60 && !HasSpell(11735) && HasSpell(706)) learnSpell(11735, false); //Демонический доспех Уровень 5
+		if (level >= 60 && !HasSpell(11668) && HasSpell(348)) learnSpell(11668, false); //Жертвенный огонь Уровень 7
+		if (level >= 60 && !HasSpell(11722) && HasSpell(1490)) learnSpell(11722, false); //Проклятие стихий Уровень 3
+		if (level >= 60 && !HasSpell(11661) && HasSpell(686)) learnSpell(11661, false); //Стрела Тьмы Уровень 9
+		if (level >= 60 && !HasSpell(17728) && HasSpell(2362)) learnSpell(17728, false); //Создание камня чар Уровень 3
+		if (level >= 61 && !HasSpell(27224) && HasSpell(702)) learnSpell(27224, false); //Проклятие слабости Уровень 7
+		if (level >= 62 && !HasSpell(25307) && HasSpell(686)) learnSpell(25307, false); //Стрела Тьмы Уровень 10
+		if (level >= 62 && !HasSpell(28176)) learnSpell(28176, false); //Доспех Скверны Уровень 1
+		if (level >= 62 && !HasSpell(27219) && HasSpell(689)) learnSpell(27219, false); //Похищение жизни Уровень 7
+		if (level >= 63 && !HasSpell(27263) && HasSpell(17877)) learnSpell(27263, false); //Ожог Тьмы Уровень 7
+		if (level >= 64 && !HasSpell(29722)) learnSpell(29722, false); //Испепеление Уровень 1
+		if (level >= 64 && !HasSpell(27211) && HasSpell(6353)) learnSpell(27211, false); //Ожог души Уровень 3
+		if (level >= 65 && !HasSpell(27210) && HasSpell(5676)) learnSpell(27210, false); //Жгучая боль Уровень 7
+		if (level >= 65 && !HasSpell(27216) && HasSpell(172)) learnSpell(27216, false); //Порча Уровень 8
+		if (level >= 66 && !HasSpell(28172) && HasSpell(2362)) learnSpell(28172, false); //Создание камня чар Уровень 4
+		if (level >= 66 && !HasSpell(29858)) learnSpell(29858, false); //Раскол души 
+		if (level >= 66 && !HasSpell(27250) && HasSpell(6366)) learnSpell(27250, false); //Создание камня огня Уровень 5
+		if (level >= 67 && !HasSpell(27218) && HasSpell(980)) learnSpell(27218, false); //Проклятие агонии Уровень 7
+		if (level >= 67 && !HasSpell(27259) && HasSpell(755)) learnSpell(27259, false); //Канал здоровья Уровень 8
+		if (level >= 67 && !HasSpell(27217) && HasSpell(1120)) learnSpell(27217, false); //Похищение души Уровень 5
+		if (level >= 68 && !HasSpell(27213) && HasSpell(1949)) learnSpell(27213, false); //Адское Пламя Уровень 4
+		if (level >= 68 && !HasSpell(27222) && HasSpell(1454)) learnSpell(27222, false); //Жизнеотвод Уровень 7
+		if (level >= 68 && !HasSpell(29893)) learnSpell(29893, false); //Ритуал душ Уровень 1
+		if (level >= 68 && !HasSpell(27223) && HasSpell(6789)) learnSpell(27223, false); //Лик смерти Уровень 4
+		if (level >= 68 && !HasSpell(27230) && HasSpell(6201)) learnSpell(27230, false); //Создание камня здоровья Уровень 6
+		if (level >= 69 && !HasSpell(27212) && HasSpell(5740)) learnSpell(27212, false); //Огненный ливень Уровень 5
+		if (level >= 69 && !HasSpell(30909) && HasSpell(702)) learnSpell(30909, false); //Проклятие слабости Уровень 8
+		if (level >= 69 && !HasSpell(27209) && HasSpell(686)) learnSpell(27209, false); //Стрела Тьмы Уровень 11
+		if (level >= 69 && !HasSpell(27215) && HasSpell(348)) learnSpell(27215, false); //Жертвенный огонь Уровень 9
+		if (level >= 69 && !HasSpell(28189) && HasSpell(28176)) learnSpell(28189, false); //Доспех Скверны Уровень 2
+		if (level >= 69 && !HasSpell(27220) && HasSpell(689)) learnSpell(27220, false); //Похищение жизни Уровень 8
+		if (level >= 69 && !HasSpell(27228) && HasSpell(1490)) learnSpell(27228, false); //Проклятие стихий Уровень 4
+		if (level >= 70 && !HasSpell(30910) && HasSpell(603)) learnSpell(30910, false); //Проклятие рока Уровень 2
+		if (level >= 70 && !HasSpell(32231) && HasSpell(29722)) learnSpell(32231, false); //Испепеление Уровень 2
+		if (level >= 70 && !HasSpell(59170) && HasSpell(50796)) learnSpell(59170, false); //Стрела Хаоса Уровень 2
+		if (level >= 70 && !HasSpell(59161) && HasSpell(48181)) learnSpell(59161, false); //Блуждающий дух Уровень 2
+		if (level >= 70 && !HasSpell(30546) && HasSpell(17877)) learnSpell(30546, false); //Ожог Тьмы Уровень 8
+		if (level >= 70 && !HasSpell(30545) && HasSpell(6353)) learnSpell(30545, false); //Ожог души Уровень 4
+		if (level >= 70 && !HasSpell(30459) && HasSpell(5676)) learnSpell(30459, false); //Жгучая боль Уровень 8
+		if (level >= 70 && !HasSpell(30414) && HasSpell(30283)) learnSpell(30414, false); //Неистовство Тьмы Уровень 3
+		if (level >= 70 && !HasSpell(30405) && HasSpell(30108)) learnSpell(30405, false); //Нестабильное колдовство Уровень 3
+		if (level >= 70 && !HasSpell(27238) && HasSpell(693)) learnSpell(27238, false); //Создание камня души Уровень 6
+		if (level >= 70 && !HasSpell(27265) && HasSpell(18220)) learnSpell(27265, false); //Темный союз Уровень 4
+		if (level >= 70 && !HasSpell(27243)) learnSpell(27243, false); //Семя порчи Уровень 1
+		if (level >= 70 && !HasSpell(27260) && HasSpell(706)) learnSpell(27260, false); //Демонический доспех Уровень 6
+		if (level >= 71 && !HasSpell(50511) && HasSpell(702)) learnSpell(50511, false); // unk
+		if (level >= 71 && !HasSpell(47812) && HasSpell(172)) learnSpell(47812, false); // unk
+		if (level >= 72 && !HasSpell(47886) && HasSpell(2362)) learnSpell(47886, false); // unk
+		if (level >= 72 && !HasSpell(61191) && HasSpell(1098)) learnSpell(61191, false); //Порабощение демона Уровень 4
+		if (level >= 72 && !HasSpell(47890) && HasSpell(6229)) learnSpell(47890, false); // unk
+		if (level >= 72 && !HasSpell(47819) && HasSpell(5740)) learnSpell(47819, false); // unk
+		if (level >= 73 && !HasSpell(47863) && HasSpell(980)) learnSpell(47863, false); // unk
+		if (level >= 73 && !HasSpell(47859) && HasSpell(6789)) learnSpell(47859, false); // unk
+		if (level >= 73 && !HasSpell(47871) && HasSpell(6201)) learnSpell(47871, false); // unk
+		if (level >= 74 && !HasSpell(47837) && HasSpell(29722)) learnSpell(47837, false); // unk
+		if (level >= 74 && !HasSpell(47892) && HasSpell(28176)) learnSpell(47892, false); // unk
+		if (level >= 74 && !HasSpell(47814) && HasSpell(5676)) learnSpell(47814, false); // unk
+		if (level >= 74 && !HasSpell(47808) && HasSpell(686)) learnSpell(47808, false); // unk
+		if (level >= 74 && !HasSpell(60219) && HasSpell(6366)) learnSpell(60219, false); //Создание камня огня Уровень 6
+		if (level >= 75 && !HasSpell(47846) && HasSpell(30283)) learnSpell(47846, false); // unk
+		if (level >= 75 && !HasSpell(47841) && HasSpell(30108)) learnSpell(47841, false); // unk
+		if (level >= 75 && !HasSpell(47897)) learnSpell(47897, false); // unk
+		if (level >= 75 && !HasSpell(47835) && HasSpell(27243)) learnSpell(47835, false); // unk
+		if (level >= 75 && !HasSpell(47826) && HasSpell(17877)) learnSpell(47826, false); // unk
+		if (level >= 75 && !HasSpell(59163) && HasSpell(48181)) learnSpell(59163, false); //Блуждающий дух Уровень 3
+		if (level >= 75 && !HasSpell(47824) && HasSpell(6353)) learnSpell(47824, false); // unk
+		if (level >= 75 && !HasSpell(59171) && HasSpell(50796)) learnSpell(59171, false); //Стрела Хаоса Уровень 3
+		if (level >= 75 && !HasSpell(47810) && HasSpell(348)) learnSpell(47810, false); // unk
+		if (level >= 76 && !HasSpell(47856) && HasSpell(755)) learnSpell(47856, false); // unk
+		if (level >= 76 && !HasSpell(47884) && HasSpell(693)) learnSpell(47884, false); // unk
+		if (level >= 76 && !HasSpell(47793) && HasSpell(706)) learnSpell(47793, false); // unk
+		if (level >= 77 && !HasSpell(47813) && HasSpell(172)) learnSpell(47813, false); // unk
+		if (level >= 77 && !HasSpell(47855) && HasSpell(1120)) learnSpell(47855, false); // unk
+		if (level >= 78 && !HasSpell(47888) && HasSpell(2362)) learnSpell(47888, false); // unk
+		if (level >= 78 && !HasSpell(47891) && HasSpell(6229)) learnSpell(47891, false); // unk
+		if (level >= 78 && !HasSpell(47865) && HasSpell(1490)) learnSpell(47865, false); // unk
+		if (level >= 78 && !HasSpell(47860) && HasSpell(6789)) learnSpell(47860, false); // unk
+		if (level >= 78 && !HasSpell(47823) && HasSpell(1949)) learnSpell(47823, false); // unk
+		if (level >= 78 && !HasSpell(47857) && HasSpell(689)) learnSpell(47857, false); // unk
+		if (level >= 79 && !HasSpell(47820) && HasSpell(5740)) learnSpell(47820, false); // unk
+		if (level >= 79 && !HasSpell(47893) && HasSpell(28176)) learnSpell(47893, false); // unk
+		if (level >= 79 && !HasSpell(47809) && HasSpell(686)) learnSpell(47809, false); // unk
+		if (level >= 79 && !HasSpell(47815) && HasSpell(5676)) learnSpell(47815, false); // unk
+		if (level >= 79 && !HasSpell(47864) && HasSpell(980)) learnSpell(47864, false); // unk
+		if (level >= 79 && !HasSpell(47878) && HasSpell(6201)) learnSpell(47878, false); // unk
+		if (level >= 80 && !HasSpell(47825) && HasSpell(6353)) learnSpell(47825, false); // unk
+		if (level >= 80 && !HasSpell(59164) && HasSpell(48181)) learnSpell(59164, false); //Блуждающий дух Уровень 4
+		if (level >= 80 && !HasSpell(47867) && HasSpell(603)) learnSpell(47867, false); // unk
+		if (level >= 80 && !HasSpell(59172) && HasSpell(50796)) learnSpell(59172, false); //Стрела Хаоса Уровень 4
+		if (level >= 80 && !HasSpell(47811) && HasSpell(348)) learnSpell(47811, false); // unk
+		if (level >= 80 && !HasSpell(60220) && HasSpell(6366)) learnSpell(60220, false); //Создание камня огня Уровень 7
+		if (level >= 80 && !HasSpell(47827) && HasSpell(17877)) learnSpell(47827, false); // unk
+		if (level >= 80 && !HasSpell(59092) && HasSpell(18220)) learnSpell(59092, false); //Темный союз Уровень 5
+		if (level >= 80 && !HasSpell(58887) && HasSpell(29893)) learnSpell(58887, false); //Ритуал душ Уровень 2
+		if (level >= 80 && !HasSpell(47889) && HasSpell(706)) learnSpell(47889, false); // unk
+		if (level >= 80 && !HasSpell(47843) && HasSpell(30108)) learnSpell(47843, false); // unk
+		if (level >= 80 && !HasSpell(47838) && HasSpell(29722)) learnSpell(47838, false); // unk
+		if (level >= 80 && !HasSpell(47847) && HasSpell(30283)) learnSpell(47847, false); // unk
+		if (level >= 80 && !HasSpell(48018)) learnSpell(48018, false); // unk
+		if (level >= 80 && !HasSpell(48020)) learnSpell(48020, false); // unk
+		if (level >= 80 && !HasSpell(47836) && HasSpell(27243)) learnSpell(47836, false); // unk
+		if (level >= 80 && !HasSpell(57946) && HasSpell(1454)) learnSpell(57946, false); //Жизнеотвод Уровень 8
+		if (level >= 80 && !HasSpell(61290) && HasSpell(47897)) learnSpell(61290, false); //Пламя Тьмы Уровень 2
+	}
+
+	if (getClass() == CLASS_DRUID)
+	{
+		if (!HasSpell(1126)) learnSpell(1126, false); //Знак дикой природы Уровень 1
+
+		if (level < 4) return;
+
+		if (!HasSpell(774)) learnSpell(774, false); //Омоложение Уровень 1
+		if (!HasSpell(8921)) learnSpell(8921, false); //Лунный огонь Уровень 1
+
+		if (level < 6) return;
+
+		if (!HasSpell(467)) learnSpell(467, false); //Шипы Уровень 1
+		if (!HasSpell(5177) && HasSpell(5176)) learnSpell(5177, false); //Гнев Уровень 2
+
+		if (level < 8) return;
+
+		if (!HasSpell(339)) learnSpell(339, false); //Гнев деревьев Уровень 1
+		if (!HasSpell(5186) && HasSpell(5185)) learnSpell(5186, false); //Целительное прикосновение Уровень 2
+
+		if (level < 10) return;
+
+		if (!HasSpell(5487)) learnSpell(5487, false); //Облик медведя
+		if (!HasSpell(6807)) learnSpell(6807, false); //Трепка
+		if (!HasSpell(6795)) learnSpell(6795, false); //Рык
+
+		if (!HasSpell(8924) && HasSpell(8921)) learnSpell(8924, false); //Лунный огонь Уровень 2
+		if (!HasSpell(16689)) learnSpell(16689, false); //Хватка природы Уровень 1
+		if (!HasSpell(5232) && HasSpell(1126)) learnSpell(5232, false); //Знак дикой природы Уровень 2
+		if (!HasSpell(1058) && HasSpell(774)) learnSpell(1058, false); //Омоложение Уровень 2
+		if (!HasSpell(99)) learnSpell(99, false); //Устрашающий рев Уровень 1
+
+		if (level < 12) return;
+
+		if (!HasSpell(8936)) learnSpell(8936, false); //Восстановление Уровень 1
+		if (!HasSpell(50769)) learnSpell(50769, false); // unk
+		if (!HasSpell(5229)) learnSpell(5229, false); //Исступление 
+
+		if (level < 14) return;
+
+		if (!HasSpell(782) && HasSpell(467)) learnSpell(782, false); //Шипы Уровень 2
+		if (!HasSpell(5187) && HasSpell(5185)) learnSpell(5187, false); //Целительное прикосновение Уровень 3
+		if (!HasSpell(5178) && HasSpell(5176)) learnSpell(5178, false); //Гнев Уровень 3
+		if (!HasSpell(5211)) learnSpell(5211, false); //Оглушить Уровень 1
+
+		if (level < 16) return;
+
+		if (!HasSpell(8925) && HasSpell(8921)) learnSpell(8925, false); //Лунный огонь Уровень 3
+		if (!HasSpell(779)) learnSpell(779, false); //Размах (медведь) Уровень 1
+		if (!HasSpell(783)) learnSpell(783, false); //Походный облик Смена облика
+		if (!HasSpell(1066)) learnSpell(1066, false); //Водный облик Смена облика
+		if (!HasSpell(1430) && HasSpell(774)) learnSpell(1430, false); //Омоложение Уровень 3
+
+		if (level < 18) return;
+
+		if (!HasSpell(1062) && HasSpell(339)) learnSpell(1062, false); //Гнев деревьев Уровень 2
+		if (!HasSpell(2637)) learnSpell(2637, false); //Спячка Уровень 1
+		if (!HasSpell(770)) learnSpell(770, false); //Волшебный огонь 
+		if (!HasSpell(8938) && HasSpell(8936)) learnSpell(8938, false); //Восстановление Уровень 2
+		if (!HasSpell(16810) && HasSpell(16689)) learnSpell(16810, false); //Хватка природы Уровень 2
+		if (!HasSpell(16857)) learnSpell(16857, false); //Волшебный огонь (зверь) 
+		if (!HasSpell(6808) && HasSpell(6807)) learnSpell(6808, false); //Трепка Уровень 2
+
+		if (level < 20) return;
+
+		if (!HasSpell(5215)) learnSpell(5215, false); //Крадущийся зверь 
+		if (!HasSpell(5188) && HasSpell(5185)) learnSpell(5188, false); //Целительное прикосновение Уровень 4
+		if (!HasSpell(2912)) learnSpell(2912, false); //Звездный огонь Уровень 1
+		if (!HasSpell(1735) && HasSpell(99)) learnSpell(1735, false); //Устрашающий рев Уровень 2
+		if (!HasSpell(1079)) learnSpell(1079, false); //Разорвать Уровень 1
+		if (!HasSpell(1082)) learnSpell(1082, false); //Цапнуть Уровень 1
+		if (!HasSpell(6756) && HasSpell(1126)) learnSpell(6756, false); //Знак дикой природы Уровень 3
+		if (!HasSpell(768)) learnSpell(768, false); //Облик кошки Смена облика
+		if (!HasSpell(20484)) learnSpell(20484, false); //Возрождение Уровень 1
+
+		if (level < 22) return;
+
+		if (!HasSpell(8926) && HasSpell(8921)) learnSpell(8926, false); //Лунный огонь Уровень 4
+		if (!HasSpell(2908)) learnSpell(2908, false); //Умиротворение животного Уровень 1
+		if (!HasSpell(5179) && HasSpell(5176)) learnSpell(5179, false); //Гнев Уровень 4
+		if (!HasSpell(2090) && HasSpell(774)) learnSpell(2090, false); //Омоложение Уровень 4
+		if (!HasSpell(5221)) learnSpell(5221, false); //Полоснуть Уровень 1
+
+		if (level < 24) return;
+
+		if (!HasSpell(5217)) learnSpell(5217, false); //Тигриное неистовство Уровень 1
+		if (!HasSpell(8939) && HasSpell(8936)) learnSpell(8939, false); //Восстановление Уровень 3
+		if (!HasSpell(1075) && HasSpell(467)) learnSpell(1075, false); //Шипы Уровень 3
+		if (!HasSpell(2782)) learnSpell(2782, false); //Снятие проклятия 
+		if (!HasSpell(780) && HasSpell(779)) learnSpell(780, false); //Размах (медведь) Уровень 2
+		if (!HasSpell(50768) && HasSpell(50769)) learnSpell(50768, false); // unk
+		if (!HasSpell(1822)) learnSpell(1822, false); //Глубокая рана Уровень 1
+
+		if (level < 26) return;
+
+		if (!HasSpell(6809) && HasSpell(6807)) learnSpell(6809, false); //Трепка Уровень 3
+		if (!HasSpell(8949) && HasSpell(2912)) learnSpell(8949, false); //Звездный огонь Уровень 2
+		if (!HasSpell(1850)) learnSpell(1850, false); //Порыв Уровень 1
+		if (!HasSpell(5189) && HasSpell(5185)) learnSpell(5189, false); //Целительное прикосновение Уровень 5
+		if (!HasSpell(2893)) learnSpell(2893, false); //Устранение яда 
+
+		if (level < 28) return;
+
+		if (!HasSpell(16811) && HasSpell(16689)) learnSpell(16811, false); //Хватка природы Уровень 3
+		if (!HasSpell(8927) && HasSpell(8921)) learnSpell(8927, false); //Лунный огонь Уровень 5
+		if (!HasSpell(8998)) learnSpell(8998, false); //Попятиться Уровень 1
+		if (!HasSpell(9492) && HasSpell(1079)) learnSpell(9492, false); //Разорвать Уровень 2
+		if (!HasSpell(2091) && HasSpell(774)) learnSpell(2091, false); //Омоложение Уровень 5
+		if (!HasSpell(5195) && HasSpell(339)) learnSpell(5195, false); //Гнев деревьев Уровень 3
+		if (!HasSpell(5209)) learnSpell(5209, false); //Вызывающий рев 
+		if (!HasSpell(3029) && HasSpell(1082)) learnSpell(3029, false); //Цапнуть Уровень 2
+
+		if (level < 30) return;
+
+		if (!HasSpell(5180) && HasSpell(5176)) learnSpell(5180, false); //Гнев Уровень 5
+		if (!HasSpell(8940) && HasSpell(8936)) learnSpell(8940, false); //Восстановление Уровень 4
+		if (!HasSpell(5234) && HasSpell(1126)) learnSpell(5234, false); //Знак дикой природы Уровень 4
+		if (!HasSpell(20739) && HasSpell(20484)) learnSpell(20739, false); //Возрождение Уровень 2
+		if (!HasSpell(740)) learnSpell(740, false); //Спокойствие Уровень 1
+		if (!HasSpell(24974) && HasSpell(5570)) learnSpell(24974, false); //Рой насекомых Уровень 2
+		if (!HasSpell(6800) && HasSpell(5221)) learnSpell(6800, false); //Полоснуть Уровень 2
+		if (!HasSpell(6798) && HasSpell(5211)) learnSpell(6798, false); //Оглушить Уровень 2
+
+		if (level < 32) return;
+
+		if (!HasSpell(6785)) learnSpell(6785, false); //Накинуться Уровень 1
+		if (!HasSpell(5225)) learnSpell(5225, false); //Выслеживание гуманоидов 
+		if (!HasSpell(6778) && HasSpell(5185)) learnSpell(6778, false); //Целительное прикосновение Уровень 6
+		if (!HasSpell(22568)) learnSpell(22568, false); //Свирепый укус Уровень 1
+		if (!HasSpell(9490) && HasSpell(99)) learnSpell(9490, false); //Устрашающий рев Уровень 3
+
+		if (level < 34) return;
+
+		if (!HasSpell(8950) && HasSpell(2912)) learnSpell(8950, false); //Звездный огонь Уровень 3
+		if (!HasSpell(8928) && HasSpell(8921)) learnSpell(8928, false); //Лунный огонь Уровень 6
+		if (!HasSpell(1823) && HasSpell(1822)) learnSpell(1823, false); //Глубокая рана Уровень 2
+		if (!HasSpell(8914) && HasSpell(467)) learnSpell(8914, false); //Шипы Уровень 4
+		if (!HasSpell(769) && HasSpell(779)) learnSpell(769, false); //Размах (медведь) Уровень 3
+		if (!HasSpell(3627) && HasSpell(774)) learnSpell(3627, false); //Омоложение Уровень 6
+		if (!HasSpell(8972) && HasSpell(6807)) learnSpell(8972, false); //Трепка Уровень 4
+
+		if (level < 36) return;
+
+		if (!HasSpell(9493) && HasSpell(1079)) learnSpell(9493, false); //Разорвать Уровень 3
+		if (!HasSpell(9005)) learnSpell(9005, false); //Наскок Уровень 1
+		if (!HasSpell(50767) && HasSpell(50769)) learnSpell(50767, false); // unk
+		if (!HasSpell(22842)) learnSpell(22842, false); //Неистовое восстановление 
+		if (!HasSpell(6793) && HasSpell(5217)) learnSpell(6793, false); //Тигриное неистовство Уровень 2
+		if (!HasSpell(8941) && HasSpell(8936)) learnSpell(8941, false); //Восстановление Уровень 5
+
+		if (level < 38) return;
+
+		if (!HasSpell(5201) && HasSpell(1082)) learnSpell(5201, false); //Цапнуть Уровень 3
+		if (!HasSpell(16812) && HasSpell(16689)) learnSpell(16812, false); //Хватка природы Уровень 4
+		if (!HasSpell(8903) && HasSpell(5185)) learnSpell(8903, false); //Целительное прикосновение Уровень 7
+		if (!HasSpell(5196) && HasSpell(339)) learnSpell(5196, false); //Гнев деревьев Уровень 4
+		if (!HasSpell(18657) && HasSpell(2637)) learnSpell(18657, false); //Спячка Уровень 2
+		if (!HasSpell(8955) && HasSpell(2908)) learnSpell(8955, false); //Умиротворение животного Уровень 2
+		if (!HasSpell(8992) && HasSpell(5221)) learnSpell(8992, false); //Полоснуть Уровень 3
+		if (!HasSpell(6780) && HasSpell(5176)) learnSpell(6780, false); //Гнев Уровень 6
+
+		if (level < 40) return;
+
+		if (!HasSpell(29166)) learnSpell(29166, false); //Озарение 
+		if (!HasSpell(24975) && HasSpell(5570)) learnSpell(24975, false); //Рой насекомых Уровень 3
+		if (!HasSpell(20719)) learnSpell(20719, false); //Кошачья грация Пассивная
+		if (!HasSpell(20742) && HasSpell(20484)) learnSpell(20742, false); //Возрождение Уровень 3
+		if (!HasSpell(16914)) learnSpell(16914, false); //Гроза Уровень 1
+		if (!HasSpell(22827) && HasSpell(22568)) learnSpell(22827, false); //Свирепый укус Уровень 2
+		if (!HasSpell(62600)) learnSpell(62600, false); //Дикая защита Пассивная
+		if (!HasSpell(8910) && HasSpell(774)) learnSpell(8910, false); //Омоложение Уровень 7
+		if (!HasSpell(6783)) learnSpell(6783, false); //Крадущийся зверь Уровень 2
+		if (!HasSpell(8907) && HasSpell(1126)) learnSpell(8907, false); //Знак дикой природы Уровень 5
+		if (!HasSpell(8918) && HasSpell(740)) learnSpell(8918, false); //Спокойствие Уровень 2
+		if (!HasSpell(8929) && HasSpell(8921)) learnSpell(8929, false); //Лунный огонь Уровень 7
+		if (!HasSpell(9000) && HasSpell(8998)) learnSpell(9000, false); //Попятиться Уровень 2
+		if (!HasSpell(9634) && HasSpell(5487)) learnSpell(9634, false); //Облик лютого медведя Смена облика
+
+		if (level < 42) return;
+
+		if (!HasSpell(8951) && HasSpell(2912)) learnSpell(8951, false); //Звездный огонь Уровень 4
+		if (!HasSpell(6787) && HasSpell(6785)) learnSpell(6787, false); //Накинуться Уровень 2
+		if (!HasSpell(9745) && HasSpell(6807)) learnSpell(9745, false); //Трепка Уровень 5
+		if (!HasSpell(9747) && HasSpell(99)) learnSpell(9747, false); //Устрашающий рев Уровень 4
+		if (!HasSpell(9750) && HasSpell(8936)) learnSpell(9750, false); //Восстановление Уровень 6
+
+		if (level < 44) return;
+
+		if (!HasSpell(9756) && HasSpell(467)) learnSpell(9756, false); //Шипы Уровень 5
+		if (!HasSpell(9754) && HasSpell(779)) learnSpell(9754, false); //Размах (медведь) Уровень 4
+		if (!HasSpell(9752) && HasSpell(1079)) learnSpell(9752, false); //Разорвать Уровень 4
+		if (!HasSpell(22812)) learnSpell(22812, false); //Дубовая кожа 
+		if (!HasSpell(1824) && HasSpell(1822)) learnSpell(1824, false); //Глубокая рана Уровень 3
+		if (!HasSpell(9758) && HasSpell(5185)) learnSpell(9758, false); //Целительное прикосновение Уровень 8
+
+		if (level < 46) return;
+
+		if (!HasSpell(9839) && HasSpell(774)) learnSpell(9839, false); //Омоложение Уровень 8
+		if (!HasSpell(9833) && HasSpell(8921)) learnSpell(9833, false); //Лунный огонь Уровень 8
+		if (!HasSpell(9823) && HasSpell(9005)) learnSpell(9823, false); //Наскок Уровень 2
+		if (!HasSpell(8905) && HasSpell(5176)) learnSpell(8905, false); //Гнев Уровень 7
+		if (!HasSpell(9829) && HasSpell(5221)) learnSpell(9829, false); //Полоснуть Уровень 4
+		if (!HasSpell(9821) && HasSpell(1850)) learnSpell(9821, false); //Порыв Уровень 2
+		if (!HasSpell(8983) && HasSpell(5211)) learnSpell(8983, false); //Оглушить Уровень 3
+
+		if (level < 48) return;
+
+		if (!HasSpell(9845) && HasSpell(5217)) learnSpell(9845, false); //Тигриное неистовство Уровень 3
+		if (!HasSpell(50766) && HasSpell(50769)) learnSpell(50766, false); // unk
+		if (!HasSpell(22828) && HasSpell(22568)) learnSpell(22828, false); //Свирепый укус Уровень 3
+		if (!HasSpell(9852) && HasSpell(339)) learnSpell(9852, false); //Гнев деревьев Уровень 5
+		if (!HasSpell(16813) && HasSpell(16689)) learnSpell(16813, false); //Хватка природы Уровень 5
+		if (!HasSpell(9849) && HasSpell(1082)) learnSpell(9849, false); //Цапнуть Уровень 4
+		if (!HasSpell(9856) && HasSpell(8936)) learnSpell(9856, false); //Восстановление Уровень 7
+
+		if (level < 50) return;
+		
+		if (!HasSpell(9875) && HasSpell(2912)) learnSpell(9875, false); //Звездный огонь Уровень 5
+		if (!HasSpell(9888) && HasSpell(5185)) learnSpell(9888, false); //Целительное прикосновение Уровень 9
+		if (!HasSpell(17401) && HasSpell(16914)) learnSpell(17401, false); //Гроза Уровень 2
+		if (!HasSpell(9866) && HasSpell(6785)) learnSpell(9866, false); //Накинуться Уровень 3
+		if (!HasSpell(9884) && HasSpell(1126)) learnSpell(9884, false); //Знак дикой природы Уровень 6
+		if (!HasSpell(9880) && HasSpell(6807)) learnSpell(9880, false); //Трепка Уровень 6
+		if (!HasSpell(20747) && HasSpell(20484)) learnSpell(20747, false); //Возрождение Уровень 4
+		if (!HasSpell(21849)) learnSpell(21849, false); //Дар дикой природы Уровень 1
+		if (!HasSpell(9862) && HasSpell(740)) learnSpell(9862, false); //Спокойствие Уровень 3
+		if (!HasSpell(24976) && HasSpell(5570)) learnSpell(24976, false); //Рой насекомых Уровень 4
+
+		if (level < 52) return;
+		
+		if (!HasSpell(9840) && HasSpell(774)) learnSpell(9840, false); //Омоложение Уровень 9
+		if (!HasSpell(9894) && HasSpell(1079)) learnSpell(9894, false); //Разорвать Уровень 5
+		if (!HasSpell(9898) && HasSpell(99)) learnSpell(9898, false); //Устрашающий рев Уровень 5
+		if (!HasSpell(9892) && HasSpell(8998)) learnSpell(9892, false); //Попятиться Уровень 3
+		if (!HasSpell(9834) && HasSpell(8921)) learnSpell(9834, false); //Лунный огонь Уровень 9
+		
+		if (level < 54) return;
+		
+		if (!HasSpell(9908) && HasSpell(779)) learnSpell(9908, false); //Размах (медведь) Уровень 5
+		if (!HasSpell(9901) && HasSpell(2908)) learnSpell(9901, false); //Умиротворение животного Уровень 3
+		if (!HasSpell(9904) && HasSpell(1822)) learnSpell(9904, false); //Глубокая рана Уровень 4
+		if (!HasSpell(9830) && HasSpell(5221)) learnSpell(9830, false); //Полоснуть Уровень 5
+		if (!HasSpell(9910) && HasSpell(467)) learnSpell(9910, false); //Шипы Уровень 6
+		if (!HasSpell(9912) && HasSpell(5176)) learnSpell(9912, false); //Гнев Уровень 8
+		if (!HasSpell(9857) && HasSpell(8936)) learnSpell(9857, false); //Восстановление Уровень 8
+
+		if (level < 56) return;
+		
+		if (!HasSpell(22829) && HasSpell(22568)) learnSpell(22829, false); //Свирепый укус Уровень 4
+		if (!HasSpell(9889) && HasSpell(5185)) learnSpell(9889, false); //Целительное прикосновение Уровень 10
+		if (!HasSpell(9827) && HasSpell(9005)) learnSpell(9827, false); //Наскок Уровень 3
+
+		if (level < 58) return;
+		
+		if (!HasSpell(9835) && HasSpell(8921)) learnSpell(9835, false); //Лунный огонь Уровень 10
+		if (!HasSpell(9867) && HasSpell(6785)) learnSpell(9867, false); //Накинуться Уровень 4
+		if (!HasSpell(9881) && HasSpell(6807)) learnSpell(9881, false); //Трепка Уровень 7
+		if (!HasSpell(9853) && HasSpell(339)) learnSpell(9853, false); //Гнев деревьев Уровень 6
+		if (!HasSpell(9841) && HasSpell(774)) learnSpell(9841, false); //Омоложение Уровень 10
+		if (!HasSpell(9876) && HasSpell(2912)) learnSpell(9876, false); //Звездный огонь Уровень 6
+		if (!HasSpell(18658) && HasSpell(2637)) learnSpell(18658, false); //Спячка Уровень 3
+		if (!HasSpell(9850) && HasSpell(1082)) learnSpell(9850, false); //Цапнуть Уровень 5
+		if (!HasSpell(33986) && HasSpell(33878)) learnSpell(33986, false); //Увечье (медведь) Уровень 2
+		if (!HasSpell(17329) && HasSpell(16689)) learnSpell(17329, false); //Хватка природы Уровень 6
+		if (!HasSpell(33982) && HasSpell(33876)) learnSpell(33982, false); //Увечье (кошка) Уровень 2
+
+		if (level < 60) return;
+		
+		if (!HasSpell(53223) && HasSpell(50516)) learnSpell(53223, false); //Тайфун Уровень 2
+		if (!HasSpell(31018) && HasSpell(22568)) learnSpell(31018, false); //Свирепый укус Уровень 5
+		if (!HasSpell(50765) && HasSpell(50769)) learnSpell(50765, false); // unk
+		if (!HasSpell(33950)) learnSpell(33950, false); //Воздушный облик Смена облика
+		if (!HasSpell(31709) && HasSpell(8998)) learnSpell(31709, false); //Попятиться Уровень 4
+		if (!HasSpell(25299) && HasSpell(774)) learnSpell(25299, false); //Омоложение Уровень 11
+		if (!HasSpell(25298) && HasSpell(2912)) learnSpell(25298, false); //Звездный огонь Уровень 7
+		if (!HasSpell(20748) && HasSpell(20484)) learnSpell(20748, false); //Возрождение Уровень 5
+		if (!HasSpell(21850) && HasSpell(21849)) learnSpell(21850, false); //Дар дикой природы Уровень 2
+		if (!HasSpell(24977) && HasSpell(5570)) learnSpell(24977, false); //Рой насекомых Уровень 5
+		if (!HasSpell(9846) && HasSpell(5217)) learnSpell(9846, false); //Тигриное неистовство Уровень 4
+		if (!HasSpell(17402) && HasSpell(16914)) learnSpell(17402, false); //Гроза Уровень 3
+		if (!HasSpell(25297) && HasSpell(5185)) learnSpell(25297, false); //Целительное прикосновение Уровень 11
+		if (!HasSpell(9913)) learnSpell(9913, false); //Крадущийся зверь Уровень 3
+		if (!HasSpell(9858) && HasSpell(8936)) learnSpell(9858, false); //Восстановление Уровень 9
+		if (!HasSpell(9885) && HasSpell(1126)) learnSpell(9885, false); //Знак дикой природы Уровень 7
+		if (!HasSpell(9896) && HasSpell(1079)) learnSpell(9896, false); //Разорвать Уровень 6
+		if (!HasSpell(9863) && HasSpell(740)) learnSpell(9863, false); //Спокойствие Уровень 4
+
+		if (level < 61) return;
+		
+		if (!HasSpell(26984) && HasSpell(5176)) learnSpell(26984, false); //Гнев Уровень 9
+		if (!HasSpell(27001) && HasSpell(5221)) learnSpell(27001, false); //Полоснуть Уровень 6
+
+		if (level < 62) return;
+		
+		if (!HasSpell(26978) && HasSpell(5185)) learnSpell(26978, false); //Целительное прикосновение Уровень 12
+		if (!HasSpell(22570)) learnSpell(22570, false); //Калечение Уровень 1
+		if (!HasSpell(26998) && HasSpell(99)) learnSpell(26998, false); //Устрашающий рев Уровень 6
+
+		if (level < 63) return;
+		
+		if (!HasSpell(26987) && HasSpell(8921)) learnSpell(26987, false); //Лунный огонь Уровень 11
+		if (!HasSpell(26981) && HasSpell(774)) learnSpell(26981, false); //Омоложение Уровень 12
+		if (!HasSpell(24248) && HasSpell(22568)) learnSpell(24248, false); //Свирепый укус Уровень 6
+
+		if (level < 64) return;
+		
+		if (!HasSpell(26997) && HasSpell(779)) learnSpell(26997, false); //Размах (медведь) Уровень 6
+		if (!HasSpell(33763)) learnSpell(33763, false); //Жизнецвет Уровень 1
+		if (!HasSpell(26992) && HasSpell(467)) learnSpell(26992, false); //Шипы Уровень 7
+		if (!HasSpell(27003) && HasSpell(1822)) learnSpell(27003, false); //Глубокая рана Уровень 5
+
+		if (level < 65) return;
+		
+		if (!HasSpell(33357) && HasSpell(1850)) learnSpell(33357, false); //Порыв Уровень 3
+		if (!HasSpell(26980) && HasSpell(8936)) learnSpell(26980, false); //Восстановление Уровень 10
+
+		if (level < 66) return;
+		
+		if (!HasSpell(27005) && HasSpell(6785)) learnSpell(27005, false); //Накинуться Уровень 5
+		if (!HasSpell(27006) && HasSpell(9005)) learnSpell(27006, false); //Наскок Уровень 4
+		if (!HasSpell(33745)) learnSpell(33745, false); //Растерзать Уровень 1
+
+		if (level < 67) return;
+		
+		if (!HasSpell(26996) && HasSpell(6807)) learnSpell(26996, false); //Трепка Уровень 8
+		if (!HasSpell(27000) && HasSpell(1082)) learnSpell(27000, false); //Цапнуть Уровень 6
+		if (!HasSpell(26986) && HasSpell(2912)) learnSpell(26986, false); //Звездный огонь Уровень 8
+		if (!HasSpell(27008) && HasSpell(1079)) learnSpell(27008, false); //Разорвать Уровень 7
+
+		if (level < 68) return;
+		
+		if (!HasSpell(33987) && HasSpell(33878)) learnSpell(33987, false); //Увечье (медведь) Уровень 3
+		if (!HasSpell(26989) && HasSpell(339)) learnSpell(26989, false); //Гнев деревьев Уровень 7
+		if (!HasSpell(27009) && HasSpell(16689)) learnSpell(27009, false); //Хватка природы Уровень 7
+		if (!HasSpell(33983) && HasSpell(33876)) learnSpell(33983, false); //Увечье (кошка) Уровень 3
+
+		if (level < 69) return;
+		
+		if (!HasSpell(26979) && HasSpell(5185)) learnSpell(26979, false); //Целительное прикосновение Уровень 13
+		if (!HasSpell(26985) && HasSpell(5176)) learnSpell(26985, false); //Гнев Уровень 10
+		if (!HasSpell(26982) && HasSpell(774)) learnSpell(26982, false); //Омоложение Уровень 13
+		if (!HasSpell(26994) && HasSpell(20484)) learnSpell(26994, false); //Возрождение Уровень 6
+		if (!HasSpell(27004) && HasSpell(8998)) learnSpell(27004, false); //Попятиться Уровень 5
+		if (!HasSpell(50764) && HasSpell(50769)) learnSpell(50764, false); // unk
+
+		if (level < 70) return;
+		
+		if (!HasSpell(53248) && HasSpell(48438)) learnSpell(53248, false); //Буйный рост Уровень 2
+		if (!HasSpell(53225) && HasSpell(50516)) learnSpell(53225, false); //Тайфун Уровень 3
+		if (!HasSpell(53199) && HasSpell(48505)) learnSpell(53199, false); // unk
+		if (!HasSpell(27013) && HasSpell(5570)) learnSpell(27013, false); //Рой насекомых Уровень 6
+		if (!HasSpell(27002) && HasSpell(5221)) learnSpell(27002, false); //Полоснуть Уровень 7
+		if (!HasSpell(26991) && HasSpell(21849)) learnSpell(26991, false); //Дар дикой природы Уровень 3
+		if (!HasSpell(27012) && HasSpell(16914)) learnSpell(27012, false); //Гроза Уровень 4
+		if (!HasSpell(26990) && HasSpell(1126)) learnSpell(26990, false); //Знак дикой природы Уровень 8
+		if (!HasSpell(26983) && HasSpell(740)) learnSpell(26983, false); //Спокойствие Уровень 5
+		if (!HasSpell(26988) && HasSpell(8921)) learnSpell(26988, false); //Лунный огонь Уровень 12
+		if (!HasSpell(33786)) learnSpell(33786, false); //Смерч 
+		if (!HasSpell(26995) && HasSpell(2908)) learnSpell(26995, false); //Умиротворение животного Уровень 4
+
+		if (level < 71) return;
+		
+		if (!HasSpell(49799) && HasSpell(1079)) learnSpell(49799, false); // unk
+		if (!HasSpell(48559) && HasSpell(99)) learnSpell(48559, false); // unk
+		if (!HasSpell(50212) && HasSpell(5217)) learnSpell(50212, false); // unk
+		if (!HasSpell(62078)) learnSpell(62078, false); //Размах (кошка) Уровень 1
+		if (!HasSpell(40120) && HasSpell(33943)) learnSpell(40120, false); //Облик стремительной птицы Смена облика
+		if (!HasSpell(48442) && HasSpell(8936)) learnSpell(48442, false); // unk
+
+		if (level < 72) return;
+		
+		if (!HasSpell(48573) && HasSpell(1822)) learnSpell(48573, false); // unk
+		if (!HasSpell(48450) && HasSpell(33763)) learnSpell(48450, false); // unk
+		if (!HasSpell(48576) && HasSpell(22568)) learnSpell(48576, false); // unk
+		if ( !HasSpell(48464) && HasSpell(2912)) learnSpell(48464, false); // unk
+		if (!HasSpell(48561) && HasSpell(779)) learnSpell(48561, false); // unk
+
+		if (level < 73) return;
+		
+		if (!HasSpell(48578) && HasSpell(6785)) learnSpell(48578, false); // unk
+		if (!HasSpell(48479) && HasSpell(6807)) learnSpell(48479, false); // unk
+		if (!HasSpell(48567) && HasSpell(33745)) learnSpell(48567, false); // unk
+		if (!HasSpell(48569) && HasSpell(1082)) learnSpell(48569, false); // unk
+
+		if (level < 74) return;
+		
+		if (!HasSpell(48377) && HasSpell(5185)) learnSpell(48377, false); // unk
+		if (!HasSpell(53307) && HasSpell(467)) learnSpell(53307, false); //Шипы Уровень 8
+		if (!HasSpell(48459) && HasSpell(5176)) learnSpell(48459, false); // unk
+		if (!HasSpell(49802) && HasSpell(22570)) learnSpell(49802, false); // unk
+
+		if (level < 75) return;
+		
+		if (!HasSpell(53226) && HasSpell(50516)) learnSpell(53226, false); //Тайфун Уровень 4
+		if (!HasSpell(53200) && HasSpell(48505)) learnSpell(53200, false); // unk
+		if (!HasSpell(52610)) learnSpell(52610, false); // unk
+		if (!HasSpell(48571) && HasSpell(5221)) learnSpell(48571, false); // unk
+		if (!HasSpell(53249) && HasSpell(48438)) learnSpell(53249, false); //Буйный рост Уровень 3
+		if (!HasSpell(48440) && HasSpell(774)) learnSpell(48440, false); // unk
+		if (!HasSpell(48462) && HasSpell(8921)) learnSpell(48462, false); // unk
+		if (!HasSpell(48565) && HasSpell(33876)) learnSpell(48565, false); // unk
+		if (!HasSpell(48563) && HasSpell(33878)) learnSpell(48563, false); // unk
+		if (!HasSpell(48446) && HasSpell(740)) learnSpell(48446, false); // unk
+
+		if (level < 76) return;
+		
+		if (!HasSpell(48575) && HasSpell(8998)) learnSpell(48575, false); // unk
+
+		if (level < 77) return;
+		
+		if (!HasSpell(49803) && HasSpell(9005)) learnSpell(49803, false); // unk
+		if (!HasSpell(48443) && HasSpell(8936)) learnSpell(48443, false); // unk
+		if (!HasSpell(48560) && HasSpell(99)) learnSpell(48560, false); // unk
+		if (!HasSpell(48562) && HasSpell(779)) learnSpell(48562, false); // unk
+
+		if (level < 78) return;
+		
+		if (!HasSpell(48465) && HasSpell(2912)) learnSpell(48465, false); // unk
+		if (!HasSpell(53312) && HasSpell(16689)) learnSpell(53312, false); //Хватка природы Уровень 8
+		if (!HasSpell(53308) && HasSpell(339)) learnSpell(53308, false); //Гнев деревьев Уровень 8
+		if (!HasSpell(48577) && HasSpell(22568)) learnSpell(48577, false); // unk
+		if (!HasSpell(48574) && HasSpell(1822)) learnSpell(48574, false); // unk
+
+		if (level < 79) return;
+		
+		if (!HasSpell(48378) && HasSpell(5185)) learnSpell(48378, false); // unk
+		if (!HasSpell(48477) && HasSpell(20484)) learnSpell(48477, false); // unk
+		if (!HasSpell(48461) && HasSpell(5176)) learnSpell(48461, false); // unk
+		if (!HasSpell(50213) && HasSpell(5217)) learnSpell(50213, false); // unk
+		if (!HasSpell(48480) && HasSpell(6807)) learnSpell(48480, false); // unk
+		if (!HasSpell(48570) && HasSpell(1082)) learnSpell(48570, false); // unk
+		if (!HasSpell(48579) && HasSpell(6785)) learnSpell(48579, false); // unk
+
+		if (level < 80) return;
+		
+		if (!HasSpell(61384) && HasSpell(50516)) learnSpell(61384, false); //Тайфун Уровень 5
+		if (!HasSpell(48451) && HasSpell(33763)) learnSpell(48451, false); // unk
+		if (!HasSpell(48447) && HasSpell(740)) learnSpell(48447, false); // unk
+		if (!HasSpell(48441) && HasSpell(774)) learnSpell(48441, false); // unk
+		if (!HasSpell(53251) && HasSpell(48438)) learnSpell(53251, false); //Буйный рост Уровень 4
+		if (!HasSpell(53201) && HasSpell(48505)) learnSpell(53201, false); // unk
+		if (!HasSpell(48463) && HasSpell(8921)) learnSpell(48463, false); // unk
+		if (!HasSpell(48568) && HasSpell(33745)) learnSpell(48568, false); // unk
+		if (!HasSpell(48566) && HasSpell(33876)) learnSpell(48566, false); // unk
+		if (!HasSpell(49800) && HasSpell(1079)) learnSpell(49800, false); // unk
+		if (!HasSpell(48564) && HasSpell(33878)) learnSpell(48564, false); // unk
+		if (!HasSpell(50464)) learnSpell(50464, false); // unk
+		if (!HasSpell(50763) && HasSpell(50769)) learnSpell(50763, false); // unk
+		if (!HasSpell(48470) && HasSpell(21849)) learnSpell(48470, false); // unk
+		if (!HasSpell(48469) && HasSpell(1126)) learnSpell(48469, false); // unk
+		if (!HasSpell(48468) && HasSpell(5570)) learnSpell(48468, false); // unk
+		if (!HasSpell(48467) && HasSpell(16914)) learnSpell(48467, false); // unk
+		if (!HasSpell(48572) && HasSpell(5221)) learnSpell(48572, false); // unk
+
+		return;
+	}
+}
+
 
 void Player::Update(uint32 p_time)
 {
@@ -3084,6 +5606,8 @@ void Player::GiveLevel(uint8 level)
             }
 
     sScriptMgr->OnPlayerLevelChanged(this, oldLevel);
+	//givelevel
+	UpdateSpellToLevel();
 }
 
 void Player::InitTalentForLevel()
@@ -5473,7 +7997,9 @@ void Player::RepopAtGraveyard()
     AreaTableEntry const* zone = GetAreaEntryByAreaID(GetAreaId());
 
     // Such zones are considered unreachable as a ghost and the player must be automatically revived
-    if ((!isAlive() && zone && zone->flags & AREA_FLAG_NEED_FLY) || GetTransport() || GetPositionZ() < -500.0f)
+	//ffff GetZoneId() GetMapId()GetAreaId()
+	bool spec = (GetMapId() == 1 && GetZoneId() == 440 && GetAreaId() == 2317);
+    if ((!isAlive() && zone && zone->flags & AREA_FLAG_NEED_FLY) || GetTransport() || GetPositionZ() < -500.0f || spec)
     {
         ResurrectPlayer(0.5f);
         SpawnCorpseBones();
@@ -5494,7 +8020,11 @@ void Player::RepopAtGraveyard()
     // and don't show spirit healer location
     if (ClosestGrave)
     {
-        TeleportTo(ClosestGrave->map_id, ClosestGrave->x, ClosestGrave->y, ClosestGrave->z, GetOrientation());
+		if (!spec)
+			TeleportTo(ClosestGrave->map_id, ClosestGrave->x, ClosestGrave->y, ClosestGrave->z, GetOrientation());
+		else
+			TeleportTo(1, -11346.81f, -4756.6469f, 6.31f, 2.277727f);
+
         if (isDead())                                        // not send if alive, because it used in TeleportTo()
         {
             WorldPacket data(SMSG_DEATH_RELEASE_LOC, 4*4);  // show spirit healer position on minimap
@@ -6843,6 +9373,8 @@ void Player::CheckAreaExploreAndOutdoor()
                     XP = uint32(sObjectMgr->GetBaseXP(p->area_level)*sWorld->getRate(RATE_XP_EXPLORE));
                 }
 
+				XP = uint32(XP * dynamicRate);
+
                 GiveXP(XP, NULL);
                 SendExplorationExperience(area, XP);
             }
@@ -7440,9 +9972,12 @@ void Player::UpdateZone(uint32 newZone, uint32 newArea)
             break;
     }
 
-    if (zone->flags & AREA_FLAG_CAPITAL)                     // in capital city
+	// wowkarelia
+	bool spec = (GetMapId() == 1 && GetZoneId() == 440 && GetAreaId() == 2317);
+
+    if (zone->flags & AREA_FLAG_CAPITAL || spec)                     // in capital city
     {
-        if (!pvpInfo.inHostileArea || zone->IsSanctuary())
+        if (!pvpInfo.inHostileArea || zone->IsSanctuary() || spec)
         {
             SetFlag(PLAYER_FLAGS, PLAYER_FLAGS_RESTING);
             SetRestType(REST_TYPE_IN_CITY);
@@ -15007,7 +17542,7 @@ void Player::RewardQuest(Quest const* quest, uint32 reward, Object* questGiver, 
 
     int32 moneyRew = 0;
     if (getLevel() < sWorld->getIntConfig(CONFIG_MAX_PLAYER_LEVEL))
-        GiveXP(XP, NULL);
+        GiveXP(uint32(XP * dynamicRate), NULL);
     else
         moneyRew = int32(quest->GetRewMoneyMaxLevel() * sWorld->getRate(RATE_DROP_MONEY));
 
@@ -15077,7 +17612,7 @@ void Player::RewardQuest(Quest const* quest, uint32 reward, Object* questGiver, 
     _SaveQuestStatus(trans);
 
     if (announce)
-        SendQuestReward(quest, XP, questGiver);
+        SendQuestReward(quest, XP * dynamicRate, questGiver);
 
     // cast spells after mark quest complete (some spells have quest completed state requirements in spell_area data)
     if (quest->GetRewSpellCast() > 0)
@@ -17201,6 +19736,35 @@ bool Player::LoadFromDB(uint32 guid, SQLQueryHolder *holder)
     m_achievementMgr.CheckAllAchievementCriteria();
 
     _LoadEquipmentSets(holder->GetPreparedResult(PLAYER_LOGIN_QUERY_LOADEQUIPMENTSETS));
+
+    /* Newland : Start */
+
+    titleAllCheck();
+
+    QueryResult rslt = LoginDatabase.PQuery("SELECT dynamicRate FROM account WHERE id = '%u'", GetSession()->GetAccountId());
+    if (rslt)
+        dynamicRate = (*rslt)[0].GetFloat();
+
+    rslt = CharacterDatabase.PQuery("SELECT rate FROM character_rate WHERE guid = '%u'", guid);
+    if (rslt)
+    {
+        dynamicRate = (*rslt)[0].GetFloat();
+        staticRate = true;
+        changeRate = time(NULL);
+    }
+
+    if(dynamicRate < 0) dynamicRate = 0.0f;
+    if(dynamicRate > 100) dynamicRate = 100.0f;
+
+    if (getLevel() < sWorld->getIntConfig(CONFIG_MAX_PLAYER_LEVEL))
+    {
+        if(dynamicRate > 0)
+            RemoveFlag(PLAYER_FLAGS, PLAYER_FLAGS_NO_XP_GAIN);
+        else
+            SetFlag(PLAYER_FLAGS, PLAYER_FLAGS_NO_XP_GAIN);
+    }
+
+    /* Newland : End */
 
     return true;
 }

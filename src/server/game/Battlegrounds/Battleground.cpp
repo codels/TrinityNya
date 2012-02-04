@@ -36,6 +36,10 @@
 #include "SpellAuraEffects.h"
 #include "Util.h"
 
+#include "Database/DatabaseEnv.h"
+#include "Guild.h"
+#include "GuildMgr.h"
+
 namespace Trinity
 {
     class BattlegroundChatBuilder
@@ -771,6 +775,23 @@ void Battleground::EndBattleground(uint32 winner)
         }
     }
 
+    /*****************************************
+    ** IroN Edition : Guild PvP Log // Start
+    *****************************************/
+
+    bool GuildWinnerBattle = true;
+    bool GuildLooserBattle = true;
+    uint32 GuildWinnerId = 0;
+    uint32 GuildLooserId = 0;
+    uint32 LooserCount = 0;
+    uint32 WinnerCount = 0;
+    std::string TeamWinner;
+    std::string TeamLooser;
+
+    /*****************************************
+    ** IroN Edition : Guild PvP Log // End
+    *****************************************/
+
     uint8 aliveWinners = GetAlivePlayersCountByTeam(winner);
     for (BattlegroundPlayerMap::iterator itr = m_Players.begin(); itr != m_Players.end(); ++itr)
     {
@@ -873,7 +894,143 @@ void Battleground::EndBattleground(uint32 winner)
         sBattlegroundMgr->BuildBattlegroundStatusPacket(&data, this, player->GetBattlegroundQueueIndex(bgQueueTypeId), STATUS_IN_PROGRESS, TIME_TO_AUTOREMOVE, GetStartTime(), GetArenaType());
         player->GetSession()->SendPacket(&data);
         player->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_COMPLETE_BATTLEGROUND, 1);
+
+        /*****************************************
+        ** IroN Edition : Guild PvP Log // Start
+        *****************************************/
+
+        uint32 GuildPlayer = player->GetGuildId();
+        BattlegroundScoreMap::iterator ScoreItr = m_PlayerScores.find(player->GetGUID());
+        if (ScoreItr == m_PlayerScores.end()) continue;
+
+        std::ostringstream PeopleData;
+        PeopleData << player->GetGUIDLow() << ":";
+        PeopleData << player->GetName() << ":";
+        PeopleData << int(player->getLevel());
+        PeopleData << ":";
+        PeopleData << GuildPlayer << ":";
+        PeopleData << ScoreItr->second->KillingBlows << ":";
+        PeopleData << ScoreItr->second->Deaths << ":";
+        PeopleData << ScoreItr->second->HonorableKills << ":";
+        PeopleData << ScoreItr->second->DamageDone << ":";
+        PeopleData << ScoreItr->second->HealingDone << ":";
+        PeopleData << ScoreItr->second->BonusHonor << ":";
+        PeopleData << uint32(player->getRace()) << ":";
+        PeopleData << uint32(player->getClass()) << ":";
+        PeopleData << uint32(player->getGender()) << " ";
+
+        if (team == winner)
+        {
+            WinnerCount++;
+            TeamWinner += PeopleData.str();
+
+            if(GuildWinnerBattle)
+                if((GuildWinnerId == 0 || GuildWinnerId == GuildPlayer) && GuildPlayer > 0)
+                {
+                    if(GuildWinnerId == 0)
+                        GuildWinnerId = GuildPlayer;
+                } else
+                    GuildWinnerBattle = false;
+        } else {
+            LooserCount++;
+            TeamLooser += PeopleData.str();
+
+            if(GuildLooserBattle)
+                if((GuildLooserId == 0 || GuildLooserId == GuildPlayer) && GuildPlayer > 0)
+                {
+                    if(GuildLooserId == 0)
+                        GuildLooserId = GuildPlayer;
+                } else
+                    GuildLooserBattle = false;
+        }
+
+        /*****************************************
+        ** IroN Edition : Guild PvP Log // End
+        *****************************************/
     }
+
+
+    /*****************************************
+    ** IroN Edition : Guild PvP Log // Start
+    *****************************************/
+
+    if(GuildWinnerId == 0)
+        GuildWinnerBattle = false;
+
+    if(GuildLooserId == 0)
+        GuildLooserBattle = false;
+    
+
+    if((GuildWinnerBattle || GuildLooserBattle) && !isArena())
+    {
+        int32 maxdd = 0;
+        int32 maxhl = 0;
+        std::string maxddn;
+        std::string maxhln;
+        for(BattlegroundPlayerMap::iterator itr = m_Players.begin(); itr != m_Players.end(); ++itr)
+        {
+            Player *plr = ObjectAccessor::FindPlayer(itr->first);
+
+            if(!plr)
+                continue;
+
+            BattlegroundScoreMap::iterator ScoreItr = m_PlayerScores.find(plr->GetGUID());
+
+            if((int32)ScoreItr->second->DamageDone >= maxdd)
+            {
+                maxdd = ScoreItr->second->DamageDone;
+                maxddn = plr->GetName();
+            }
+            if((int32)ScoreItr->second->HealingDone >= maxhl)
+            {
+                maxhl = ScoreItr->second->HealingDone;
+                maxhln = plr->GetName();
+            }       
+        }
+
+        std::string Message;
+        Message = "Гильдия \"";
+        if (GuildWinnerBattle)
+        {
+            Guild* GW = sGuildMgr->GetGuildById(GuildWinnerId);
+
+            Message += GW->GetName();
+            Message += "\", выйграла сражение на поле боя";
+            if (GuildLooserBattle)
+            {
+                Guild* GL = sGuildMgr->GetGuildById(GuildLooserId);
+                Message += " против гильдии \"";
+                Message += GL->GetName();
+                Message += "\"";
+            }
+        }
+        else if (GuildLooserBattle)
+        {
+            Guild* GL = sGuildMgr->GetGuildById(GuildLooserId);
+            Message += GL->GetName();
+            Message += "\", проиграла сражение на поле боя";
+        }
+        Message += ", больше всех на поле боя нанёс урон \"";
+        Message += maxddn.c_str();
+        Message += "\", а вылечил \"";
+        Message += maxhln.c_str();
+        Message += "\"";
+        sWorld->SendWorldText(LANG_AUTO_BROADCAST, Message.c_str());
+    }
+    uint32 bglog_team_win = 0;
+    uint32 bglog_team_lose = 0;
+
+    if(isArena() && isRated())
+    {
+        bglog_team_win = GetArenaTeamIdForTeam(winner);
+        bglog_team_lose = GetArenaTeamIdForTeam(GetOtherTeam(winner));
+    }
+
+    CharacterDatabase.PExecute("INSERT INTO _battlegroundLog (mapId, battleType, isArena, isRate, battleTime, battleDate, guildIdWin, peopleCountWin, peopleDataWin, guildIdLose, peopleCountLose, peopleDataLose, factionWin, bracket, levelMin, levelMax, arenaTeamIdWin, arenaTeamIdLose) VALUES ('%u', '%u', '%u', '%u', '%u', NOW(), '%u', '%u', '%s', '%u', '%u', '%s', '%u', '%u', '%u', '%u', '%u', '%u')", m_MapId, GetTypeID(), uint32(isArena()), uint32(isRated()), uint32(GetStartTime()/1000), GuildWinnerId, WinnerCount, TeamWinner.c_str(), GuildLooserId, LooserCount, TeamLooser.c_str(), winner, m_BracketId, GetMinLevel(), GetMaxLevel(), bglog_team_win, bglog_team_lose);
+
+    /*****************************************
+    ** IroN Edition : Guild PvP Log // End
+    *****************************************/
 
     if (isArena() && isRated() && winner_arena_team && loser_arena_team && winner_arena_team != loser_arena_team)
     {

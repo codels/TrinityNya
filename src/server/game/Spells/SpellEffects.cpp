@@ -7273,13 +7273,16 @@ void Spell::EffectPlayerNotification(SpellEffIndex effIndex)
     if (!unitTarget || unitTarget->GetTypeId() != TYPEID_PLAYER)
         return;
 
-    switch (m_spellInfo->Id)
-    {
-        case 58730: // Restricted Flight Area
-        case 58600: // Restricted Flight Area
-            unitTarget->ToPlayer()->GetSession()->SendNotification(LANG_ZONE_NOFLYZONE);
-            break;
-    }
+	if (!unitTarget->HasAura(55164))
+	{
+		switch (m_spellInfo->Id)
+		{
+			case 58730: // Restricted Flight Area
+			case 58600: // Restricted Flight Area
+				unitTarget->ToPlayer()->GetSession()->SendNotification(LANG_ZONE_NOFLYZONE);
+				break;
+		}
+	}
 
     uint32 soundid = m_spellInfo->Effects[effIndex].MiscValue;
 

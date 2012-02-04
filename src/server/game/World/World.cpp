@@ -2070,6 +2070,21 @@ void World::SendGlobalGMMessage(WorldPacket* packet, WorldSession* self, uint32 
     }
 }
 
+void World::AllCastSpell(uint32 spellid, uint32 team)
+{
+    SessionMap::const_iterator itr;
+    for (itr = m_sessions.begin(); itr != m_sessions.end(); ++itr)
+    {
+        if (itr->second &&
+            itr->second->GetPlayer() &&
+            itr->second->GetPlayer()->IsInWorld() &&
+            (team == 0 || itr->second->GetPlayer()->GetTeam() == team) )
+        {
+            itr->second->GetPlayer()->CastSpell(itr->second->GetPlayer(), spellid, true);
+        }
+    }
+}
+
 namespace Trinity
 {
     class WorldWorldTextBuilder

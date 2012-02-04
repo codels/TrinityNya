@@ -29,6 +29,70 @@
 #include "revision.h"
 #include "Util.h"
 
+
+bool ChatHandler::HandleSetGameRateAccount(const char* args)
+{
+    if (!*args)
+        return false;
+
+    Player *chr = m_session->GetPlayer();
+
+    if (chr->changeRate + 300 * IN_MILLISECONDS > time(NULL))
+    {
+        SendSysMessage(LANG_RATE_WAIT);
+        return true;
+    }
+
+    float rate = (float)atof((char*)args);
+
+    if (rate < 0 || rate > 100)
+    {
+        SendSysMessage(LANG_RATE_BETWEEN);
+        return true;
+    }
+
+    if (!chr->staticRate)
+        chr->dynamicRate = rate;
+
+    LoginDatabase.PExecute("UPDATE `account` SET `dynamicRate` = '%f' WHERE `id` = '%u'", rate, m_session->GetAccountId());
+    chr->changeRate = time(NULL);
+
+    SendSysMessage(LANG_RATE_SET_ACCOUNT);
+    return true;
+}
+
+bool ChatHandler::HandleSetGameRateCharacter(const char* args)
+{
+    if (!*args)
+        return false;
+
+    Player *chr = m_session->GetPlayer();
+
+    if (chr->changeRate + 300 * IN_MILLISECONDS > time(NULL))
+    {
+        SendSysMessage(LANG_RATE_WAIT);
+        return true;
+    }
+
+    float rate = (float)atof((char*)args);
+
+    if (rate < 0 || rate > 100)
+    {
+        SendSysMessage(LANG_RATE_BETWEEN);
+        return true;
+    }
+
+    chr->dynamicRate = rate;
+    chr->staticRate = true;
+
+    CharacterDatabase.PExecute("REPLACE INTO `character_rate` (`guid`, `rate`) VALUES ('%u', '%f')", chr->GetGUID(), rate);
+    chr->changeRate = time(NULL);
+
+    PSendSysMessage(LANG_RATE_SET_CHARACTER, rate, chr->GetName());
+    return true;
+}
+
+
 bool ChatHandler::HandleHelpCommand(const char* args)
 {
     char* cmd = strtok((char*)args, " ");

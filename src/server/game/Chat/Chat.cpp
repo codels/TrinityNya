@@ -67,6 +67,13 @@ static size_t appendCommandTable(ChatCommand* target, const ChatCommand* source)
 
 ChatCommand* ChatHandler::getCommandTable()
 {
+    static ChatCommand rateCommandTable[] =
+    {
+        { "account",        SEC_PLAYER,         false, OldHandler<&ChatHandler::HandleSetGameRateAccount>,          "", NULL },
+        { "character",      SEC_PLAYER,         false, OldHandler<&ChatHandler::HandleSetGameRateCharacter>,        "", NULL },
+        { NULL,             0,                  false, NULL,                                                        "", NULL },
+    };
+
     static ChatCommand banCommandTable[] =
     {
         { "account",        SEC_ADMINISTRATOR,  true,  OldHandler<&ChatHandler::HandleBanAccountCommand>,          "", NULL },
@@ -331,6 +338,7 @@ ChatCommand* ChatHandler::getCommandTable()
 
     static ChatCommand commandTable[] =
     {
+		{ "rate",           SEC_PLAYER,         true,  NULL,                                           "", rateCommandTable},
         { "character",      SEC_GAMEMASTER,     true,  NULL,                                           "", characterCommandTable},
         { "list",           SEC_ADMINISTRATOR,  true,  NULL,                                           "", listCommandTable     },
         { "lookup",         SEC_ADMINISTRATOR,  true,  NULL,                                           "", lookupCommandTable   },

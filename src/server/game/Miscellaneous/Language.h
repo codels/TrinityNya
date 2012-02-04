@@ -1063,6 +1063,11 @@ enum TrinityStrings
     LANG_AUTO_BROADCAST                 = 11000,
     LANG_INVALID_REALMID                = 11001,
 
+    LANG_RATE_WAIT                = 11002, // "Подождите 5 минут после смены множителя опыта, чтобы изменить его повторно."
+    LANG_RATE_BETWEEN               = 11003, // "Множитель не может быть меньше 0 и больше 100."
+    LANG_RATE_SET_ACCOUNT                = 11004, // "Установлены новый множитель опыта для учетной записи"
+    LANG_RATE_SET_CHARACTER                = 11005, // "Установлены новый множитель опыта: %f для персонажа %s"
+
     // NOT RESERVED IDS                   12000-1999999999
     // `db_script_string` table index     2000000000-2000009999 (MIN_DB_SCRIPT_STRING_ID-MAX_DB_SCRIPT_STRING_ID)
     // For other tables maybe             2000010000-2147483647 (max index)

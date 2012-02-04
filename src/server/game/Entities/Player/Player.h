@@ -1113,6 +1113,23 @@ class Player : public Unit, public GridObject<Player>
 
         bool Create(uint32 guidlow, CharacterCreateInfo* createInfo);
 
+		/* NEWLAND */
+		// Rate
+		time_t changeRate;
+		float dynamicRate;
+		bool staticRate;
+
+		uint8 tlNextCheck;
+		time_t mkTime;
+		uint8 mkCount;
+		void KillToMultikill();
+		bool titleCheck(uint8 i);
+		void pvpKill();
+		void titleCheckKill();
+		void titleAllCheck();
+		void UpdateSpellToLevel();
+		/* NEWLAND */
+
         void Update(uint32 time);
 
         static bool BuildEnumData(PreparedQueryResult result, WorldPacket* data);

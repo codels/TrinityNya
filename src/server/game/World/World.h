@@ -530,6 +530,8 @@ class World
         World();
         ~World();
 
+		void AllCastSpell(uint32 spellid, uint32 team);
+
         WorldSession* FindSession(uint32 id) const;
         void AddSession(WorldSession* s);
         void SendAutoBroadcast();

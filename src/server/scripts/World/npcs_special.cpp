@@ -2071,6 +2071,7 @@ public:
         {
             me->SetControlled(true, UNIT_STATE_STUNNED);//disable rotate
             me->ApplySpellImmune(0, IMMUNITY_EFFECT, SPELL_EFFECT_KNOCK_BACK, true);//imune to knock aways like blast wave
+			me->ApplySpellImmune(0, IMMUNITY_ID, 49560, true);
 
             ResetTimer = 5000;
             DespawnTimer = 15000;
