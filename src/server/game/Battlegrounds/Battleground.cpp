@@ -989,17 +989,17 @@ void Battleground::EndBattleground(uint32 winner)
         }
 
         std::string Message;
-        Message = "Ãèëüäèÿ \"";
+        Message = "Ð“Ð¸Ð»ÑŒÐ´Ð¸Ñ \"";
         if (GuildWinnerBattle)
         {
             Guild* GW = sGuildMgr->GetGuildById(GuildWinnerId);
 
             Message += GW->GetName();
-            Message += "\", âûéãðàëà ñðàæåíèå íà ïîëå áîÿ";
+            Message += "\", Ð²Ñ‹Ð¹Ð³Ñ€Ð°Ð»Ð° ÑÑ€Ð°Ð¶ÐµÐ½Ð¸Ðµ Ð½Ð° Ð¿Ð¾Ð»Ðµ Ð±Ð¾Ñ";
             if (GuildLooserBattle)
             {
                 Guild* GL = sGuildMgr->GetGuildById(GuildLooserId);
-                Message += " ïðîòèâ ãèëüäèè \"";
+                Message += " Ð¿Ñ€Ð¾Ñ‚Ð¸Ð² Ð³Ð¸Ð»ÑŒÐ´Ð¸Ð¸ \"";
                 Message += GL->GetName();
                 Message += "\"";
             }
@@ -1008,11 +1008,11 @@ void Battleground::EndBattleground(uint32 winner)
         {
             Guild* GL = sGuildMgr->GetGuildById(GuildLooserId);
             Message += GL->GetName();
-            Message += "\", ïðîèãðàëà ñðàæåíèå íà ïîëå áîÿ";
+            Message += "\", Ð¿Ñ€Ð¾Ð¸Ð³Ñ€Ð°Ð»Ð° ÑÑ€Ð°Ð¶ÐµÐ½Ð¸Ðµ Ð½Ð° Ð¿Ð¾Ð»Ðµ Ð±Ð¾Ñ";
         }
-        Message += ", áîëüøå âñåõ íà ïîëå áîÿ íàí¸ñ óðîí \"";
+        Message += ", Ð±Ð¾Ð»ÑŒÑˆÐµ Ð²ÑÐµÑ… Ð½Ð° Ð¿Ð¾Ð»Ðµ Ð±Ð¾Ñ Ð½Ð°Ð½Ñ‘Ñ ÑƒÑ€Ð¾Ð½ \"";
         Message += maxddn.c_str();
-        Message += "\", à âûëå÷èë \"";
+        Message += "\", Ð° Ð²Ñ‹Ð»ÐµÑ‡Ð¸Ð» \"";
         Message += maxhln.c_str();
         Message += "\"";
         sWorld->SendWorldText(LANG_AUTO_BROADCAST, Message.c_str());

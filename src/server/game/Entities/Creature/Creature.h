@@ -192,6 +192,11 @@ struct CreatureBaseStats
         return uint32((BaseHealth[info->expansion] * info->ModHealth) + 0.5f);
     }
 
+    uint32 GenerateHealth(uint32 expansion, uint32 modhealth) const
+    {
+        return uint32((BaseHealth[expansion] * modhealth) + 0.5f);
+    }
+
     uint32 GenerateMana(CreatureTemplate const* info) const
     {
         // Mana can be 0.
@@ -447,6 +452,11 @@ class Creature : public Unit, public GridObject<Creature>, public MapCreature
         void RemoveFromWorld();
 
         void DisappearAndDie();
+
+		uint32 DynamicInstanceLevel;
+		float DynamicInstanceSpellBonus;
+		void DynamicInstanceUpdate(uint32 level);
+		uint32 ExtraLoot;
 
         bool Create(uint32 guidlow, Map* map, uint32 phaseMask, uint32 Entry, uint32 vehId, uint32 team, float x, float y, float z, float ang, const CreatureData* data = NULL);
         bool LoadCreaturesAddon(bool reload = false);

@@ -249,6 +249,23 @@ class instance_deadmines : public InstanceMapScript
                 data << uint32(sound);
                 unit->SendMessageToSet(&data, false);
             }
+
+			void OnCreatureCreate(Creature* creature)
+			{
+				Map::PlayerList const &players = instance->GetPlayers();
+				uint32 instanceLevel = 20;
+
+				if (!players.isEmpty())
+				{
+					if (Player* player = players.begin()->getSource())
+						instanceLevel = player->getLevel();
+				}
+
+				if (creature && creature->getLevel() != instanceLevel)
+				{
+					creature->DynamicInstanceUpdate(instanceLevel);
+				}
+			}
         };
 
         InstanceScript* GetInstanceScript(InstanceMap* map) const

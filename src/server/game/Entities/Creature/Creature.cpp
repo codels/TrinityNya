@@ -52,6 +52,8 @@
 #include "MoveSpline.h"
 // apply implementation of the singletons
 
+#include <math.h>
+
 TrainerSpell const* TrainerSpellData::Find(uint32 spell_id) const
 {
     TrainerSpellMap::const_iterator itr = spellList.find(spell_id);
@@ -145,7 +147,7 @@ m_PlayerDamageReq(0), m_lootMoney(0), m_lootRecipient(0), m_lootRecipientGroup(0
 m_respawnDelay(300), m_corpseDelay(60), m_respawnradius(0.0f), m_reactState(REACT_AGGRESSIVE),
 m_defaultMovementType(IDLE_MOTION_TYPE), m_DBTableGuid(0), m_equipmentId(0), m_AlreadyCallAssistance(false),
 m_AlreadySearchedAssistance(false), m_regenHealth(true), m_AI_locked(false), m_meleeDamageSchoolMask(SPELL_SCHOOL_MASK_NORMAL),
-m_creatureInfo(NULL), m_creatureData(NULL), m_formation(NULL), m_path_id(0)
+m_creatureInfo(NULL), m_creatureData(NULL), m_formation(NULL), m_path_id(0), DynamicInstanceSpellBonus(0.0f), ExtraLoot(0), DynamicInstanceLevel(0)
 {
     m_regenTimer = CREATURE_REGEN_INTERVAL;
     m_valuesCount = UNIT_END;
@@ -1114,8 +1116,91 @@ void Creature::SaveToDB(uint32 mapid, uint8 spawnMask, uint32 phaseMask)
     WorldDatabase.CommitTransaction(trans);
 }
 
+//wowkarelia
+void Creature::DynamicInstanceUpdate(uint32 level)
+{
+	DynamicInstanceLevel = level;
+
+	CreatureTemplate const* cinfo = GetCreatureInfo();
+
+	if (cinfo->maxlevel == 1)
+		return;
+
+	uint32 clevel = cinfo->maxlevel;
+	if (clevel > 80) clevel = 80;
+
+	DynamicInstanceSpellBonus = pow(1.05, (1.55 * (level - clevel)));
+
+	SetLevel(level);
+
+	uint8 expansion = 0;
+	if (level > 59) expansion++;
+	if (level > 69) expansion++;
+
+	uint32 rank = isPet()? 0 : cinfo->rank;
+
+	CreatureBaseStats const* stats = sObjectMgr->GetCreatureBaseStats(level, cinfo->unit_class);
+
+    //damage
+    float damagemod = 1.0f;//_GetDamageMod(rank);
+
+	float healthmod = _GetHealthMod(rank);
+
+	if (rank != CREATURE_ELITE_NORMAL)
+	{
+		damagemod *= 2;
+		healthmod *= 3;
+	}
+	if (rank == CREATURE_ELITE_RAREELITE) damagemod *= 1.5;
+
+    uint32 basehp = stats->GenerateHealth(expansion, cinfo->ModHealth);
+    uint32 health = uint32(basehp * healthmod);
+
+	float dmgbase = 2.5 * pow(1.05, level * 2) / 2;
+	//sLog->outError("Creature::DynamicInstanceLevel dmgbase: %f", dmgbase);
+	float dmgmin = dmgbase * 0.95;
+	float dmgmax = dmgbase * 1.05;
+
+    SetCreateHealth(health);
+    SetMaxHealth(health);
+    SetHealth(health);
+    ResetPlayerDamageReq();
+
+    // mana
+    uint32 mana = stats->GenerateMana(cinfo);
+
+    SetCreateMana(mana);
+    SetMaxPower(POWER_MANA, mana);                          //MAX Mana
+    SetPower(POWER_MANA, mana);
+
+    // TODO: set UNIT_FIELD_POWER*, for some creature class case (energy, etc)
+
+    SetModifierValue(UNIT_MOD_HEALTH, BASE_VALUE, (float)health);
+    SetModifierValue(UNIT_MOD_MANA, BASE_VALUE, (float)mana);
+
+
+
+    SetBaseWeaponDamage(BASE_ATTACK, MINDAMAGE, dmgmin * damagemod);
+    SetBaseWeaponDamage(BASE_ATTACK, MAXDAMAGE, dmgmax * damagemod);
+
+    SetFloatValue(UNIT_FIELD_MINRANGEDDAMAGE, dmgmin * damagemod);
+    SetFloatValue(UNIT_FIELD_MAXRANGEDDAMAGE, dmgmax * damagemod);
+
+    SetModifierValue(UNIT_MOD_ATTACK_POWER, BASE_VALUE, cinfo->attackpower * damagemod);
+
+	ExtraLoot = 6;
+
+	UpdateAllStats();
+}
+
 void Creature::SelectLevel(const CreatureTemplate* cinfo)
 {
+	if (DynamicInstanceLevel != 0)
+	{
+		DynamicInstanceUpdate(DynamicInstanceLevel);
+		return;
+	}
+
     uint32 rank = isPet()? 0 : cinfo->rank;
 
     // level

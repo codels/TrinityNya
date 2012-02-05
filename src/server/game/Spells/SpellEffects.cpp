@@ -63,6 +63,7 @@
 #include "GameObjectAI.h"
 #include "AccountMgr.h"
 #include "InstanceScript.h"
+#include "OutdoorPvPWG.h"
 
 pEffect SpellEffects[TOTAL_SPELL_EFFECTS]=
 {
@@ -4436,6 +4437,24 @@ void Spell::EffectScriptEffect(SpellEffIndex effIndex)
         {
             switch (m_spellInfo->Id)
             {
+                //Teleport to Lake Wintergrasp
+                case 58622:
+                   {
+                  if(OutdoorPvPWG *pvpWG = (OutdoorPvPWG*)sOutdoorPvPMgr->GetOutdoorPvPToZoneId(4197))
+                        if(pvpWG->isWarTime() || pvpWG->m_timer<300000)
+                        {
+                        if ((pvpWG->getDefenderTeam()==TEAM_ALLIANCE) && (unitTarget->ToPlayer()->GetTeam() == ALLIANCE))
+                        unitTarget->CastSpell(unitTarget, SPELL_TELEPORT_FORTRESS, true);
+                        else if ((pvpWG->getDefenderTeam()==TEAM_ALLIANCE) && (unitTarget->ToPlayer()->GetTeam() == HORDE))
+                        unitTarget->CastSpell(unitTarget, SPELL_TELEPORT_HORDE_CAMP, true);
+                    
+                        if ((pvpWG->getDefenderTeam()!=TEAM_ALLIANCE) && (unitTarget->ToPlayer()->GetTeam() == HORDE))
+                        unitTarget->CastSpell(unitTarget, SPELL_TELEPORT_FORTRESS, true);
+                        else if ((pvpWG->getDefenderTeam()!=TEAM_ALLIANCE) && (unitTarget->ToPlayer()->GetTeam() == ALLIANCE))
+                        unitTarget->CastSpell(unitTarget, SPELL_TELEPORT_ALLIANCE_CAMP, true);
+                        }
+                return;
+                   }
                 // Glyph of Backstab
                 case 63975:
                 {
@@ -7278,6 +7297,20 @@ void Spell::EffectPlayerNotification(SpellEffIndex effIndex)
 		switch (m_spellInfo->Id)
 		{
 			case 58730: // Restricted Flight Area
+			{
+				if (sWorld->getBoolConfig(CONFIG_OUTDOORPVP_WINTERGRASP_ENABLED))
+				{
+					OutdoorPvPWG *pvpWG = (OutdoorPvPWG*)sOutdoorPvPMgr->GetOutdoorPvPToZoneId(4197);
+					if (pvpWG && pvpWG->isWarTime() == true)
+					{
+						unitTarget->ToPlayer()->GetSession()->SendNotification(LANG_ZONE_NOFLYZONE);
+						unitTarget->PlayDirectSound(9417); // Fel Reaver sound
+						unitTarget->MonsterTextEmote("На Озере Ледяных Оков нельзя летать пока идет бой. Вы будете сброшены через 10 секунд",unitTarget->GetGUID(),true);
+						break;
+					} else unitTarget->RemoveAura(58730);
+				}
+				break;
+			}
 			case 58600: // Restricted Flight Area
 				unitTarget->ToPlayer()->GetSession()->SendNotification(LANG_ZONE_NOFLYZONE);
 				break;
