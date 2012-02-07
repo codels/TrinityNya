@@ -10,6 +10,7 @@
 
 set(scripts_STAT_SRCS
   ${scripts_STAT_SRCS}
+  Custom/mod_MultiKill.cpp
 )
 
 message("  -> Prepared: Custom")

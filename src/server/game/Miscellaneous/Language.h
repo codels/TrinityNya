@@ -1086,10 +1086,21 @@ enum TrinityStrings
     LANG_AUTO_BROADCAST                 = 11000,
     LANG_INVALID_REALMID                = 11001,
 
-    LANG_RATE_WAIT                = 11002, // "Подождите 5 минут после смены множителя опыта, чтобы изменить его повторно."
-    LANG_RATE_BETWEEN               = 11003, // "Множитель не может быть меньше 0 и больше 100."
-    LANG_RATE_SET_ACCOUNT                = 11004, // "Установлены новый множитель опыта для учетной записи"
-    LANG_RATE_SET_CHARACTER                = 11005, // "Установлены новый множитель опыта: %f для персонажа %s"
+    LANG_RATE_WAIT							= 11002, // "РџРѕРґРѕР¶РґРёС‚Рµ 5 РјРёРЅСѓС‚ РїРѕСЃР»Рµ СЃРјРµРЅС‹ РјРЅРѕР¶РёС‚РµР»СЏ РѕРїС‹С‚Р°, С‡С‚РѕР±С‹ РёР·РјРµРЅРёС‚СЊ РµРіРѕ РїРѕРІС‚РѕСЂРЅРѕ."
+    LANG_RATE_BETWEEN						= 11003, // "РњРЅРѕР¶РёС‚РµР»СЊ РЅРµ РјРѕР¶РµС‚ Р±С‹С‚СЊ РјРµРЅСЊС€Рµ 0 Рё Р±РѕР»СЊС€Рµ 100."
+    LANG_RATE_SET_ACCOUNT					= 11004, // "РЈСЃС‚Р°РЅРѕРІР»РµРЅС‹ РЅРѕРІС‹Р№ РјРЅРѕР¶РёС‚РµР»СЊ РѕРїС‹С‚Р° РґР»СЏ СѓС‡РµС‚РЅРѕР№ Р·Р°РїРёСЃРё"
+    LANG_RATE_SET_CHARACTER					= 11005, // "РЈСЃС‚Р°РЅРѕРІР»РµРЅС‹ РЅРѕРІС‹Р№ РјРЅРѕР¶РёС‚РµР»СЊ РѕРїС‹С‚Р°: %f РґР»СЏ РїРµСЂСЃРѕРЅР°Р¶Р° %s"
+
+	LANG_MULTIKILL_GOLD						= 11006,
+	LANG_MULTIKILL_KILL						= 11007,
+	LANG_MULTIKILL_START					= 11008,
+	LANG_MULTIKILL_3						= 11009,
+	LANG_MULTIKILL_4						= 11010,
+	LANG_MULTIKILL_5						= 11011,
+	LANG_MULTIKILL_6						= 11012,
+	LANG_MULTIKILL_7						= 11013,
+	LANG_MULTIKILL_8						= 11014,
+	LANG_MULTIKILL_END						= 11015,
 
     // NOT RESERVED IDS                   12000-1999999999
     // `db_script_string` table index     2000000000-2000009999 (MIN_DB_SCRIPT_STRING_ID-MAX_DB_SCRIPT_STRING_ID)

@@ -867,8 +867,6 @@ Player::Player(WorldSession* session): Unit(true), m_achievementMgr(this), m_rep
 	dynamicRate = 1.0f;
     staticRate = false;
     changeRate = 0;
-    mkTime = 0;
-    mkCount = 0;
 }
 
 Player::~Player ()
@@ -1575,90 +1573,6 @@ void Player::titleCheckKill()
 {
     if (titleCheck(tlNextCheck))
         ++tlNextCheck;
-}
-
-std::string strMulti[8] = 
-{
-    "|cFF00FFFF ДВОЙНОЕ УБИЙСТВО",
-    "|cFF00FFFF ТРОЙНОЕ УБИЙСТВО",
-    "|cFF00FFFF ЧЕТЫРЕХКРАТНОЕ УБИЙСТВО",
-    "|cFF00FFFF ПЯТИКРАТНОЕ УБИЙСТВО",
-    "|cFF00FFFF ЗВЕРСТВО",
-    "|cFF00FFFF ПРЕВОСХОДСТВО",
-    "|cFFFF0018 НЕУСМИРИМЫЙ",
-    "|cFFFF0018 ПОДОБЕН БОГУ"
-};
-//CC6600 ModifyMoney(-(int32)cost);
-//23505
-void Player::KillToMultikill()
-{
-    time_t now = time(NULL);
-
-    if (now - mkTime > 15)
-        mkCount = 0;
-
-    mkTime = now;
-
-    if (mkCount < 9)
-        mkCount++;
-
-    if (mkCount < 2)
-        return;
-
-    CastSpell(this, 2379, true);
-
-	ModifyMoney(500000 * (mkCount - 1));
-
-	std::ostringstream strMultiKillMoney;
-
-    strMultiKillMoney << "|TInterface\\Icons\\Inv_misc_coin_02.png:30|t |cFFCC6600";
-    strMultiKillMoney << GetName();
-    strMultiKillMoney << " +" << (50  * (mkCount - 1)) << " ЗОЛОТА";
-
-    WorldPacket dataOne(SMSG_NOTIFICATION, (strMultiKillMoney.str().size()+1));
-    dataOne << strMultiKillMoney.str().c_str();
-    sWorld->SendGlobalMessage(&dataOne);
-
-    std::string strMultiKill;
-    strMultiKill = "|TInterface\\Icons\\Achievement_bg_topdps.png:30|t |cFF60FF00";
-    strMultiKill += GetName();
-    strMultiKill += strMulti[mkCount - 2];
-
-    WorldPacket data(SMSG_NOTIFICATION, (strMultiKill.size()+1));
-    data << strMultiKill;
-    sWorld->SendGlobalMessage(&data);
-
-	CharacterDatabase.PExecute("INSERT INTO `character_multikill` (`character_guid`, `character_name`, `count`, `time`) VALUES ('%u', '%s', '%u', CURRENT_TIMESTAMP())", GetGUID(), GetName(), mkCount);
-
-    if (mkCount < 3)
-        return;
-
-    std::string strMultiKillBerserk;
-    strMultiKillBerserk = "|TInterface\\Icons\\Racial_orc_berserkerstrength.png:30|t |cFF00FFFF";
-    strMultiKillBerserk += GetName();
-    strMultiKillBerserk += "|cFFCC0000  ВХОДИТ В СОСТОЯНИЕ БЕРСЕРКА";
-
-    WorldPacket dataZero(SMSG_NOTIFICATION, (strMultiKillBerserk.size()+1));
-    dataZero << strMultiKillBerserk;
-    sWorld->SendGlobalMessage(&dataZero);
-
-	CastSpell(this, 23505, true);
-
-    if (mkCount < 6)
-        return;
-
-    WorldPacket dataTwo(SMSG_PLAY_SOUND, 4);
-    dataTwo << uint32(14808) << GetGUID();
-    sWorld->SendGlobalMessage(&dataTwo);
-}
-
-void Player::pvpKill()
-{
-    if(!InBattleground())
-        return;
-
-    titleCheckKill();
-    KillToMultikill();
 }
 
 void Player::UpdateSpellToLevel()

@@ -706,7 +706,7 @@ uint32 Unit::DealDamage(Unit* victim, uint32 damage, CleanDamage const* cleanDam
 
 
         /*****************************************
-        ** IRON : Guild PvE Log // Start
+        ** TRINITY_NYA : Guild PvE Log // Start
         *****************************************/
 
         if(victim->GetTypeId() != TYPEID_PLAYER && 
@@ -908,25 +908,8 @@ uint32 Unit::DealDamage(Unit* victim, uint32 damage, CleanDamage const* cleanDam
             }
         }
 
-        if(victim->GetTypeId() == TYPEID_PLAYER && victim != this && !((Player*)victim)->HasAura(15007))
-        {
-            if(GetTypeId() == TYPEID_PLAYER)
-                    ((Player*)this)->pvpKill();
-            else {
-                if(((Creature*)this)->isPet())
-                {
-                    if(((Pet*)this)->isControlled())
-                    {
-                        Unit *owner = GetOwner();
-                        if(owner->GetTypeId() == TYPEID_PLAYER)
-                            ((Player*)owner)->pvpKill();
-                    }
-                }
-            }
-        }
-
         /*****************************************
-        ** IRON : Guild PvE Log // End
+        ** TRINITY_NYA : Guild PvE Log // End
         *****************************************/
 
         if (victim->GetTypeId() == TYPEID_PLAYER && victim != this)

@@ -1122,11 +1122,7 @@ class Player : public Unit, public GridObject<Player>
 		bool staticRate;
 
 		uint8 tlNextCheck;
-		time_t mkTime;
-		uint8 mkCount;
-		void KillToMultikill();
 		bool titleCheck(uint8 i);
-		void pvpKill();
 		void titleCheckKill();
 		void titleAllCheck();
 		void UpdateSpellToLevel();

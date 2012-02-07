@@ -18,6 +18,9 @@
 #include "ScriptLoader.h"
 #include "AnticheatMgr.h"
 
+//mod
+void AddSC_Mod_Multikill();
+
 //examples
 void AddSC_example_creature();
 void AddSC_example_escort();
@@ -1244,6 +1247,7 @@ void AddCustomScripts()
 {
 #ifdef SCRIPTS
     /* This is where custom scripts should be added. */
+    AddSC_Mod_Multikill();
 
 #endif
 }
