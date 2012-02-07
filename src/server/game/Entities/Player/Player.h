@@ -1116,12 +1116,9 @@ class Player : public Unit, public GridObject<Player>
         bool Create(uint32 guidlow, CharacterCreateInfo* createInfo);
 
 		/* TRINTY_NYA */
-		// Rate
 		time_t changeRate;
 		float dynamicRate;
 		bool staticRate;
-
-		void UpdateSpellToLevel();
 		/* TRINTY_NYA */
 
         void Update(uint32 time);
