@@ -1516,64 +1516,7 @@ void Player::SetDrunkValue(uint16 newDrunkenValue, uint32 itemId)
     SendMessageToSet(&data, true);
 }
 
-// newland
-//wowkarelia
-
-struct ttlForPvP
-{
-    uint32 hk;
-    uint16 tA;
-    uint16 tH;
-};
-
-ttlForPvP ttl[] = 
-{
-    {100, 1, 15}, // 0
-    {250, 2, 16}, // 1
-    {500, 3, 17}, // 2
-    {1000, 4, 18}, // 3
-    {1500, 5, 19}, // 4
-    {2500, 6, 20}, // 5
-    {4000, 7, 21}, // 6
-    {5555, 8, 22}, // 7
-    {7500, 9, 23}, // 8
-    {10000, 10, 24}, // 9
-    {15000, 11, 25}, // 10
-    {20000, 12, 26}, // 11
-    {25000, 13, 27}, // 12
-    {50000, 14, 28} // 13
-};
-
-
-bool Player::titleCheck(uint8 i)
-{
-    if(i > 13)
-        return false;
-
-    if(ttl[i].hk > GetUInt32Value(PLAYER_FIELD_LIFETIME_HONORABLE_KILLS))
-        return false;
-
-    uint16 tId = GetTeam() == ALLIANCE ? ttl[i].tA : ttl[i].tH;
-
-    if(!HasTitle(tId))
-        if (CharTitlesEntry const* title = sCharTitlesStore.LookupEntry(tId))
-            SetTitle(title);
-
-    return true;
-}
-
-void Player::titleAllCheck()
-{
-    for (uint8 i = 0; i < 14; ++i)
-        if(titleCheck(i))
-            ++tlNextCheck;
-}
-
-void Player::titleCheckKill()
-{
-    if (titleCheck(tlNextCheck))
-        ++tlNextCheck;
-}
+// TRINITY_NYA
 
 void Player::UpdateSpellToLevel()
 {
@@ -19749,9 +19692,7 @@ bool Player::LoadFromDB(uint32 guid, SQLQueryHolder *holder)
 
     _LoadEquipmentSets(holder->GetPreparedResult(PLAYER_LOGIN_QUERY_LOADEQUIPMENTSETS));
 
-    /* Newland : Start */
-
-    titleAllCheck();
+    /* TRINITY_NYA : Start */
 
     QueryResult rslt = LoginDatabase.PQuery("SELECT dynamicRate FROM account WHERE id = '%u'", GetSession()->GetAccountId());
     if (rslt)
@@ -19776,7 +19717,7 @@ bool Player::LoadFromDB(uint32 guid, SQLQueryHolder *holder)
             SetFlag(PLAYER_FLAGS, PLAYER_FLAGS_NO_XP_GAIN);
     }
 
-    /* Newland : End */
+    /* TRINITY_NYA : End */
 
     return true;
 }

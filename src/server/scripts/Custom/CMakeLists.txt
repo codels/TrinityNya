@@ -11,6 +11,7 @@
 set(scripts_STAT_SRCS
   ${scripts_STAT_SRCS}
   Custom/mod_MultiKill.cpp
+  Custom/mod_HonorRank.cpp
 )
 
 message("  -> Prepared: Custom")

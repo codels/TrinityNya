@@ -7,23 +7,23 @@
 #define MAX_KILLS 9
 
 
-bool multikill_enable = true;
-bool only_bg = true;
-bool log_db = true;
-int time_between_kills = 15;
+bool    MultiKillEnable                 = true;
+bool    MultiKillBattleGround           = true;
+bool    MultiKillLog                    = true;
+int     MultiKillTimeBetween            = 15;
 
-uint32  reward_gold_count   =   50;
-uint32  reward_gold_kills   =   2;
-bool    reward_gold_scale   =   true;
+uint32  MultiKillRewardGold             = 50;
+uint32  MultiKillRewardGoldKills        = 2;
+bool    MultiKillRewardGoldScale        = true;
 
-uint32  reward_buff_one_id      =   2379;
-uint32  reward_buff_one_kills   =   2;
+uint32  MultiKillRewardBuffFirst        = 2379;
+uint32  MiltuKillRewardBuffFirstKills   = 2;
 
-uint32  reward_buff_two_id      =   23505;
-uint32  reward_buff_two_kills   =   3;
+uint32  MultiKillRewardBuffSecond       = 23505;
+uint32  MultiKillRewardBuffSecondKills  = 3;
 
-uint32  reward_sound_id     =   14808;
-uint32  reward_sound_kills  =   6;
+uint32  MultiKillRewardSound            = 14808;
+uint32  MultiKillRewardSoundKills       = 6;
 
 struct MultiKillInfo
 {
@@ -43,27 +43,27 @@ class Mod_MultiKill_WorldScript : public WorldScript
 
     void SetInitialWorldSettings()
     {
-        multikill_enable = ConfigMgr::GetBoolDefault("MultiKill.Enable", true);
+        MultiKillEnable = ConfigMgr::GetBoolDefault("MultiKill.Enable", true);
 
-        if (!multikill_enable)
+        if (!MultiKillEnable)
             return;
 
-        only_bg = ConfigMgr::GetBoolDefault("MultiKill.BattleGroundOnly", true);
-        log_db = ConfigMgr::GetBoolDefault("MultiKill.Log", true);
-        time_between_kills = ConfigMgr::GetIntDefault("MultiKill.Time.Between", 15);
+        MultiKillBattleGround = ConfigMgr::GetBoolDefault("MultiKill.BattleGroundOnly", true);
+        MultiKillLog = ConfigMgr::GetBoolDefault("MultiKill.Log", true);
+        MultiKillTimeBetween = ConfigMgr::GetIntDefault("MultiKill.Time.Between", 15);
 
-        reward_gold_count = ConfigMgr::GetIntDefault("MultiKill.Reward.Gold.Count", 50);
-        reward_gold_kills = ConfigMgr::GetIntDefault("MultiKill.Reward.Gold.Kills", 2);
-        reward_gold_scale = ConfigMgr::GetBoolDefault("MultiKill.Reward.Gold.Scale", true);
+        MultiKillRewardGold = ConfigMgr::GetIntDefault("MultiKill.Reward.Gold.Count", 50);
+        MultiKillRewardGoldKills = ConfigMgr::GetIntDefault("MultiKill.Reward.Gold.Kills", 2);
+        MultiKillRewardGoldScale = ConfigMgr::GetBoolDefault("MultiKill.Reward.Gold.Scale", true);
 
-        reward_buff_one_id = ConfigMgr::GetIntDefault("MultiKill.Reward.Buff.One.Spell", 2379);
-        reward_buff_one_kills = ConfigMgr::GetIntDefault("MultiKill.Reward.Buff.One.Kills", 2);
+        MultiKillRewardBuffFirst = ConfigMgr::GetIntDefault("MultiKill.Reward.Buff.One.Spell", 2379);
+        MiltuKillRewardBuffFirstKills = ConfigMgr::GetIntDefault("MultiKill.Reward.Buff.One.Kills", 2);
 
-        reward_buff_two_id = ConfigMgr::GetIntDefault("MultiKill.Reward.Buff.Two.Spell", 23505);
-        reward_buff_two_kills = ConfigMgr::GetIntDefault("MultiKill.Reward.Buff.Two.Kills", 3);
+        MultiKillRewardBuffSecond = ConfigMgr::GetIntDefault("MultiKill.Reward.Buff.Two.Spell", 23505);
+        MultiKillRewardBuffSecondKills = ConfigMgr::GetIntDefault("MultiKill.Reward.Buff.Two.Kills", 3);
         
-        reward_sound_id = ConfigMgr::GetIntDefault("MultiKill.Reward.Sound.Id", 14808);
-        reward_sound_kills = ConfigMgr::GetIntDefault("MultiKill.Reward.Sound.Kills", 6);
+        MultiKillRewardSound = ConfigMgr::GetIntDefault("MultiKill.Reward.Sound.Id", 14808);
+        MultiKillRewardSoundKills = ConfigMgr::GetIntDefault("MultiKill.Reward.Sound.Kills", 6);
     }
 };
 
@@ -75,67 +75,67 @@ class Mod_MultiKill_PlayerScript : public PlayerScript
         {
         }
 
-    void RewardSound(Player *player)
+    void RewardSound(Player* player)
     {
-        if (reward_sound_id == 0)
+        if (MultiKillRewardSound == 0)
             return;
 
-        if (MultiKill[player->GetGUID()].count < reward_sound_kills)
+        if (MultiKill[player->GetGUID()].count < MultiKillRewardSoundKills)
             return;
 
-		if (player->InBattleground())
-		{
-			if (Battleground* bg = player->GetBattleground())
-				bg->PlaySoundToAll(reward_sound_id);
-		}
+        if (player->InBattleground())
+        {
+            if (Battleground* bg = player->GetBattleground())
+                bg->PlaySoundToAll(MultiKillRewardSound);
+        }
     }
 
-    void RewardBuff(uint32 buff_id, uint32 buff_kills, Player *player)
+    void RewardBuff(uint32 spell, uint32 kills, Player* player)
     {
-        if (buff_id == 0)
+        if (spell == 0)
             return;
 
-        if (MultiKill[player->GetGUID()].count < buff_kills)
+        if (MultiKill[player->GetGUID()].count < kills)
             return;
 
-        player->CastSpell(player, buff_id, true);
+        player->CastSpell(player, spell, true);
     }
 
-    void RewardGold(Player *player)
+    void RewardGold(Player* player)
     {
-        if (reward_gold_count == 0)
+        if (MultiKillRewardGold == 0)
             return;
 
-        if (MultiKill[player->GetGUID()].count < reward_gold_kills)
+        if (MultiKill[player->GetGUID()].count < MultiKillRewardGoldKills)
             return;
 
-        uint32 gold = reward_gold_count;
-        if (reward_gold_scale)
+        uint32 gold = MultiKillRewardGold;
+        if (MultiKillRewardGoldScale)
             gold *= MultiKill[player->GetGUID()].count - 1;
 
         player->ModifyMoney(gold * GOLD);
 
-		if (player->InBattleground())
-		{
-			if (Battleground* bg = player->GetBattleground())
-				bg->SendWarningToAll(LANG_MULTIKILL_GOLD, player->GetName(), gold);
-		}
+        if (player->InBattleground())
+        {
+            if (Battleground* bg = player->GetBattleground())
+                bg->SendWarningToAll(LANG_MULTIKILL_GOLD, player->GetName(), gold);
+        }
     }
 
-    void Announce(Player *player)
+    void Announce(Player* player)
     {
-		if (player->InBattleground())
-		{
-			if (Battleground* bg = player->GetBattleground())
-			{	bg->SendWarningToAll(
-					LANG_MULTIKILL_KILL,
-					player->GetName(),
-					sObjectMgr->GetTrinityStringForDBCLocale(LANG_MULTIKILL_START + MultiKill[player->GetGUID()].count - 2)
-				);
-			}
-		}
+        if (player->InBattleground())
+        {
+            if (Battleground* bg = player->GetBattleground())
+            {   bg->SendWarningToAll(
+                    LANG_MULTIKILL_KILL,
+                    player->GetName(),
+                    sObjectMgr->GetTrinityStringForDBCLocale(LANG_MULTIKILL_START + MultiKill[player->GetGUID()].count - 2)
+                );
+            }
+        }
 
-        if (!log_db)
+        if (!MultiKillLog)
             return;
 
         CharacterDatabase.PExecute(
@@ -145,21 +145,21 @@ class Mod_MultiKill_PlayerScript : public PlayerScript
         );
     }
         
-    void OnPVPKill(Player *killer, Player *killed)
+    void OnPVPKill(Player* killer, Player* killed)
     {
-        if (!multikill_enable)
+        if (!MultiKillEnable)
             return;
 
         if (killer->GetGUID() == killed->GetGUID())
             return;
 
-        if (only_bg && !killer->InBattleground())
+        if (MultiKillBattleGround && !killer->InBattleground())
             return;
 
         time_t now = time(NULL);
         uint32 guid = killer->GetGUID();
 
-        if (now - MultiKill[guid].last > time_between_kills)
+        if (now - MultiKill[guid].last > MultiKillTimeBetween)
             MultiKill[guid].count = 0;
 
         MultiKill[guid].last = now;
@@ -170,11 +170,11 @@ class Mod_MultiKill_PlayerScript : public PlayerScript
         if (MultiKill[guid].count < MIN_KILLS)
             return;
 
-        RewardBuff(reward_buff_one_id, reward_buff_one_kills, killer);
-		RewardBuff(reward_buff_two_id, reward_buff_two_kills, killer);
+        RewardBuff(MultiKillRewardBuffFirst, MiltuKillRewardBuffFirstKills, killer);
+        RewardBuff(MultiKillRewardBuffSecond, MultiKillRewardBuffSecondKills, killer);
         Announce(killer);
-		RewardGold(killer);
-		RewardSound(killer);
+        RewardGold(killer);
+        RewardSound(killer);
     }
 };
 

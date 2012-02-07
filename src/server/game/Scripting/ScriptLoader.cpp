@@ -19,6 +19,7 @@
 #include "AnticheatMgr.h"
 
 //mod
+void AddSC_Mod_HonorRank();
 void AddSC_Mod_Multikill();
 
 //examples
@@ -1247,6 +1248,7 @@ void AddCustomScripts()
 {
 #ifdef SCRIPTS
     /* This is where custom scripts should be added. */
+	AddSC_Mod_HonorRank();
     AddSC_Mod_Multikill();
 
 #endif

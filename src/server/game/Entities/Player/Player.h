@@ -1115,18 +1115,14 @@ class Player : public Unit, public GridObject<Player>
 
         bool Create(uint32 guidlow, CharacterCreateInfo* createInfo);
 
-		/* NEWLAND */
+		/* TRINTY_NYA */
 		// Rate
 		time_t changeRate;
 		float dynamicRate;
 		bool staticRate;
 
-		uint8 tlNextCheck;
-		bool titleCheck(uint8 i);
-		void titleCheckKill();
-		void titleAllCheck();
 		void UpdateSpellToLevel();
-		/* NEWLAND */
+		/* TRINTY_NYA */
 
         void Update(uint32 time);
 
