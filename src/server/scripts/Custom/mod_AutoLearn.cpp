@@ -296,21 +296,21 @@ class Mod_AutoLearn_PlayerScript : public PlayerScript
 
         if (level < 61) return;
 
-            if (!character->HasSpell(26839) && character->HasSpell(703)) character->learnSpell(26839, false); //Гаррота Уровень 7
+        learn(26839, 703); //Гаррота Уровень 7
 
-            if (level < 62) return;
+        if (level < 62) return;
 
-            if (!character->HasSpell(26861) && character->HasSpell(1752)) character->learnSpell(26861, false); //Коварный удар Уровень 9
-            if (!character->HasSpell(32645)) character->learnSpell(32645, false); //Отравление Уровень 1
-            if (!character->HasSpell(26889) && character->HasSpell(1856)) character->learnSpell(26889, false); //Исчезновение Уровень 3
+        learn(26861, 1752); //Коварный удар Уровень 9
+        learn(32645); //Отравление Уровень 1
+        learn(26889, 1856); //Исчезновение Уровень 3
 
-            if (level < 64) return;
-            
-            if (!character->HasSpell(26865) && character->HasSpell(2098)) character->learnSpell(26865, false); //Потрошение Уровень 10
-            if (!character->HasSpell(26679)) character->learnSpell(26679, false); //Смертельный бросок Уровень 1
-            if (!character->HasSpell(27448) && character->HasSpell(1966)) character->learnSpell(27448, false); //Ложный выпад Уровень 6
+        if (level < 64) return;
 
-            if (level < 66) return;
+        learn(26865, 2098); //Потрошение Уровень 10
+        learn(26679); //Смертельный бросок Уровень 1
+        learn(27448, 1966); //Ложный выпад Уровень 6
+
+        if (level < 66) return;
 
             if (!character->HasSpell(31224)) character->learnSpell(31224, false); //Плащ Теней 
             if (!character->HasSpell(27441) && character->HasSpell(8676)) character->learnSpell(27441, false); //Внезапный удар Уровень 7
