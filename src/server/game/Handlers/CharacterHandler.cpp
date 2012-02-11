@@ -45,6 +45,9 @@
 #include "AccountMgr.h"
 #include "LFGMgr.h"
 
+#include "OutdoorPvPMgr.h"
+#include "OutdoorPvPWG.h"
+
 class LoginQueryHolder : public SQLQueryHolder
 {
     private:
@@ -661,7 +664,7 @@ void WorldSession::HandleCharCreateCallback(PreparedQueryResult result, Characte
             std::string IP_str = GetRemoteAddress();
             sLog->outDetail("Account: %d (IP: %s) Create Character:[%s] (GUID: %u)", GetAccountId(), IP_str.c_str(), createInfo->Name.c_str(), newChar.GetGUIDLow());
             sLog->outChar("Account: %d (IP: %s) Create Character:[%s] (GUID: %u)", GetAccountId(), IP_str.c_str(), createInfo->Name.c_str(), newChar.GetGUIDLow());
-			LoginDatabase.PExecute("INSERT INTO accountHistory (accountId, connectIp, historyText, characterGuid) VALUES ('%d', '%s', 'Создан персонаж %s', '%u')", GetAccountId(), IP_str.c_str(), createInfo->Name.c_str(), newChar.GetGUIDLow());
+            LoginDatabase.PExecute("INSERT INTO accountHistory (accountId, connectIp, historyText, characterGuid) VALUES ('%d', '%s', 'Создан персонаж %s', '%u')", GetAccountId(), IP_str.c_str(), createInfo->Name.c_str(), newChar.GetGUIDLow());
             sScriptMgr->OnPlayerCreate(&newChar);
             sWorld->AddCharacterNameData(newChar.GetGUIDLow(), std::string(newChar.GetName()), newChar.getGender(), newChar.getRace(), newChar.getClass());
 
@@ -717,7 +720,7 @@ void WorldSession::HandleCharDeleteOpcode(WorldPacket & recv_data)
     std::string IP_str = GetRemoteAddress();
     sLog->outDetail("Account: %d (IP: %s) Delete Character:[%s] (GUID: %u)", GetAccountId(), IP_str.c_str(), name.c_str(), GUID_LOPART(guid));
     sLog->outChar("Account: %d (IP: %s) Delete Character:[%s] (GUID: %u)", GetAccountId(), IP_str.c_str(), name.c_str(), GUID_LOPART(guid));
-	LoginDatabase.PExecute("INSERT INTO accountHistory (accountId, connectIp, historyText, characterGuid) VALUES ('%d', '%s', 'LK: Удален персонаж %s', '%u')", GetAccountId(),IP_str.c_str(),name.c_str(),GUID_LOPART(guid));
+    LoginDatabase.PExecute("INSERT INTO accountHistory (accountId, connectIp, historyText, characterGuid) VALUES ('%d', '%s', 'LK: Удален персонаж %s', '%u')", GetAccountId(),IP_str.c_str(),name.c_str(),GUID_LOPART(guid));
     sScriptMgr->OnPlayerDelete(guid);
     sWorld->DeleteCharaceterNameData(GUID_LOPART(guid));
 
@@ -1006,12 +1009,26 @@ void WorldSession::HandlePlayerLogin(LoginQueryHolder* holder)
     sLog->outChar("Account: %d (IP: %s) Login Character:[%s] (GUID: %u)",
         GetAccountId(), IP_str.c_str(), pCurrChar->GetName(), pCurrChar->GetGUIDLow());
 
-	LoginDatabase.PExecute("INSERT INTO accountHistory (accountId, connectIp, historyText, characterGuid) VALUES ('%d', '%s', 'LK: Вход в игру персонажем %s', '%u')", GetAccountId(), IP_str.c_str(), pCurrChar->GetName(), pCurrChar->GetGUIDLow());
+    LoginDatabase.PExecute("INSERT INTO accountHistory (accountId, connectIp, historyText, characterGuid) VALUES ('%d', '%s', 'LK: Вход в игру персонажем %s', '%u')", GetAccountId(), IP_str.c_str(), pCurrChar->GetName(), pCurrChar->GetGUIDLow());
 
     if (!pCurrChar->IsStandState() && !pCurrChar->HasUnitState(UNIT_STATE_STUNNED))
         pCurrChar->SetStandState(UNIT_STAND_STATE_STAND);
 
     m_playerLoading = false;
+
+    if (OutdoorPvPWG *pvpWG = (OutdoorPvPWG*)sOutdoorPvPMgr->GetOutdoorPvPToZoneId(4197))
+    {
+        
+        if (pvpWG->isWarTime())
+            pCurrChar->SendUpdateWorldState(ClockWorldState[1], uint32(time(NULL)));
+        else {
+            pvpWG->SendInitWorldStatesTo(pCurrChar);
+            pCurrChar->SendUpdateWorldState(ClockWorldState[1], uint32(time(NULL) + pvpWG->GetTimer()));
+        }
+        uint32 zone, area;
+        pCurrChar->GetZoneAndAreaId(zone, area);
+        pCurrChar->SendInitWorldStates(zone, area);
+    }
 
     sScriptMgr->OnPlayerLogin(pCurrChar);
     delete holder;
