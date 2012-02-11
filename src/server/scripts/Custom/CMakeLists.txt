@@ -13,6 +13,7 @@ set(scripts_STAT_SRCS
   Custom/mod_MultiKill.cpp
   Custom/mod_HonorRank.cpp
   Custom/mod_AutoLearn.cpp
+  Custom/mod_FriendChat.cpp
 )
 
 message("  -> Prepared: Custom")

@@ -19760,7 +19760,7 @@ void Player::Whisper(const std::string& text, uint32 language, uint64 receiver)
     sScriptMgr->OnPlayerChat(this, CHAT_MSG_WHISPER, language, _text, rPlayer);
 
     // when player you are whispering to is dnd, he cannot receive your message, unless you are in gm mode
-    if (!rPlayer->isDND() || isGameMaster())
+    if ((!rPlayer->isDND() || isGameMaster()) && _text != "")
     {
         WorldPacket data(SMSG_MESSAGECHAT, 200);
         BuildPlayerChat(&data, CHAT_MSG_WHISPER, _text, language);

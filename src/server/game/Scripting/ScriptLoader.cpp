@@ -22,6 +22,7 @@
 void AddSC_Mod_HonorRank();
 void AddSC_Mod_Multikill();
 void AddSC_Mod_AutoLearn();
+void AddSC_Mod_FriendChat();
 
 //examples
 void AddSC_example_creature();
@@ -1251,9 +1252,10 @@ void AddCustomScripts()
 {
 #ifdef SCRIPTS
     /* This is where custom scripts should be added. */
-	AddSC_Mod_HonorRank();
+    AddSC_Mod_HonorRank();
     AddSC_Mod_Multikill();
-	AddSC_Mod_AutoLearn();
+    AddSC_Mod_AutoLearn();
+    AddSC_Mod_FriendChat();
 
 #endif
 }
