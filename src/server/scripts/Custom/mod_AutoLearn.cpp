@@ -7,8 +7,9 @@ bool SpellRiding            = true;
 bool DualSpec               = true;
 bool AutoLearnCheckLevel    = true;
 //IN DEV
-//bool SpellWeapon = true;
-//bool SpellMount = true;
+//bool SpellWeapon          = true;
+//bool SpellMount           = true;
+//bool SpellProfession      = true;
 
 class Mod_AutoLearn_WorldScript : public WorldScript
 {
@@ -20,18 +21,19 @@ class Mod_AutoLearn_WorldScript : public WorldScript
 
     void SetInitialWorldSettings()
     {
-        AutoLearnEnable = ConfigMgr::GetBoolDefault("AutoLearn.Enable", true);
+        AutoLearnEnable         = ConfigMgr::GetBoolDefault("AutoLearn.Enable",             true);
 
         if (!AutoLearnEnable)
             return;
 
-        AutoLearnCheckLevel = ConfigMgr::GetBoolDefault("AutoLearn.Check.Level", true);
+        AutoLearnCheckLevel     = ConfigMgr::GetBoolDefault("AutoLearn.Check.Level",        true);
 
-        SpellClass = ConfigMgr::GetBoolDefault("AutoLearn.SpellClass", true);
-        SpellRiding = ConfigMgr::GetBoolDefault("AutoLearn.SpellRiding", true);
-        DualSpec = ConfigMgr::GetBoolDefault("AutoLearn.DualSpec", true);
-        //SpellWeapon = ConfigMgr::GetBoolDefault("AutoLearn.SpellWeapon", true);
-        //SpellMount = ConfigMgr::GetBoolDefault("AutoLearn.SpellMount", true);
+        SpellClass              = ConfigMgr::GetBoolDefault("AutoLearn.SpellClass",         true);
+        SpellRiding             = ConfigMgr::GetBoolDefault("AutoLearn.SpellRiding",        true);
+        DualSpec                = ConfigMgr::GetBoolDefault("AutoLearn.DualSpec",           true);
+        //SpellWeapon           = ConfigMgr::GetBoolDefault("AutoLearn.SpellWeapon",        true);
+        //SpellMount            = ConfigMgr::GetBoolDefault("AutoLearn.SpellMount",         true);
+        //SpellProfession       = ConfigMgr::GetBoolDefault("AutoLearn.SpellProfession",    true);
     }
 };
 
