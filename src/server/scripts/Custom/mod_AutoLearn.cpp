@@ -2,13 +2,13 @@
 #include "Config.h"
 
 bool AutoLearnEnable        = true;
-bool SpellClass             = true; // IN DEV
+bool SpellClass             = true;
 bool SpellRiding            = true;
 bool DualSpec               = true;
 bool AutoLearnCheckLevel    = true;
 bool SpellMount             = true;
+bool SpellWeapon            = true;
 //IN DEV
-//bool SpellWeapon          = true;
 //bool SpellProfession      = true;
 
 class Mod_AutoLearn_WorldScript : public WorldScript
@@ -32,7 +32,7 @@ class Mod_AutoLearn_WorldScript : public WorldScript
         SpellRiding             = ConfigMgr::GetBoolDefault("AutoLearn.SpellRiding",        true);
         DualSpec                = ConfigMgr::GetBoolDefault("AutoLearn.DualSpec",           true);
         SpellMount              = ConfigMgr::GetBoolDefault("AutoLearn.SpellMount",         true);
-        //SpellWeapon           = ConfigMgr::GetBoolDefault("AutoLearn.SpellWeapon",        true);
+        SpellWeapon             = ConfigMgr::GetBoolDefault("AutoLearn.SpellWeapon",        true);
         //SpellProfession       = ConfigMgr::GetBoolDefault("AutoLearn.SpellProfession",    true);
     }
 };
@@ -58,6 +58,8 @@ class Mod_AutoLearn_PlayerScript : public PlayerScript
 
     void CheckSpell(Player* player)
     {
+        if (!AutoLearnEnable) return;
+
         level = player->getLevel();
         character = player;
 
@@ -65,6 +67,7 @@ class Mod_AutoLearn_PlayerScript : public PlayerScript
         learnDualSpec();
         learnSpellClass();
         learnMount();
+        learnWeapon();
     }
 
     void learn(uint32 spell, uint32 required = 0)
@@ -76,6 +79,96 @@ class Mod_AutoLearn_PlayerScript : public PlayerScript
         if (required != 0 && !character->HasSpell(required)) return;
 
         character->learnSpell(spell, false);
+    }
+
+    void learnWeapon()
+    {
+        if (!SpellWeapon) return;
+
+        if (character->getClass() == CLASS_ROGUE) {
+            learn(5011);// Арбалеты
+            learn(264);// Луки
+            learn(266);// Ружья
+            learn(2567);// Метательное оружие
+            learn(1180);// Кинжалы
+            learn(15590);// Кулачное оружие
+            learn(198);// Одноручное дробящее оружие
+            learn(201);// Одноручные мечи
+            learn(196);// Одноручные топоры
+        } else if (character->getClass() == CLASS_HUNTER) {
+            learn(5011);// Арбалеты
+            learn(202);// Двуручные мечи
+            learn(197);// Двуручные топоры
+            learn(200);// Древковое оружие
+            learn(1180);// Кинжалы
+            learn(15590);// Кулачное оружие
+            learn(264);// Луки
+            learn(201);// Одноручные мечи
+            learn(196);// Одноручные топоры
+            learn(227);// Посохи
+            learn(266);// Ружья
+        } else if (character->getClass() == CLASS_SHAMAN) {
+            learn(199);// Двуручное дробящее оружие
+            learn(197);// Двуручные топоры
+            learn(1180);// Кинжалы
+            learn(15590);// Кулачное оружие
+            learn(198);// Одноручное дробящее оружие
+            learn(196);// Одноручные топоры
+            learn(227);// Посохи
+        } else if (character->getClass() == CLASS_WARRIOR) {
+            learn(196);// Одноручные топоры
+            learn(197);// Двуручные топоры
+            learn(198);// Одноручное дробящее оружие
+            learn(199);// Двуручное дробящее оружие
+            learn(266);// Ружья
+            learn(15590);// Кулачное оружие
+            learn(264);// Луки
+            learn(2567);// Метательное оружие
+            learn(15590);// Кулачное оружие
+            learn(200);// Древковое оружие
+            learn(201);// Одноручные мечи
+            learn(202);// Двуручные мечи
+            learn(227);// Посохи
+            learn(5011);// Арбалеты
+            learn(1180);// Кинжалы
+            learn(2567);// Метательное оружие
+            learn(5011);// Арбалеты
+        } else if (character->getClass() == CLASS_PALADIN) {
+            learn(202);// Двуручные мечи
+            learn(199);// Двуручное дробящее оружие
+            learn(197);// Двуручные топоры
+            learn(200);// Древковое оружие
+            learn(198);// Одноручное дробящее оружие
+            learn(201);// Одноручные мечи
+            learn(196);// Одноручные топоры
+        } else if (character->getClass() == CLASS_PRIEST) {
+            learn(227);// Посохи
+            learn(198);// Одноручное дробящее оружие
+            learn(1180);// Кинжалы
+        } else if (character->getClass() == CLASS_DEATH_KNIGHT) {
+            learn(199);// Двуручное дробящее оружие
+            learn(202);// Двуручные мечи
+            learn(197);// Двуручные топоры
+            learn(200);// Древковое оружие
+            learn(198);// Одноручное дробящее оружие
+            learn(201);// Одноручные мечи
+            learn(196);// Одноручные топоры
+        } else if (character->getClass() == CLASS_MAGE) {
+            learn(1180);// Кинжалы
+            learn(201);// Одноручные мечи
+            learn(227);// Посохи
+        } else if (character->getClass() == CLASS_WARLOCK) {
+            learn(1180);// Кинжалы
+            learn(201);// Одноручные мечи
+            learn(227);// Посохи
+        } else if (character->getClass() == CLASS_DRUID) {
+            learn(199);// Двуручное дробящее оружие
+            learn(200);// Древковое оружие
+            learn(1180);// Кинжалы
+            learn(15590);// Кулачное оружие
+            learn(198);// Одноручное дробящее оружие
+            learn(227);// Посохи
+        }
     }
 
     void learnSpellRiding()
