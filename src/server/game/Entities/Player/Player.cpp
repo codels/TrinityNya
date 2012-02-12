@@ -862,7 +862,7 @@ Player::Player(WorldSession* session): Unit(true), m_achievementMgr(this), m_rep
 
     SetPendingBind(0, 0);
 
-	dynamicRate = 1.0f;
+    dynamicRate = 1.0f;
     staticRate = false;
     changeRate = 0;
 }
@@ -5484,8 +5484,8 @@ void Player::RepopAtGraveyard()
     AreaTableEntry const* zone = GetAreaEntryByAreaID(GetAreaId());
 
     // Such zones are considered unreachable as a ghost and the player must be automatically revived
-	//ffff GetZoneId() GetMapId()GetAreaId()
-	bool spec = (GetMapId() == 1 && GetZoneId() == 440 && GetAreaId() == 2317);
+    //ffff GetZoneId() GetMapId()GetAreaId()
+    bool spec = (GetMapId() == 1 && GetZoneId() == 440 && GetAreaId() == 2317);
     if ((!isAlive() && zone && zone->flags & AREA_FLAG_NEED_FLY) || GetTransport() || GetPositionZ() < -500.0f || spec)
     {
         ResurrectPlayer(0.5f);
@@ -5507,10 +5507,10 @@ void Player::RepopAtGraveyard()
     // and don't show spirit healer location
     if (ClosestGrave)
     {
-		if (!spec)
-			TeleportTo(ClosestGrave->map_id, ClosestGrave->x, ClosestGrave->y, ClosestGrave->z, GetOrientation());
-		else
-			TeleportTo(1, -11346.81f, -4756.6469f, 6.31f, 2.277727f);
+        if (!spec)
+            TeleportTo(ClosestGrave->map_id, ClosestGrave->x, ClosestGrave->y, ClosestGrave->z, GetOrientation());
+        else
+            TeleportTo(1, -11346.81f, -4756.6469f, 6.31f, 2.277727f);
 
         if (isDead())                                        // not send if alive, because it used in TeleportTo()
         {
@@ -6218,8 +6218,8 @@ bool Player::UpdateSkillPro(uint16 SkillId, int32 Chance, uint32 step)
         UpdateSkillEnchantments(SkillId, SkillValue, SkillNewValue);
         GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_REACH_SKILL_LEVEL, SkillId);
         sLog->outDebug(LOG_FILTER_PLAYER_SKILLS, "Player::UpdateSkillPro Chance=%3.1f%% taken", Chance / 10.0f);
-		//TRINITY_NYA
-		sScriptMgr->OnPlayerSkillUpdate(this, SkillId, SkillValue, SkillNewValue);
+        //TRINITY_NYA
+        sScriptMgr->OnPlayerSkillUpdate(this, SkillId, SkillValue, SkillNewValue);
         return true;
     }
 
@@ -6862,7 +6862,7 @@ void Player::CheckAreaExploreAndOutdoor()
                     XP = uint32(sObjectMgr->GetBaseXP(p->area_level)*sWorld->getRate(RATE_XP_EXPLORE));
                 }
 
-				XP = uint32(XP * dynamicRate);
+                XP = uint32(XP * dynamicRate);
 
                 GiveXP(XP, NULL);
                 SendExplorationExperience(area, XP);
@@ -7461,8 +7461,8 @@ void Player::UpdateZone(uint32 newZone, uint32 newArea)
             break;
     }
 
-	// wowkarelia
-	bool spec = (GetMapId() == 1 && GetZoneId() == 440 && GetAreaId() == 2317);
+    // TRINITY_NYA
+    bool spec = (GetMapId() == 1 && GetZoneId() == 440 && GetAreaId() == 2317);
 
     if (zone->flags & AREA_FLAG_CAPITAL || spec)                     // in capital city
     {
@@ -18787,6 +18787,9 @@ void Player::SaveToDB(bool create /*=false*/)
     // save pet (hunter pet level and experience and all type pets health/mana).
     if (Pet* pet = GetPet())
         pet->SavePetToDB(PET_SAVE_AS_CURRENT);
+
+    //TRINITY_NYA
+    sScriptMgr->OnPlayerSave(this);
 }
 
 // fast save function for item/money cheating preventing - save only inventory and money state

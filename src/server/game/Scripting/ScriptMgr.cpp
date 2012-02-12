@@ -1300,6 +1300,11 @@ void ScriptMgr::OnPlayerSkillUpdate(Player* player, uint16 SkillId, uint16 Skill
     FOREACH_SCRIPT(PlayerScript)->OnPlayerSkillUpdate(player, SkillId, SkillValue, SkillNewValue);
 }
 
+void ScriptMgr::OnPlayerSave(Player* player)
+{
+    FOREACH_SCRIPT(PlayerScript)->OnPlayerSave(player);
+}
+
 // Guild
 void ScriptMgr::OnGuildAddMember(Guild* guild, Player* player, uint8& plRank)
 {
