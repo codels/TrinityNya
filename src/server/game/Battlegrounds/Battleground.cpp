@@ -900,8 +900,8 @@ void Battleground::EndBattleground(uint32 winner)
         *****************************************/
 
         uint32 GuildPlayer = player->GetGuildId();
-        BattlegroundScoreMap::iterator ScoreItr = m_PlayerScores.find(player->GetGUID());
-        if (ScoreItr == m_PlayerScores.end()) continue;
+        BattlegroundScoreMap::iterator ScoreItr = PlayerScores.find(player->GetGUID());
+        if (ScoreItr == PlayerScores.end()) continue;
 
         std::ostringstream PeopleData;
         PeopleData << player->GetGUIDLow() << ":";
@@ -974,7 +974,7 @@ void Battleground::EndBattleground(uint32 winner)
             if(!plr)
                 continue;
 
-            BattlegroundScoreMap::iterator ScoreItr = m_PlayerScores.find(plr->GetGUID());
+            BattlegroundScoreMap::iterator ScoreItr = PlayerScores.find(plr->GetGUID());
 
             if((int32)ScoreItr->second->DamageDone >= maxdd)
             {
