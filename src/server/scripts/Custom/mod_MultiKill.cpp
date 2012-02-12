@@ -31,7 +31,8 @@ struct MultiKillInfo
     uint8 count;
 };
 
-static std::map<uint32, MultiKillInfo> MultiKill;
+typedef std::map<uint32, MultiKillInfo> MultiKillMap; 
+MultiKillMap MultiKill;
 
 class Mod_MultiKill_WorldScript : public WorldScript
 {
@@ -175,6 +176,37 @@ class Mod_MultiKill_PlayerScript : public PlayerScript
         Announce(killer);
         RewardGold(killer);
         RewardSound(killer);
+    }
+
+    void OnLogin(Player* player)
+    {
+        if (!MultiKillEnable) return;
+
+        MultiKill[player->GetGUID()].count = 0;
+        MultiKill[player->GetGUID()].last = time(NULL);
+    }
+
+    void OnLogout(Player* player)
+    {
+        if (!MultiKillEnable) return;
+
+        uint32 guid = player->GetGUID();
+
+        if (MultiKill.empty())
+            return;
+
+        MultiKillMap::iterator itr;
+
+        for (itr = MultiKill.begin(); itr != MultiKill.end();)
+        {
+            if (itr->first == guid)
+            {
+                MultiKill.erase(itr);
+                return;
+            }
+            else
+                ++itr;
+        }
     }
 };
 
