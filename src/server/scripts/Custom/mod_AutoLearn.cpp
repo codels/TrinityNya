@@ -6,9 +6,9 @@ bool SpellClass             = true; // IN DEV
 bool SpellRiding            = true;
 bool DualSpec               = true;
 bool AutoLearnCheckLevel    = true;
+bool SpellMount             = true;
 //IN DEV
 //bool SpellWeapon          = true;
-//bool SpellMount           = true;
 //bool SpellProfession      = true;
 
 class Mod_AutoLearn_WorldScript : public WorldScript
@@ -31,8 +31,8 @@ class Mod_AutoLearn_WorldScript : public WorldScript
         SpellClass              = ConfigMgr::GetBoolDefault("AutoLearn.SpellClass",         true);
         SpellRiding             = ConfigMgr::GetBoolDefault("AutoLearn.SpellRiding",        true);
         DualSpec                = ConfigMgr::GetBoolDefault("AutoLearn.DualSpec",           true);
+        SpellMount              = ConfigMgr::GetBoolDefault("AutoLearn.SpellMount",         true);
         //SpellWeapon           = ConfigMgr::GetBoolDefault("AutoLearn.SpellWeapon",        true);
-        //SpellMount            = ConfigMgr::GetBoolDefault("AutoLearn.SpellMount",         true);
         //SpellProfession       = ConfigMgr::GetBoolDefault("AutoLearn.SpellProfession",    true);
     }
 };
@@ -64,6 +64,7 @@ class Mod_AutoLearn_PlayerScript : public PlayerScript
         learnSpellRiding();
         learnDualSpec();
         learnSpellClass();
+        learnMount();
     }
 
     void learn(uint32 spell, uint32 required = 0)
@@ -79,13 +80,93 @@ class Mod_AutoLearn_PlayerScript : public PlayerScript
 
     void learnSpellRiding()
     {
-        if (!SpellRiding) return;
+        if (!SpellRiding || level < 20) return;
+        
+        learn(33388);// Верховая езда (ученик)
 
-        if (level > 19) learn(33388);
-        if (level > 39) learn(33391);
-        if (level > 59) learn(34090);
-        if (level > 69) learn(34091);
-        if (level > 76) learn(54197);// air northland
+        if (level < 40) return;
+        
+        learn(33391);// Верховая езда (подмастерье)
+
+        if (level < 60) return;
+        
+        learn(34090);// Верховая езда (умелец)
+
+        if (level < 70) return;
+
+        learn(34091);// Верховая езда (искусник)
+
+        if (level < 77) return;
+
+        learn(54197);// Полеты в непогоду
+    }
+    
+    void learnMount()
+    {
+        if (!SpellMount || level < 20) return;
+
+        uint32 race = character->getRace();
+
+        if (race == RACE_HUMAN)
+        {
+            if (level > 19) learn(458);// Гнедой конь
+            if (level > 39) learn(23228); // Стремительный белый рысак
+        }
+        else if (race == RACE_ORC)
+        {
+            if (level > 19) learn(64658);// Черный волк
+            if (level > 39) learn(23251);// Стремительный лесной волк
+        }
+        else if (race == RACE_DWARF)
+        {
+            if (level > 19) learn(6898);// Белый баран
+            if (level > 39) learn(23240);// Стремительный белый баран
+        }
+        else if (race == RACE_NIGHTELF)
+        {
+            if (level > 19) learn(8394);// Полосатый ледопард
+            if (level > 39) learn(23221);// Стремительный ледопард
+        }
+        else if (race == RACE_UNDEAD_PLAYER)
+        {
+            if (level > 19) learn(64977);// Черный конь-скелет
+            if (level > 39) learn(23246);// Лиловый боевой конь-скелет
+        }
+        else if (race == RACE_TAUREN)
+        {
+            if (level > 19) learn(64657);// Белый кодо
+            if (level > 39) learn(23248);// Огромный серый кодо
+        }
+        else if (race == RACE_GNOME)
+        {
+            if (level > 19) learn(10873);// Красный механодолгоног
+            if (level > 39) learn(23225);// Стремительный зеленый механодолгоног
+        }
+        else if (race == RACE_TROLL)
+        {
+            if (level > 19) learn(8395);// Изумрудный ящер
+            if (level > 39) learn(23241);// Стремительный синий ящер
+        }
+        else if (race == RACE_BLOODELF)
+        {
+            if (level > 19) learn(35022);// Черный крылобег
+            if (level > 39) learn(33660);// Стремительный розовый крылобег
+        }
+        else if (race == RACE_DRAENEI)
+        {
+            if (level > 19) learn(35710);// Серый элекк
+            if (level > 39) learn(35713);// Большой синий элекк
+        }
+
+        if (level < 60) return;
+
+        if (character->GetTeam() == ALLIANCE) learn(32240);// Белоснежный грифон
+        else learn(32243);// Рыжий ветрокрыл
+
+        if (level < 70) return;
+
+        if (character->GetTeam() == ALLIANCE) learn(32289);// Стремительный красный грифон
+        else learn(32246);// Стремительный красный ветрокрыл
     }
 
     void learnDualSpec()
@@ -96,8 +177,8 @@ class Mod_AutoLearn_PlayerScript : public PlayerScript
 
         if (character->GetSpecsCount() != 1) return;
 
-        character->CastSpell(character, 63680, true, NULL, NULL, character->GetGUID());
-        character->CastSpell(character, 63624, true, NULL, NULL, character->GetGUID());
+        character->CastSpell(character, 63680, true, NULL, NULL, character->GetGUID());// Обучение переключению между раскладками талантов
+        character->CastSpell(character, 63624, true, NULL, NULL, character->GetGUID());// Изучение второй специализации талантов
     }
 
     void learnSpellClass()
@@ -128,29 +209,29 @@ class Mod_AutoLearn_PlayerScript : public PlayerScript
 
     void learnSpellRogue()
     {
-        learn(1784); //Незаметность
+        learn(1784);// Незаметность
 
         if (level < 4) return;
 
-        learn(53); //Удар в спину Уровень 1
-        learn(921); //Обшаривание карманов
+        learn(53);// Удар в спину Уровень 1
+        learn(921);// Обшаривание карманов
 
         if (level < 6) return;
 
-        learn(1757, 1752); //Коварный удар Уровень 2
-        learn(1776); //Парализующий удар
+        learn(1757, 1752);// Коварный удар Уровень 2
+        learn(1776);// Парализующий удар
 
         if (level < 8) return;
 
-        learn(6760, 2098); //Потрошение Уровень 2
-        learn(5277); //Ускользание Уровень 1
+        learn(6760, 2098);// Потрошение Уровень 2
+        learn(5277);// Ускользание Уровень 1
 
         if (level < 10) return;
 
-        learn(2983); //Спринт Уровень 1
-        learn(6770); //Ошеломление Уровень 1
-        learn(5171); //Мясорубка Уровень 1
-        learn(674); //Бой двумя оружиями Пассивная
+        learn(2983);// Спринт Уровень 1
+        learn(6770);// Ошеломление Уровень 1
+        learn(5171);// Мясорубка Уровень 1
+        learn(674);// Бой двумя оружиями Пассивная
 
         if (level < 12) return;
 
@@ -178,7 +259,7 @@ class Mod_AutoLearn_PlayerScript : public PlayerScript
 
         learn(2590, 53); //Удар в спину Уровень 3
         learn(1943); //Рваная рана Уровень 1
-        learn(51722); //unk
+        learn(51722);
 
         if (level < 22) return;
 
@@ -302,101 +383,96 @@ class Mod_AutoLearn_PlayerScript : public PlayerScript
 
         if (level < 62) return;
 
-        learn(26861, 1752); //Коварный удар Уровень 9
+        learn(26861, 1752); // Коварный удар Уровень 9
         learn(32645); //Отравление Уровень 1
         learn(26889, 1856); //Исчезновение Уровень 3
 
         if (level < 64) return;
 
-        learn(26865, 2098); //Потрошение Уровень 10
-        learn(26679); //Смертельный бросок Уровень 1
-        learn(27448, 1966); //Ложный выпад Уровень 6
+        learn(26865, 2098);// Потрошение Уровень 10
+        learn(26679);// Смертельный бросок Уровень 1
+        learn(27448, 1966);// Ложный выпад Уровень 6
 
         if (level < 66) return;
 
-            if (!character->HasSpell(31224)) character->learnSpell(31224, false); //Плащ Теней 
-            if (!character->HasSpell(27441) && character->HasSpell(8676)) character->learnSpell(27441, false); //Внезапный удар Уровень 7
-            //if (!character->HasSpell(26866)) character->learnSpell(26866, false); //Ослабление доспеха Уровень 6
+        learn(31224);// Плащ Теней
+        learn(27441, 8676);// Внезапный удар Уровень 7
 
-            if (level < 68) return;
+        if (level < 68) return;
 
-            if (!character->HasSpell(26867) && character->HasSpell(1943)) character->learnSpell(26867, false); //Рваная рана Уровень 7
-            if (!character->HasSpell(26863) && character->HasSpell(53)) character->learnSpell(26863, false); //Удар в спину Уровень 10
+        learn(26867, 1943);// Рваная рана Уровень 7
+        learn(26863, 53);// Удар в спину Уровень 10
 
-            if (level < 69) return;
+        if (level < 69) return;
 
-            if (!character->HasSpell(32684) && character->HasSpell(32645)) character->learnSpell(32684, false); //Отравление Уровень 2
+        learn(32684, 32645);// Отравление Уровень 2
 
-            if (level < 70) return;
+        if (level < 70) return;
 
-            if (!character->HasSpell(48689) && character->HasSpell(8676)) character->learnSpell(48689, false); // unk
-            if (!character->HasSpell(34413) && character->HasSpell(1329)) character->learnSpell(34413, false); //Расправа Уровень 4
-            if (!character->HasSpell(48673) && character->HasSpell(26679)) character->learnSpell(48673, false); // unk
-            if (!character->HasSpell(5938)) character->learnSpell(5938, false); //Отравляющий укол 
-            if (!character->HasSpell(26884) && character->HasSpell(703)) character->learnSpell(26884, false); //Гаррота Уровень 8
-            if (!character->HasSpell(26864) && character->HasSpell(16511)) character->learnSpell(26864, false); //Кровоизлияние Уровень 4
-            if (!character->HasSpell(26862) && character->HasSpell(1752)) character->learnSpell(26862, false); //Коварный удар Уровень 10
+        learn(48689, 8676);
+        learn(34413, 1329);// Расправа Уровень 4
+        learn(48673, 26679);
+        learn(5938);// Отравляющий укол
+        learn(26884, 703);// Гаррота Уровень 8
+        learn(26864, 16511);// Кровоизлияние Уровень 4
+        learn(26862, 1752);// Коварный удар Уровень 10
 
-            if (level < 71) return;
-            
-            if (!character->HasSpell(51724) && character->HasSpell(6770)) character->learnSpell(51724, false); // unk
+        if (level < 71) return;
 
-            if (level < 72) return;
+        learn(51724, 6770);
 
-            if (!character->HasSpell(48658) && character->HasSpell(1966)) character->learnSpell(48658, false); // unk
+        if (level < 72) return;
 
-            if (level < 73) return;
+        learn(48658, 1966);
 
-            if (!character->HasSpell(48667) && character->HasSpell(2098)) character->learnSpell(48667, false); // unk
+        if (level < 73) return;
 
-            if (level < 74) return;
+        learn(48667, 2098);
 
-            if (!character->HasSpell(57992) && character->HasSpell(32645)) character->learnSpell(57992, false); //Отравление Уровень 3
-            if (!character->HasSpell(48671) && character->HasSpell(1943)) character->learnSpell(48671, false); // unk
-            if (!character->HasSpell(48656) && character->HasSpell(53)) character->learnSpell(48656, false); // unk
+        if (level < 74) return;
 
-            if (level < 75) return;
+        learn(57992, 32645);// Отравление Уровень 3
+        learn(48671, 1943);
+        learn(48656, 53);
 
-            if (!character->HasSpell(57934)) character->learnSpell(57934, false); //Маленькие хитрости 
-            if (!character->HasSpell(48690) && character->HasSpell(8676)) character->learnSpell(48690, false); // unk
-            if (!character->HasSpell(48663) && character->HasSpell(1329)) character->learnSpell(48663, false); // unk
-            if (!character->HasSpell(48675) && character->HasSpell(703)) character->learnSpell(48675, false); // unk
+        if (level < 75) return;
 
-            if (level < 76) return;
+        learn(57934);// Маленькие хитрости
+        learn(48690, 8676);
+        learn(48663, 1329);
+        learn(48675, 703);
 
-            if (!character->HasSpell(48637) && character->HasSpell(1752)) character->learnSpell(48637, false); // unk
-            if (!character->HasSpell(48674) && character->HasSpell(26679)) character->learnSpell(48674, false); // unk
+        if (level < 76) return;
 
-            //if (level < 77) return;
-            //if (!character->HasSpell(48669)) character->learnSpell(48669, false); //Ослабление доспеха уровень 7
+        learn(48637, 1752);
+        learn(48674, 26679);
 
-            if (level < 78) return;
+        if (level < 78) return;
 
-            if (!character->HasSpell(48659) && character->HasSpell(1966)) character->learnSpell(48659, false); // unk
+        learn(48659, 1966);
 
-            if (level < 79) return;
+        if (level < 79) return;
 
-            if (!character->HasSpell(48672) && character->HasSpell(1943)) character->learnSpell(48672, false); // unk
-            if (!character->HasSpell(48668) && character->HasSpell(2098)) character->learnSpell(48668, false); // unk
+        learn(48672, 1943);
+        learn(48668, 2098);
 
-            if (level < 80) return;
+        if (level < 80) return;
 
-            if (!character->HasSpell(48676) && character->HasSpell(703)) character->learnSpell(48676, false); // unk
-            if (!character->HasSpell(48638) && character->HasSpell(1752)) character->learnSpell(48638, false); // unk
-            if (!character->HasSpell(48657) && character->HasSpell(53)) character->learnSpell(48657, false); // unk
-            if (!character->HasSpell(48660) && character->HasSpell(16511)) character->learnSpell(48660, false); // unk
-            if (!character->HasSpell(51723)) character->learnSpell(51723, false); //Веер клинков
-            if (!character->HasSpell(48666) && character->HasSpell(1329)) character->learnSpell(48666, false); // unk
-            if (!character->HasSpell(48691) && character->HasSpell(8676)) character->learnSpell(48691, false); // unk
-            if (!character->HasSpell(57993) && character->HasSpell(32645)) character->learnSpell(57993, false); //Отравление Уровень 4
+        learn(48676, 703);
+        learn(48638, 1752);
+        learn(48657, 53);
+        learn(48660, 16511);
+        learn(51723);// Веер клинков
+        learn(48666, 1329);
+        learn(48691, 8676);
+        learn(57993, 32645);// Отравление Уровень 4
     }
 
     void learnSpellHunter()
     {
+        learn(1494);// Выслеживание животных 
 
-            if (!character->HasSpell(1494)) character->learnSpell(1494, false); //Выслеживание животных 
-
-            if (level < 4) return;
+        if (level < 4) return;
 
             if (!character->HasSpell(1978)) character->learnSpell(1978, false); //Укус змеи Уровень 1
             if (!character->HasSpell(13163)) character->learnSpell(13163, false); //Дух обезьяны 
