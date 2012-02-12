@@ -86,7 +86,7 @@ public:
 
         if (rate < DynamicRateMin || rate > DynamicRateMax)
         {
-            handler->SendSysMessage(LANG_RATE_BETWEEN, DynamicRateMin, DynamicRateMax);
+            handler->PSendSysMessage(LANG_RATE_BETWEEN, DynamicRateMin, DynamicRateMax);
             return true;
         }
         
@@ -121,7 +121,7 @@ public:
 
         if (rate < DynamicRateMin || rate > DynamicRateMax)
         {
-            handler->SendSysMessage(LANG_RATE_BETWEEN, DynamicRateMin, DynamicRateMax);
+            handler->PSendSysMessage(LANG_RATE_BETWEEN, DynamicRateMin, DynamicRateMax);
             return true;
         }
 
