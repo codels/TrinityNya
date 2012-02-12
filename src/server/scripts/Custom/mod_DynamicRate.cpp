@@ -1,11 +1,5 @@
 #include "ScriptPCH.h"
 #include "Config.h"
-#include "Battleground.h"
-
-#define GOLD 10000
-#define MIN_KILLS 2
-#define MAX_KILLS 9
-
 
 bool    DynamicRateEnable               = true;
 float   DynamicRateMin                  = 0.0f;
@@ -92,7 +86,7 @@ public:
 
         if (rate < DynamicRateMin || rate > DynamicRateMax)
         {
-            handler->SendSysMessage(LANG_RATE_BETWEEN);
+            handler->SendSysMessage(LANG_RATE_BETWEEN, DynamicRateMin, DynamicRateMax);
             return true;
         }
         
@@ -127,7 +121,7 @@ public:
 
         if (rate < DynamicRateMin || rate > DynamicRateMax)
         {
-            handler->SendSysMessage(LANG_RATE_BETWEEN);
+            handler->SendSysMessage(LANG_RATE_BETWEEN, DynamicRateMin, DynamicRateMax);
             return true;
         }
 
@@ -163,7 +157,7 @@ class Mod_DynamicRate_PlayerScript : public PlayerScript
 
         uint32 guid = player->GetGUID();
 
-        DynamicRate[guid].rate = 1.0f;
+        DynamicRate[guid].rate = DynamicRateDefault;
         DynamicRate[guid].update = time(NULL);
         DynamicRate[guid].character = false;
 
