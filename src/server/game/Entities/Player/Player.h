@@ -1115,12 +1115,6 @@ class Player : public Unit, public GridObject<Player>
 
         bool Create(uint32 guidlow, CharacterCreateInfo* createInfo);
 
-		/* TRINTY_NYA */
-		time_t changeRate;
-		float dynamicRate;
-		bool staticRate;
-		/* TRINTY_NYA */
-
         void Update(uint32 time);
 
         static bool BuildEnumData(PreparedQueryResult result, WorldPacket* data);

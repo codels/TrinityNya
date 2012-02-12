@@ -861,10 +861,6 @@ Player::Player(WorldSession* session): Unit(true), m_achievementMgr(this), m_rep
     isDebugAreaTriggers = false;
 
     SetPendingBind(0, 0);
-
-    dynamicRate = 1.0f;
-    staticRate = false;
-    changeRate = 0;
 }
 
 Player::~Player ()
@@ -6861,8 +6857,6 @@ void Player::CheckAreaExploreAndOutdoor()
                 {
                     XP = uint32(sObjectMgr->GetBaseXP(p->area_level)*sWorld->getRate(RATE_XP_EXPLORE));
                 }
-
-                XP = uint32(XP * dynamicRate);
 
                 GiveXP(XP, NULL);
                 SendExplorationExperience(area, XP);
@@ -15038,7 +15032,7 @@ void Player::RewardQuest(Quest const* quest, uint32 reward, Object* questGiver, 
 
     int32 moneyRew = 0;
     if (getLevel() < sWorld->getIntConfig(CONFIG_MAX_PLAYER_LEVEL))
-        GiveXP(uint32(XP * dynamicRate), NULL);
+        GiveXP(XP, NULL);
     else
         moneyRew = int32(quest->GetRewMoneyMaxLevel() * sWorld->getRate(RATE_DROP_MONEY));
 
@@ -15108,7 +15102,7 @@ void Player::RewardQuest(Quest const* quest, uint32 reward, Object* questGiver, 
     _SaveQuestStatus(trans);
 
     if (announce)
-        SendQuestReward(quest, XP * dynamicRate, questGiver);
+        SendQuestReward(quest, XP, questGiver);
 
     // cast spells after mark quest complete (some spells have quest completed state requirements in spell_area data)
     if (quest->GetRewSpellCast() > 0)
@@ -17232,33 +17226,6 @@ bool Player::LoadFromDB(uint32 guid, SQLQueryHolder *holder)
     m_achievementMgr.CheckAllAchievementCriteria();
 
     _LoadEquipmentSets(holder->GetPreparedResult(PLAYER_LOGIN_QUERY_LOADEQUIPMENTSETS));
-
-    /* TRINITY_NYA : Start */
-
-    QueryResult rslt = LoginDatabase.PQuery("SELECT dynamicRate FROM account WHERE id = '%u'", GetSession()->GetAccountId());
-    if (rslt)
-        dynamicRate = (*rslt)[0].GetFloat();
-
-    rslt = CharacterDatabase.PQuery("SELECT rate FROM character_rate WHERE guid = '%u'", guid);
-    if (rslt)
-    {
-        dynamicRate = (*rslt)[0].GetFloat();
-        staticRate = true;
-        changeRate = time(NULL);
-    }
-
-    if(dynamicRate < 0) dynamicRate = 0.0f;
-    if(dynamicRate > 100) dynamicRate = 100.0f;
-
-    if (getLevel() < sWorld->getIntConfig(CONFIG_MAX_PLAYER_LEVEL))
-    {
-        if(dynamicRate > 0)
-            RemoveFlag(PLAYER_FLAGS, PLAYER_FLAGS_NO_XP_GAIN);
-        else
-            SetFlag(PLAYER_FLAGS, PLAYER_FLAGS_NO_XP_GAIN);
-    }
-
-    /* TRINITY_NYA : End */
 
     return true;
 }

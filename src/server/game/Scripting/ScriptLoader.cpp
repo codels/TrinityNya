@@ -23,6 +23,7 @@ void AddSC_Mod_HonorRank();
 void AddSC_Mod_Multikill();
 void AddSC_Mod_AutoLearn();
 void AddSC_Mod_FriendChat();
+void AddSC_Mod_DynamicRate();
 
 //examples
 void AddSC_example_creature();
@@ -1256,6 +1257,7 @@ void AddCustomScripts()
     AddSC_Mod_Multikill();
     AddSC_Mod_AutoLearn();
     AddSC_Mod_FriendChat();
+	AddSC_Mod_DynamicRate();
 
 #endif
 }
