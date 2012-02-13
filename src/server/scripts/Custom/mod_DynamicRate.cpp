@@ -93,7 +93,7 @@ public:
         if (!DynamicRate[guid].character)
             DynamicRate[guid].rate = rate;
 
-        LoginDatabase.PExecute("REPLACE INTO `account_rate` (`id`, `rate`) VALUES ('%u', '%f')", handler->GetSession()->GetAccountId(), rate);
+        CharacterDatabase.PExecute("REPLACE INTO `account_rate` (`id`, `rate`) VALUES ('%u', '%f')", handler->GetSession()->GetAccountId(), rate);
         DynamicRate[guid].update = time(NULL);
 
         handler->SendSysMessage(LANG_RATE_SET_ACCOUNT);
@@ -169,7 +169,7 @@ class Mod_DynamicRate_PlayerScript : public PlayerScript
         }
         else
         {
-            QueryResult rslt = LoginDatabase.PQuery("SELECT `rate` FROM `account_rate` WHERE `id` = '%u'", player->GetSession()->GetAccountId());
+            QueryResult rslt = CharacterDatabase.PQuery("SELECT `rate` FROM `account_rate` WHERE `id` = '%u'", player->GetSession()->GetAccountId());
             if (rslt)
                 DynamicRate[guid].rate = (*rslt)[0].GetFloat();
         }

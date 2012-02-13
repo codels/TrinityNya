@@ -1257,7 +1257,7 @@ void AddCustomScripts()
     AddSC_Mod_Multikill();
     AddSC_Mod_AutoLearn();
     AddSC_Mod_FriendChat();
-	AddSC_Mod_DynamicRate();
+    AddSC_Mod_DynamicRate();
 
 #endif
 }

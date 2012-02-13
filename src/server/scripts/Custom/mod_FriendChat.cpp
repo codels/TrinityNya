@@ -8,7 +8,8 @@ struct FriendChatInfo
     bool enable;
 };
 
-static std::map<uint32, FriendChatInfo> FriendChat;
+typedef std::map<uint32, FriendChatInfo> FriendChatMap;
+FriendChatMap FriendChat;
 
 class Mod_FriendChat_CommandScript : public CommandScript
 {
@@ -32,21 +33,24 @@ public:
 
         std::string param = (char*)args;
 
+        Player *player = handler->GetSession()->GetPlayer();
+        uint32 guid = player->GetGUID();
+
         if (param == "on")
         {
-            FriendChat[handler->GetSession()->GetPlayer()->GetGUID()].enable = true;
+            FriendChat[guid].enable = true;
             handler->SendSysMessage(LANG_FC_ON);
             return true;
         }
 
         if (param == "off")
         {
-            FriendChat[handler->GetSession()->GetPlayer()->GetGUID()].enable = false;
+            FriendChat[guid].enable = false;
             handler->SendSysMessage(LANG_FC_OFF);
             return true;
         }
 
-        if (FriendChat[handler->GetSession()->GetPlayer()->GetGUID()].enable)
+        if (FriendChat[guid].enable)
         {
             handler->SendSysMessage(LANG_FC_ON);
         } else {
@@ -68,7 +72,13 @@ class Mod_FriendChat_PlayerScript : public PlayerScript
 
     void OnLogin(Player* player)
     {
-        FriendChat[player->GetGUID()].enable = false;
+        uint32 guid = player->GetGUID();
+
+        QueryResult rslt = CharacterDatabase.PQuery("SELECT `guid` FROM `character_friend_chat` WHERE `guid` = '%u'", guid);
+        if (rslt)
+            FriendChat[guid].enable = true;
+        else
+            FriendChat[guid].enable = false;
     }
 
     void OnChat(Player* player, uint32 type, uint32 lang, std::string& msg, Player* receiver)
@@ -80,6 +90,32 @@ class Mod_FriendChat_PlayerScript : public PlayerScript
             return;
 
         msg = "";
+    }
+
+    void OnLogout(Player* player)
+    {
+        uint32 guid = player->GetGUID();
+
+        if (FriendChat[guid].enable)
+            CharacterDatabase.PExecute("REPLACE INTO `character_friend_chat` (`guid`) VALUES ('%u')", guid);
+        else
+            CharacterDatabase.PExecute("DELETE FROM `character_friend_chat` WHERE `guid` = '%u'", guid);
+
+        if (FriendChat.empty())
+            return;
+
+        FriendChatMap::iterator itr;
+
+        for (itr = FriendChat.begin(); itr != FriendChat.end();)
+        {
+            if (itr->first == guid)
+            {
+                FriendChat.erase(itr);
+                return;
+            }
+            else
+                ++itr;
+        }
     }
 };
 
