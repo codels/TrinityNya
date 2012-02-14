@@ -24,6 +24,7 @@ void AddSC_Mod_Multikill();
 void AddSC_Mod_AutoLearn();
 void AddSC_Mod_FriendChat();
 void AddSC_Mod_DynamicRate();
+void AddSC_Mod_KillBoss();
 
 //examples
 void AddSC_example_creature();
@@ -1258,6 +1259,7 @@ void AddCustomScripts()
     AddSC_Mod_AutoLearn();
     AddSC_Mod_FriendChat();
     AddSC_Mod_DynamicRate();
+	AddSC_Mod_KillBoss();
 
 #endif
 }
