@@ -72,9 +72,7 @@ public:
         if (!*args)
             return false;
 
-        Player *player = handler->GetSession()->GetPlayer();
-
-        uint32 guid = player->GetGUID();
+        uint32 guid = handler->GetSession()->GetPlayer()->GetGUID();
 
         if (DynamicRate[guid].update + DynamicRateCooldown > time(NULL))
         {
@@ -107,9 +105,7 @@ public:
         if (!*args)
             return false;
 
-        Player *player = handler->GetSession()->GetPlayer();
-
-        uint32 guid = player->GetGUID();
+        uint32 guid = handler->GetSession()->GetPlayer()->GetGUID();
 
         if (DynamicRate[guid].update + DynamicRateCooldown > time(NULL))
         {
@@ -131,7 +127,7 @@ public:
         CharacterDatabase.PExecute("REPLACE INTO `character_rate` (`guid`, `rate`) VALUES ('%u', '%f')", guid, rate);
         DynamicRate[guid].update = time(NULL);
 
-        handler->PSendSysMessage(LANG_RATE_SET_CHARACTER, rate, player->GetName());
+        handler->PSendSysMessage(LANG_RATE_SET_CHARACTER, rate, handler->GetSession()->GetPlayer()->GetName());
         return true;
     }
 };
@@ -169,7 +165,7 @@ class Mod_DynamicRate_PlayerScript : public PlayerScript
         }
         else
         {
-            QueryResult rslt = CharacterDatabase.PQuery("SELECT `rate` FROM `account_rate` WHERE `id` = '%u'", player->GetSession()->GetAccountId());
+            rslt = CharacterDatabase.PQuery("SELECT `rate` FROM `account_rate` WHERE `id` = '%u'", player->GetSession()->GetAccountId());
             if (rslt)
                 DynamicRate[guid].rate = (*rslt)[0].GetFloat();
         }

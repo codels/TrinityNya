@@ -29,7 +29,7 @@ ttlForPvP ttl[] =
 };
 
 bool HonorRankEnable = true;
-bool HonorRankCheckKill = true; //Need Optimize
+bool HonorRankCheckKill = true;
 bool HonorRankCheckLogin = true;
 
 class Mod_HonorRank_WorldScript : public WorldScript

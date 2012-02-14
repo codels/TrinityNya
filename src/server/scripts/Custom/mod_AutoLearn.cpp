@@ -8,7 +8,6 @@ bool DualSpec               = true;
 bool AutoLearnCheckLevel    = true;
 bool SpellMount             = true;
 bool SpellWeapon            = true;
-//IN DEV
 //bool SpellProfession      = true;
 
 class Mod_AutoLearn_WorldScript : public WorldScript

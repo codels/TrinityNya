@@ -33,8 +33,7 @@ public:
 
         std::string param = (char*)args;
 
-        Player *player = handler->GetSession()->GetPlayer();
-        uint32 guid = player->GetGUID();
+        uint32 guid = handler->GetSession()->GetPlayer()->GetGUID();
 
         if (param == "on")
         {
@@ -51,11 +50,9 @@ public:
         }
 
         if (FriendChat[guid].enable)
-        {
             handler->SendSysMessage(LANG_FC_ON);
-        } else {
+        else
             handler->SendSysMessage(LANG_FC_OFF);
-        }
 
         return true;
     }
