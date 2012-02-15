@@ -28,10 +28,10 @@ ttlForPvP ttl[] =
     {50000, 14, 28} // 13
 };
 
-bool HonorRankEnable		= true;
-bool HonorRankCheckKill		= true;
-bool HonorRankCheckLogin	= true;
-bool HonorRankSetNew		= true;
+bool HonorRankEnable        = true;
+bool HonorRankCheckKill     = true;
+bool HonorRankCheckLogin    = true;
+bool HonorRankSetNew        = true;
 
 class Mod_HonorRank_WorldScript : public WorldScript
 {
@@ -43,14 +43,14 @@ class Mod_HonorRank_WorldScript : public WorldScript
 
     void SetInitialWorldSettings()
     {
-        HonorRankEnable			= ConfigMgr::GetBoolDefault("HonorRank.Enable", true);
+        HonorRankEnable         = ConfigMgr::GetBoolDefault("HonorRank.Enable", true);
 
         if (!HonorRankEnable)
             return;
 
-        HonorRankCheckKill		= ConfigMgr::GetBoolDefault("HonorRank.Check.Kill", true);
-        HonorRankCheckLogin		= ConfigMgr::GetBoolDefault("HonorRank.Check.Login", true);
-		HonorRankSetNew			= ConfigMgr::GetBoolDefault("HonorRank.SetNew", true);
+        HonorRankCheckKill      = ConfigMgr::GetBoolDefault("HonorRank.Check.Kill", true);
+        HonorRankCheckLogin     = ConfigMgr::GetBoolDefault("HonorRank.Check.Login", true);
+        HonorRankSetNew         = ConfigMgr::GetBoolDefault("HonorRank.SetNew", true);
     }
 };
 
@@ -74,12 +74,12 @@ class Mod_HonorRank_PlayerScript : public PlayerScript
 
         if(!player->HasTitle(tId))
             if (CharTitlesEntry const* title = sCharTitlesStore.LookupEntry(tId))
-			{
+            {
                 player->SetTitle(title);
 
-				if (HonorRankSetNew)
-					player->SetUInt32Value(PLAYER_CHOSEN_TITLE, tId);
-			}
+                if (HonorRankSetNew)
+                    player->SetUInt32Value(PLAYER_CHOSEN_TITLE, tId);
+            }
 
         return true;
     }
