@@ -1046,7 +1046,7 @@ bool ScriptMgr::OnConditionCheck(Condition* condition, ConditionSourceInfo& sour
 {
     ASSERT(condition);
 
-    GET_SCRIPT_RET(ConditionScript, condition->mScriptId, tmpscript, true);
+    GET_SCRIPT_RET(ConditionScript, condition->ScriptId, tmpscript, true);
     return tmpscript->OnConditionCheck(condition, sourceInfo);
 }
 
