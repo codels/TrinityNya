@@ -104,15 +104,24 @@ class Mod_KillBoss_AllCreatureScript : public AllCreatureScript
                     break;
             }
 */
+        Player* recipient = creature->GetLootRecipient();
+
+        if (!recipient) return;
+
+        bool isRaid = creature->GetMap()->IsRaid();
+        uint32 oEntry = creature->GetEntry();
+        uint32 Entry = oEntry;
+        uint8 spawnMode = creature->GetMap()->GetSpawnMode();
         uint32 GuildId = 0;
         bool IsGuildKill = true;
         uint32 KillerCount = 0;
         std::string TeamKill;
 
-        Player* recipient = creature->GetLootRecipient();
+        if(spawnMode > 0 && spawnMode < MAX_DIFFICULTY)
+            if(CreatureTemplate const* normalInfo = sObjectMgr->GetCreatureTemplate(Entry))
+                if(normalInfo->DifficultyEntry[spawnMode] != 0)
+                    Entry = normalInfo->DifficultyEntry[spawnMode];
 
-        if (!recipient) return;
-        
         if(Group *pGroup = recipient->GetGroup())
         {
             for(GroupReference *itr = pGroup->GetFirstMember(); itr != NULL; itr = itr->next())
@@ -125,10 +134,9 @@ class Mod_KillBoss_AllCreatureScript : public AllCreatureScript
                 std::ostringstream PeopleData;
                 PeopleData << Temp->GetGUIDLow() << ":";
                 PeopleData << Temp->GetName() << ":";
-                PeopleData << int(Temp->getLevel()) << ":";
-                PeopleData << int(Temp->GetGuildId()) << ":";
+                PeopleData << Temp->getLevel() << ":";
+                PeopleData << Temp->GetGuildId() << ":";
                 PeopleData << int(Temp->isAlive()) << ":";
-                PeopleData << int(Temp->isDead()) << ":";
                 PeopleData << int(Temp->IsAtGroupRewardDistance(creature)) << " ";
                 TeamKill += PeopleData.str();
 
@@ -149,34 +157,18 @@ class Mod_KillBoss_AllCreatureScript : public AllCreatureScript
             std::ostringstream PeopleData;
             PeopleData << recipient->GetGUIDLow() << ":";
             PeopleData << recipient->GetName() << ":";
-            PeopleData << int(recipient->getLevel()) << ":";
-            PeopleData << int(recipient->GetGuildId()) << ":";
+            PeopleData << recipient->getLevel() << ":";
+            PeopleData << recipient->GetGuildId() << ":";
             PeopleData << int(recipient->isAlive()) << ":";
-            PeopleData << int(recipient->isDead()) << ":";
-            PeopleData << int(1) << " ";
+            PeopleData << 1 << " ";
             TeamKill += PeopleData.str();
         }
 
         if(!IsGuildKill && GuildId != 0) GuildId = 0;
         if(GuildId == 0 && IsGuildKill) IsGuildKill = false;
-                        
-        uint32 oEntry = creature->GetEntry();
-        uint32 Entry = oEntry;
-        uint8 spawnMode = creature->GetMap()->GetSpawnMode();
-        bool isRaid = creature->GetMap()->IsRaid();
-
-        if(spawnMode > 0 && spawnMode < MAX_DIFFICULTY)
-        {
-            if(CreatureTemplate const* normalInfo = sObjectMgr->GetCreatureTemplate(Entry))
-            {
-                if(normalInfo->DifficultyEntry[spawnMode] != 0)
-                    Entry = normalInfo->DifficultyEntry[spawnMode];
-            }
-        }
 
         if(IsGuildKill)
         {
-            Guild* guild = sGuildMgr->GetGuildById(GuildId);
             std::ostringstream strBoss;
             strBoss << creature->GetMap()->GetMapName() << " - ";
             strBoss << creature->GetNameForLocaleIdx(sObjectMgr->GetDBCLocaleIndex());
@@ -200,29 +192,15 @@ class Mod_KillBoss_AllCreatureScript : public AllCreatureScript
                     default:
                         break;
                 }
-            } else {
-                switch(spawnMode)
-                {
-                    case DUNGEON_DIFFICULTY_NORMAL:
-                        break;
-                    case DUNGEON_DIFFICULTY_HEROIC:
-                        strBoss << " (Героический режим)";
-                        break;
-                    default:
-                        break;
-                }
-            }
+            } else if (spawnMode == DUNGEON_DIFFICULTY_HEROIC)
+                strBoss << " (Героический режим)";
 
             strBoss << " повержен гильдией \"";
-            strBoss << guild->GetName();
+            strBoss << sGuildMgr->GetGuildById(GuildId)->GetName();
             strBoss << "\", составом в ";
             strBoss << KillerCount;
-            if(KillerCount > 4)
-            {
-                strBoss << " человек";
-            } else {
-                strBoss << " человекa";
-            }
+            strBoss << (KillerCount > 4) ? " человек" : " человекa";
+
             sWorld->SendWorldText(LANG_AUTO_BROADCAST, strBoss.str().c_str());
         }
                         
