@@ -29,7 +29,7 @@ class Mod_DynamicRate_WorldScript : public WorldScript
 
     void SetInitialWorldSettings()
     {
-        DynamicRateEnable = ConfigMgr::GetBoolDefault("MultiKill.Enable", true);
+        DynamicRateEnable = ConfigMgr::GetBoolDefault("DynamicRate.Enable", true);
 
         if (!DynamicRateEnable)
             return;

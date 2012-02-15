@@ -2932,3 +2932,40 @@ OutdoorPvP.Wintergrasp.CustomHonorIntactBuilding = 1500
 OutdoorPvP.Wintergrasp.Antifarm.Enable = 1
 OutdoorPvP.Wintergrasp.Antifarm.Atk = 1
 OutdoorPvP.Wintergrasp.Antifarm.Def = 1
+
+MultiKill.Enable = 1
+MultiKill.BattleGroundOnly = 1
+MultiKill.Log = 1
+MultiKill.Time.Between = 15
+MultiKill.Reward.Gold.Count = 50
+MultiKill.Reward.Gold.Kills = 2
+MultiKill.Reward.Gold.Scale = 1
+MultiKill.Reward.Buff.One.Spell = 2379
+MultiKill.Reward.Buff.One.Kills = 2
+MultiKill.Reward.Buff.Two.Spell = 23505
+MultiKill.Reward.Buff.Two.Kills = 3
+MultiKill.Reward.Sound.Id = 14808
+MultiKill.Reward.Sound.Kills = 6
+
+HonorRank.Enable = 1
+HonorRank.Check.Kill = 1
+HonorRank.Check.Login = 1
+HonorRank.SetNew = 1
+
+AutoLearn.Enable = 1
+AutoLearn.SpellClass = 1
+AutoLearn.SpellRiding = 1
+AutoLearn.DualSpec = 1
+AutoLearn.SpellWeapon = 1
+AutoLearn.SpellMount = 1
+AutoLearn.SpellWeapon = 1
+
+KillBoss.Enable = 1
+
+DynamicRate.Enable = 1
+DynamicRate.Mix = 0
+DynamicRate.Default = 1
+DynamicRate.Max = 100
+DynamicRate.Account = 1
+DynamicRate.Character = 1
+DynamicRate.Cooldown = 120
