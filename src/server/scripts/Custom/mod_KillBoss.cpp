@@ -53,52 +53,52 @@ class Mod_KillBoss_AllCreatureScript : public AllCreatureScript
                 case 4949:
                     sWorld->AllCastSpell(35076, ALLIANCE);
                     sWorld->AllCastSpell(16618, ALLIANCE);
-                    sWorld->SendWorldText(LANG_AUTO_BROADCAST, "œÂ‰‚Ó‰ËÚÂÎ¸ ÓÍÓ‚ Ô‡Î!");
+                    sWorld->SendWorldText(LANG_AUTO_BROADCAST, "–ü—Ä–µ–¥–≤–æ–¥–∏—Ç–µ–ª—å –æ—Ä–∫–æ–≤ –ø–∞–ª!");
                     break;
                 case 10540:
                     sWorld->AllCastSpell(35076, ALLIANCE);
                     sWorld->AllCastSpell(16618, ALLIANCE);
-                    sWorld->SendWorldText(LANG_AUTO_BROADCAST, "œÂ‰‚Ó‰ËÚÂÎ¸ ÚÓÎÎÂÈ Ô‡Î!");
+                    sWorld->SendWorldText(LANG_AUTO_BROADCAST, "–ü—Ä–µ–¥–≤–æ–¥–∏—Ç–µ–ª—å —Ç—Ä–æ–ª–ª–µ–π –ø–∞–ª!");
                     break;
                 case 3057:
                     sWorld->AllCastSpell(35076, ALLIANCE);
                     sWorld->AllCastSpell(16618, ALLIANCE);
-                    sWorld->SendWorldText(LANG_AUTO_BROADCAST, "œÂ‰‚Ó‰ËÚÂÎ¸ Ú‡ÛÂÌÓ‚ Ô‡Î!");
+                    sWorld->SendWorldText(LANG_AUTO_BROADCAST, "–ü—Ä–µ–¥–≤–æ–¥–∏—Ç–µ–ª—å —Ç–∞—É—Ä–µ–Ω–æ–≤ –ø–∞–ª!");
                     break;
                 case 10181:
                     sWorld->AllCastSpell(35076, ALLIANCE);
                     sWorld->AllCastSpell(16618, ALLIANCE);
-                    sWorld->SendWorldText(LANG_AUTO_BROADCAST, "œÂ‰‚Ó‰ËÚÂÎ¸ ÌÂÊËÚË Ô‡Î!");
+                    sWorld->SendWorldText(LANG_AUTO_BROADCAST, "–ü—Ä–µ–¥–≤–æ–¥–∏—Ç–µ–ª—å –Ω–µ–∂–∏—Ç–∏ –ø–∞–ª!");
                     break;
                 case 16802:
                     sWorld->AllCastSpell(35076, ALLIANCE);
-                    sWorld->SendWorldText(LANG_AUTO_BROADCAST, "œÂ‰‚Ó‰ËÚÂÎ¸ ÍÓ‚‡‚˚ı ˝Î¸ÙÓ‚ Ô‡Î!");
+                    sWorld->SendWorldText(LANG_AUTO_BROADCAST, "–ü—Ä–µ–¥–≤–æ–¥–∏—Ç–µ–ª—å –∫—Ä–æ–≤–∞–≤—ã—Ö —ç–ª—å—Ñ–æ–≤ –ø–∞–ª!");
                     sWorld->AllCastSpell(16618, ALLIANCE);
                     break;
                 case 29611:
                     sWorld->AllCastSpell(16618, HORDE);
                     sWorld->AllCastSpell(35076, HORDE);
-                    sWorld->SendWorldText(LANG_AUTO_BROADCAST, "œÂ‰‚Ó‰ËÚÂÎ¸ Î˛‰ÂÈ Ô‡Î!");
+                    sWorld->SendWorldText(LANG_AUTO_BROADCAST, "–ü—Ä–µ–¥–≤–æ–¥–∏—Ç–µ–ª—å –ª—é–¥–µ–π –ø–∞–ª!");
                     break;
                 case 7937:
                     sWorld->AllCastSpell(16618, HORDE);
                     sWorld->AllCastSpell(35076, HORDE);
-                    sWorld->SendWorldText(LANG_AUTO_BROADCAST, "œÂ‰‚Ó‰ËÚÂÎ¸ „ÌÓÏÓ‚ Ô‡Î!");
+                    sWorld->SendWorldText(LANG_AUTO_BROADCAST, "–ü—Ä–µ–¥–≤–æ–¥–∏—Ç–µ–ª—å –≥–Ω–æ–º–æ–≤ –ø–∞–ª!");
                     break;
                 case 2784:
                     sWorld->AllCastSpell(16618, HORDE);
                     sWorld->AllCastSpell(35076, HORDE);
-                    sWorld->SendWorldText(LANG_AUTO_BROADCAST, "œÂ‰‚Ó‰ËÚÂÎ¸ ‰‚‡ÙÓ‚ Ô‡Î!");
+                    sWorld->SendWorldText(LANG_AUTO_BROADCAST, "–ü—Ä–µ–¥–≤–æ–¥–∏—Ç–µ–ª—å –¥–≤–∞—Ä—Ñ–æ–≤ –ø–∞–ª!");
                     break;
                 case 17468:
                     sWorld->AllCastSpell(16618, HORDE);
                     sWorld->AllCastSpell(35076, HORDE);
-                    sWorld->SendWorldText(LANG_AUTO_BROADCAST, "œÂ‰‚Ó‰ËÚÂÎ¸ ‰ÂÌÂÈ Ô‡Î!");
+                    sWorld->SendWorldText(LANG_AUTO_BROADCAST, "–ü—Ä–µ–¥–≤–æ–¥–∏—Ç–µ–ª—å –¥—Ä–µ–Ω–µ–π –ø–∞–ª!");
                     break;
                 case 7999:
                     sWorld->AllCastSpell(16618, HORDE);
                     sWorld->AllCastSpell(35076, HORDE);
-                    sWorld->SendWorldText(LANG_AUTO_BROADCAST, "œÂ‰‚Ó‰ËÚÂÎ¸ ÌÓ˜Ì˚ı ˝Î¸ÙÓ‚ Ô‡Î!");
+                    sWorld->SendWorldText(LANG_AUTO_BROADCAST, "–ü—Ä–µ–¥–≤–æ–¥–∏—Ç–µ–ª—å –Ω–æ—á–Ω—ã—Ö —ç–ª—å—Ñ–æ–≤ –ø–∞–ª!");
                     break;
                 default:
                     break;
@@ -186,16 +186,16 @@ class Mod_KillBoss_AllCreatureScript : public AllCreatureScript
                 switch(spawnMode)
                 {
                     case RAID_DIFFICULTY_10MAN_NORMAL:
-                        strBoss << " (—ÎÓÊÌÓÒÚ¸ Ì‡ 10 ˜ÂÎÓ‚ÂÍ)";
+                        strBoss << " (–°–ª–æ–∂–Ω–æ—Å—Ç—å –Ω–∞ 10 —á–µ–ª–æ–≤–µ–∫)";
                         break;
                     case RAID_DIFFICULTY_25MAN_NORMAL:
-                        strBoss << " (—ÎÓÊÌÓÒÚ¸ Ì‡ 25 ˜ÂÎÓ‚ÂÍ)";
+                        strBoss << " (–°–ª–æ–∂–Ω–æ—Å—Ç—å –Ω–∞ 25 —á–µ–ª–æ–≤–µ–∫)";
                         break;
                     case RAID_DIFFICULTY_10MAN_HEROIC:
-                        strBoss << " (—ÎÓÊÌÓÒÚ¸ „ÂÓË˜ÂÒÍËÈ Ì‡ 10 ˜ÂÎÓ‚ÂÍ)";
+                        strBoss << " (–°–ª–æ–∂–Ω–æ—Å—Ç—å –≥–µ—Ä–æ–∏—á–µ—Å–∫–∏–π –Ω–∞ 10 —á–µ–ª–æ–≤–µ–∫)";
                         break;
                     case RAID_DIFFICULTY_25MAN_HEROIC:
-                        strBoss << " (—ÎÓÊÌÓÒÚ¸ „ÂÓË˜ÂÒÍËÈ Ì‡ 25 ˜ÂÎÓ‚ÂÍ)";
+                        strBoss << " (–°–ª–æ–∂–Ω–æ—Å—Ç—å –≥–µ—Ä–æ–∏—á–µ—Å–∫–∏–π –Ω–∞ 25 —á–µ–ª–æ–≤–µ–∫)";
                         break;
                     default:
                         break;
@@ -206,22 +206,22 @@ class Mod_KillBoss_AllCreatureScript : public AllCreatureScript
                     case DUNGEON_DIFFICULTY_NORMAL:
                         break;
                     case DUNGEON_DIFFICULTY_HEROIC:
-                        strBoss << " (√ÂÓË˜ÂÒÍËÈ ÂÊËÏ)";
+                        strBoss << " (–ì–µ—Ä–æ–∏—á–µ—Å–∫–∏–π —Ä–µ–∂–∏–º)";
                         break;
                     default:
                         break;
                 }
             }
 
-            strBoss << " ÔÓ‚ÂÊÂÌ „ËÎ¸‰ËÂÈ \"";
+            strBoss << " –ø–æ–≤–µ—Ä–∂–µ–Ω –≥–∏–ª—å–¥–∏–µ–π \"";
             strBoss << guild->GetName();
-            strBoss << "\", ÒÓÒÚ‡‚ÓÏ ‚ ";
+            strBoss << "\", —Å–æ—Å—Ç–∞–≤–æ–º –≤ ";
             strBoss << KillerCount;
             if(KillerCount > 4)
             {
-                strBoss << " ˜ÂÎÓ‚ÂÍ";
+                strBoss << " —á–µ–ª–æ–≤–µ–∫";
             } else {
-                strBoss << " ˜ÂÎÓ‚ÂÍa";
+                strBoss << " —á–µ–ª–æ–≤–µ–∫a";
             }
             sWorld->SendWorldText(LANG_AUTO_BROADCAST, strBoss.str().c_str());
         }
