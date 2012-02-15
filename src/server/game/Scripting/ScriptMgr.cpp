@@ -289,6 +289,7 @@ void ScriptMgr::Unload()
     SCR_CLEAR(PlayerScript);
     SCR_CLEAR(GuildScript);
     SCR_CLEAR(GroupScript);
+    SCR_CLEAR(AllCreatureScript);
 
     #undef SCR_CLEAR
 }
@@ -857,6 +858,11 @@ void ScriptMgr::OnCreatureUpdate(Creature* creature, uint32 diff)
 
     GET_SCRIPT(CreatureScript, creature->GetScriptId(), tmpscript);
     tmpscript->OnUpdate(creature, diff);
+}
+
+void ScriptMgr::AllCreatureJustDied(Creature* creature)
+{
+    FOREACH_SCRIPT(AllCreatureScript)->AllCreatureJustDied(creature);
 }
 
 bool ScriptMgr::OnGossipHello(Player* player, GameObject* go)
@@ -1456,6 +1462,12 @@ CreatureScript::CreatureScript(const char* name)
     ScriptRegistry<CreatureScript>::AddScript(this);
 }
 
+AllCreatureScript::AllCreatureScript(const char* name)
+    : ScriptObject(name)
+{
+    ScriptRegistry<AllCreatureScript>::AddScript(this);
+}
+
 GameObjectScript::GameObjectScript(const char* name)
     : ScriptObject(name)
 {
@@ -1560,6 +1572,7 @@ template class ScriptRegistry<InstanceMapScript>;
 template class ScriptRegistry<BattlegroundMapScript>;
 template class ScriptRegistry<ItemScript>;
 template class ScriptRegistry<CreatureScript>;
+template class ScriptRegistry<AllCreatureScript>;
 template class ScriptRegistry<GameObjectScript>;
 template class ScriptRegistry<AreaTriggerScript>;
 template class ScriptRegistry<BattlegroundScript>;

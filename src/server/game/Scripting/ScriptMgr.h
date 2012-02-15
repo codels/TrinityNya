@@ -435,6 +435,18 @@ class CreatureScript : public ScriptObject, public UpdatableScript<Creature>
         virtual CreatureAI* GetAI(Creature* /*creature*/) const { return NULL; }
 };
 
+class AllCreatureScript : public ScriptObject
+{
+    protected:
+
+        AllCreatureScript(const char* name);
+
+    public:
+               
+        // Called when die creature
+        virtual void AllCreatureJustDied(Creature* /*creature*/) { }
+};
+
 class GameObjectScript : public ScriptObject, public UpdatableScript<GameObject>
 {
     protected:
@@ -728,7 +740,7 @@ class PlayerScript : public ScriptObject
         // Called when a player skill update
         virtual void OnPlayerSkillUpdate(Player* /*player*/, uint16 /*SkillId*/, uint16 /*SkillValue*/, uint16 /*SkillNewValue*/) { }
 
-		// Called when a player SaveToDB
+        // Called when a player SaveToDB
         virtual void OnPlayerSave(Player* /*player*/) { }
 };
 
@@ -901,6 +913,10 @@ class ScriptMgr
         uint32 GetDialogStatus(Player* player, Creature* creature);
         CreatureAI* GetCreatureAI(Creature* creature);
         void OnCreatureUpdate(Creature* creature, uint32 diff);
+
+    public: /* AllCreatureScript */
+
+        void AllCreatureJustDied(Creature* creature);
 
     public: /* GameObjectScript */
 
