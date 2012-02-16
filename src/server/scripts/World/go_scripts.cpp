@@ -1120,7 +1120,7 @@ public:
 ######*/
 
 #define GOSSIP_USE_OUTHOUSE "Воспользоваться уборной."
-#define GO_ANDERHOLS_SLIDER_CIDER_NOT_FOUND "Предмет Слабительная настойка Андерхола не найдена."
+#define GO_ANDERHOLS_SLIDER_CIDER_NOT_FOUND "Слабительная настойка Андерхола не найдена."
 
 enum eAmberpineOuthouse
 {
