@@ -5,6 +5,7 @@
 #include "GuildMgr.h"
 
 bool KillBossEnable = true;
+bool KillBossSaveDB = true;
 
 class Mod_KillBoss_WorldScript : public WorldScript
 {
@@ -20,6 +21,8 @@ class Mod_KillBoss_WorldScript : public WorldScript
 
         if (!KillBossEnable)
             return;
+
+        KillBossSaveDB = ConfigMgr::GetBoolDefault("KillBoss.SaveDB", true);
     }
 };
 
@@ -39,71 +42,6 @@ class Mod_KillBoss_AllCreatureScript : public AllCreatureScript
         if (creature->GetCreatureInfo()->rank != CREATURE_ELITE_WORLDBOSS)
             return;
 
-/*
-            bool NeedLog = true;
-            switch(creature->GetEntry())
-            {
-                case 13020:
-                case 31146:
-                case 34925:
-                case 36731:
-                case 31099:
-                    NeedLog = false;
-                    break;
-                case 4949:
-                    sWorld->AllCastSpell(35076, ALLIANCE);
-                    sWorld->AllCastSpell(16618, ALLIANCE);
-                    sWorld->SendWorldText(LANG_AUTO_BROADCAST, "Предводитель орков пал!");
-                    break;
-                case 10540:
-                    sWorld->AllCastSpell(35076, ALLIANCE);
-                    sWorld->AllCastSpell(16618, ALLIANCE);
-                    sWorld->SendWorldText(LANG_AUTO_BROADCAST, "Предводитель троллей пал!");
-                    break;
-                case 3057:
-                    sWorld->AllCastSpell(35076, ALLIANCE);
-                    sWorld->AllCastSpell(16618, ALLIANCE);
-                    sWorld->SendWorldText(LANG_AUTO_BROADCAST, "Предводитель тауренов пал!");
-                    break;
-                case 10181:
-                    sWorld->AllCastSpell(35076, ALLIANCE);
-                    sWorld->AllCastSpell(16618, ALLIANCE);
-                    sWorld->SendWorldText(LANG_AUTO_BROADCAST, "Предводитель нежити пал!");
-                    break;
-                case 16802:
-                    sWorld->AllCastSpell(35076, ALLIANCE);
-                    sWorld->SendWorldText(LANG_AUTO_BROADCAST, "Предводитель кровавых эльфов пал!");
-                    sWorld->AllCastSpell(16618, ALLIANCE);
-                    break;
-                case 29611:
-                    sWorld->AllCastSpell(16618, HORDE);
-                    sWorld->AllCastSpell(35076, HORDE);
-                    sWorld->SendWorldText(LANG_AUTO_BROADCAST, "Предводитель людей пал!");
-                    break;
-                case 7937:
-                    sWorld->AllCastSpell(16618, HORDE);
-                    sWorld->AllCastSpell(35076, HORDE);
-                    sWorld->SendWorldText(LANG_AUTO_BROADCAST, "Предводитель гномов пал!");
-                    break;
-                case 2784:
-                    sWorld->AllCastSpell(16618, HORDE);
-                    sWorld->AllCastSpell(35076, HORDE);
-                    sWorld->SendWorldText(LANG_AUTO_BROADCAST, "Предводитель дварфов пал!");
-                    break;
-                case 17468:
-                    sWorld->AllCastSpell(16618, HORDE);
-                    sWorld->AllCastSpell(35076, HORDE);
-                    sWorld->SendWorldText(LANG_AUTO_BROADCAST, "Предводитель дреней пал!");
-                    break;
-                case 7999:
-                    sWorld->AllCastSpell(16618, HORDE);
-                    sWorld->AllCastSpell(35076, HORDE);
-                    sWorld->SendWorldText(LANG_AUTO_BROADCAST, "Предводитель ночных эльфов пал!");
-                    break;
-                default:
-                    break;
-            }
-*/
         Player* recipient = creature->GetLootRecipient();
 
         if (!recipient) return;
@@ -131,14 +69,17 @@ class Mod_KillBoss_AllCreatureScript : public AllCreatureScript
                 if(!Temp) continue;
 
                 KillerCount++;
-                std::ostringstream PeopleData;
-                PeopleData << Temp->GetGUIDLow() << ":";
-                PeopleData << Temp->GetName() << ":";
-                PeopleData << Temp->getLevel() << ":";
-                PeopleData << Temp->GetGuildId() << ":";
-                PeopleData << int(Temp->isAlive()) << ":";
-                PeopleData << int(Temp->IsAtGroupRewardDistance(creature)) << " ";
-                TeamKill += PeopleData.str();
+                if (KillBossSaveDB)
+                {
+                    std::ostringstream PeopleData;
+                    PeopleData << Temp->GetGUIDLow() << ":";
+                    PeopleData << Temp->GetName() << ":";
+                    PeopleData << Temp->getLevel() << ":";
+                    PeopleData << Temp->GetGuildId() << ":";
+                    PeopleData << int(Temp->isAlive()) << ":";
+                    PeopleData << int(Temp->IsAtGroupRewardDistance(creature)) << " ";
+                    TeamKill += PeopleData.str();
+                }
 
                 if (IsGuildKill)
                 {
@@ -154,14 +95,17 @@ class Mod_KillBoss_AllCreatureScript : public AllCreatureScript
             GuildId = recipient->GetGuildId();
             if(GuildId == 0) IsGuildKill = false;
 
-            std::ostringstream PeopleData;
-            PeopleData << recipient->GetGUIDLow() << ":";
-            PeopleData << recipient->GetName() << ":";
-            PeopleData << recipient->getLevel() << ":";
-            PeopleData << recipient->GetGuildId() << ":";
-            PeopleData << int(recipient->isAlive()) << ":";
-            PeopleData << 1 << " ";
-            TeamKill += PeopleData.str();
+            if (KillBossSaveDB)
+            {
+                std::ostringstream PeopleData;
+                PeopleData << recipient->GetGUIDLow() << ":";
+                PeopleData << recipient->GetName() << ":";
+                PeopleData << recipient->getLevel() << ":";
+                PeopleData << recipient->GetGuildId() << ":";
+                PeopleData << int(recipient->isAlive()) << ":";
+                PeopleData << 1 << " ";
+                TeamKill += PeopleData.str();
+            }
         }
 
         if(!IsGuildKill && GuildId != 0) GuildId = 0;
@@ -203,6 +147,8 @@ class Mod_KillBoss_AllCreatureScript : public AllCreatureScript
 
             sWorld->SendWorldText(LANG_AUTO_BROADCAST, strBoss.str().c_str());
         }
+
+        if (!KillBossSaveDB) return;
                         
         std::string boss_name(creature->GetNameForLocaleIdx(sObjectMgr->GetDBCLocaleIndex()));
         std::string instance_name(creature->GetMap()->GetMapName());
