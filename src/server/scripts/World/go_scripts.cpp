@@ -538,9 +538,9 @@ public:
 
 #define GOSSIP_FEL_CRYSTALFORGE_TEXT 31000
 #define GOSSIP_FEL_CRYSTALFORGE_ITEM_TEXT_RETURN 31001
-#define GOSSIP_FEL_CRYSTALFORGE_ITEM_1 "Purchase 1 Unstable Flask of the Beast for the cost of 10 Apexis Shards"
-#define GOSSIP_FEL_CRYSTALFORGE_ITEM_5 "Purchase 5 Unstable Flask of the Beast for the cost of 50 Apexis Shards"
-#define GOSSIP_FEL_CRYSTALFORGE_ITEM_RETURN "Use the fel crystalforge to make another purchase."
+#define GOSSIP_FEL_CRYSTALFORGE_ITEM_1 "Купить 1 Нестабильный настой Зверя за 10 Апекситовых осколоков"
+#define GOSSIP_FEL_CRYSTALFORGE_ITEM_5 "Купить 5 Нестабильный настой Зверя за 50 Апекситовых осколоков"
+#define GOSSIP_FEL_CRYSTALFORGE_ITEM_RETURN "Использовать Хрустальную кузницу Скверны для покупки."
 
 enum eFelCrystalforge
 {
@@ -597,9 +597,9 @@ public:
 
 #define GOSSIP_BASHIR_CRYSTALFORGE_TEXT 31100
 #define GOSSIP_BASHIR_CRYSTALFORGE_ITEM_TEXT_RETURN 31101
-#define GOSSIP_BASHIR_CRYSTALFORGE_ITEM_1 "Purchase 1 Unstable Flask of the Sorcerer for the cost of 10 Apexis Shards"
-#define GOSSIP_BASHIR_CRYSTALFORGE_ITEM_5 "Purchase 5 Unstable Flask of the Sorcerer for the cost of 50 Apexis Shards"
-#define GOSSIP_BASHIR_CRYSTALFORGE_ITEM_RETURN "Use the bashir crystalforge to make another purchase."
+#define GOSSIP_BASHIR_CRYSTALFORGE_ITEM_1 "Купить 1 Нестабильный настой Волшебника за 10 Апекситовых осколоков"
+#define GOSSIP_BASHIR_CRYSTALFORGE_ITEM_5 "Купить 5 Нестабильный настой Волшебника за 50 Апекситовых осколоков"
+#define GOSSIP_BASHIR_CRYSTALFORGE_ITEM_RETURN "Использовать Хрустальную кузницу Баш'ира для покупки."
 
 enum eBashirCrystalforge
 {
@@ -1119,8 +1119,8 @@ public:
 ## go_amberpine_outhouse
 ######*/
 
-#define GOSSIP_USE_OUTHOUSE "Use the outhouse."
-#define GO_ANDERHOLS_SLIDER_CIDER_NOT_FOUND "Quest item Anderhol's Slider Cider not found."
+#define GOSSIP_USE_OUTHOUSE "Воспользоваться уборной."
+#define GO_ANDERHOLS_SLIDER_CIDER_NOT_FOUND "Предмет Слабительная настойка Андерхола не найдена."
 
 enum eAmberpineOuthouse
 {
