@@ -18,7 +18,7 @@ class Mod_AutoLearn_WorldScript : public WorldScript
         {
         }
 
-    void SetInitialWorldSettings()
+    void OnConfigLoad(bool reload)
     {
         AutoLearnEnable         = ConfigMgr::GetBoolDefault("AutoLearn.Enable",             true);
 

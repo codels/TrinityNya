@@ -271,6 +271,9 @@ class WorldScript : public ScriptObject
 
         // Called when the world is actually shut down.
         virtual void OnShutdown() { }
+
+        // Called at End of SetInitialWorldSettings.
+        virtual void SetInitialWorldSettings() { }
 };
 
 class FormulaScript : public ScriptObject
@@ -868,6 +871,7 @@ class ScriptMgr
         void OnWorldUpdate(uint32 diff);
         void OnStartup();
         void OnShutdown();
+        void SetInitialWorldSettings();
 
     public: /* FormulaScript */
 

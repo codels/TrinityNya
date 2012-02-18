@@ -16,6 +16,7 @@ set(scripts_STAT_SRCS
   Custom/mod_FriendChat.cpp
   Custom/mod_DynamicRate.cpp
   Custom/mod_KillBoss.cpp
+  Custom/mod_ExternalMail.cpp
 )
 
 message("  -> Prepared: Custom")

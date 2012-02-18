@@ -41,7 +41,7 @@ class Mod_HonorRank_WorldScript : public WorldScript
         {
         }
 
-    void SetInitialWorldSettings()
+    void OnConfigLoad(bool reload)
     {
         HonorRankEnable         = ConfigMgr::GetBoolDefault("HonorRank.Enable", true);
 

@@ -524,6 +524,11 @@ void ScriptMgr::OnWorldUpdate(uint32 diff)
     FOREACH_SCRIPT(WorldScript)->OnUpdate(diff);
 }
 
+void ScriptMgr::SetInitialWorldSettings()
+{
+    FOREACH_SCRIPT(WorldScript)->SetInitialWorldSettings();
+}
+
 void ScriptMgr::OnHonorCalculation(float& honor, uint8 level, float multiplier)
 {
     FOREACH_SCRIPT(FormulaScript)->OnHonorCalculation(honor, level, multiplier);
