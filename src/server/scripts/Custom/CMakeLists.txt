@@ -17,6 +17,7 @@ set(scripts_STAT_SRCS
   Custom/mod_DynamicRate.cpp
   Custom/mod_KillBoss.cpp
   Custom/mod_ExternalMail.cpp
+  Custom/mod_DynamicInsctane.cpp
 )
 
 message("  -> Prepared: Custom")

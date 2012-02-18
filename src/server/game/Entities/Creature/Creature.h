@@ -453,11 +453,6 @@ class Creature : public Unit, public GridObject<Creature>, public MapCreature
 
         void DisappearAndDie();
 
-		uint32 DynamicInstanceLevel;
-		float DynamicInstanceSpellBonus;
-		void DynamicInstanceUpdate(uint32 level);
-		uint32 ExtraLoot;
-
         bool Create(uint32 guidlow, Map* map, uint32 phaseMask, uint32 Entry, uint32 vehId, uint32 team, float x, float y, float z, float ang, const CreatureData* data = NULL);
         bool LoadCreaturesAddon(bool reload = false);
         void SelectLevel(const CreatureTemplate* cinfo);

@@ -26,6 +26,7 @@ void AddSC_Mod_FriendChat();
 void AddSC_Mod_DynamicRate();
 void AddSC_Mod_KillBoss();
 void AddSC_Mod_ExternalMail();
+void AddSC_Mod_DynamicInstance();
 
 //examples
 void AddSC_example_creature();
@@ -1261,7 +1262,8 @@ void AddCustomScripts()
     AddSC_Mod_FriendChat();
     AddSC_Mod_DynamicRate();
     AddSC_Mod_KillBoss();
-	AddSC_Mod_ExternalMail();
+    AddSC_Mod_ExternalMail();
+    AddSC_Mod_DynamicInstance();
 
 #endif
 }
