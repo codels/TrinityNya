@@ -2991,6 +2991,23 @@ void SpellMgr::LoadDbcDataCorrections()
 
         switch (spellInfo->Id)
         {
+			// TRINITY_NYA NEED NORMAL FIX!!! *((((
+			case 23880: // Bloodthirst
+				spellInfo->Effect[0] = SPELL_EFFECT_HEAL_PCT;
+				spellInfo->EffectBasePoints[0] = 0; // default to 1%
+				// make it capable of crit as magic effect using spell crit chance
+				spellInfo->AttributesEx2 &= ~SPELL_ATTR2_CANT_CRIT;
+				spellInfo->DmgClass = SPELL_DAMAGE_CLASS_MAGIC;
+				spellInfo->SchoolMask = SPELL_SCHOOL_MASK_HOLY;
+				break;
+			/*
+			case 23881: // Bloodthirst
+				//spellInfo->EffectImplicitTargetA[1] = TARGET_UNIT_CASTER;
+				break;
+			case 23885: // Bloodthirst
+				//spellInfo->EffectApplyAuraName[0] = SPELL_AURA_PROC_TRIGGER_SPELL_WITH_VALUE;
+				break;
+			*/
             case 40244: case 40245: // Simon Game Visual
             case 40246: case 40247: // Simon Game Visual
             case 42835: // Spout, remove damage effect, only anim is needed

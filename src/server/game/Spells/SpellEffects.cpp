@@ -1658,6 +1658,10 @@ void Spell::EffectHealPct(SpellEffIndex /*effIndex*/)
     if (m_spellInfo->Id == 59754 && unitTarget == m_caster)
         return;
 
+    // TRINITY_NYA Bloodthirst HACK *((((( need normal fix!!!
+    if (m_spellInfo->Id == 23880 && m_caster->GetAuraEffect(58369, 0))
+        damage *= 2;
+
     m_healing += m_originalCaster->SpellHealingBonus(unitTarget, m_spellInfo, unitTarget->CountPctFromMaxHealth(damage), HEAL);
 }
 
@@ -6628,30 +6632,30 @@ void Spell::EffectPlayerNotification(SpellEffIndex effIndex)
     if (!unitTarget || unitTarget->GetTypeId() != TYPEID_PLAYER)
         return;
 
-	if (!unitTarget->HasAura(55164))
-	{
-		switch (m_spellInfo->Id)
-		{
-			case 58730: // Restricted Flight Area
-			{
-				if (sWorld->getBoolConfig(CONFIG_OUTDOORPVP_WINTERGRASP_ENABLED))
-				{
-					OutdoorPvPWG *pvpWG = (OutdoorPvPWG*)sOutdoorPvPMgr->GetOutdoorPvPToZoneId(4197);
-					if (pvpWG && pvpWG->isWarTime() == true)
-					{
-						unitTarget->ToPlayer()->GetSession()->SendNotification(LANG_ZONE_NOFLYZONE);
-						unitTarget->PlayDirectSound(9417); // Fel Reaver sound
-						unitTarget->MonsterTextEmote("На Озере Ледяных Оков нельзя летать пока идет бой. Вы будете сброшены через 10 секунд",unitTarget->GetGUID(),true);
-						break;
-					} else unitTarget->RemoveAura(58730);
-				}
-				break;
-			}
-			case 58600: // Restricted Flight Area
-				unitTarget->ToPlayer()->GetSession()->SendNotification(LANG_ZONE_NOFLYZONE);
-				break;
-		}
-	}
+    if (!unitTarget->HasAura(55164))
+    {
+        switch (m_spellInfo->Id)
+        {
+            case 58730: // Restricted Flight Area
+            {
+                if (sWorld->getBoolConfig(CONFIG_OUTDOORPVP_WINTERGRASP_ENABLED))
+                {
+                    OutdoorPvPWG *pvpWG = (OutdoorPvPWG*)sOutdoorPvPMgr->GetOutdoorPvPToZoneId(4197);
+                    if (pvpWG && pvpWG->isWarTime() == true)
+                    {
+                        unitTarget->ToPlayer()->GetSession()->SendNotification(LANG_ZONE_NOFLYZONE);
+                        unitTarget->PlayDirectSound(9417); // Fel Reaver sound
+                        unitTarget->MonsterTextEmote("На Озере Ледяных Оков нельзя летать пока идет бой. Вы будете сброшены через 10 секунд",unitTarget->GetGUID(),true);
+                        break;
+                    } else unitTarget->RemoveAura(58730);
+                }
+                break;
+            }
+            case 58600: // Restricted Flight Area
+                unitTarget->ToPlayer()->GetSession()->SendNotification(LANG_ZONE_NOFLYZONE);
+                break;
+        }
+    }
 
     uint32 soundid = m_spellInfo->Effects[effIndex].MiscValue;
 
