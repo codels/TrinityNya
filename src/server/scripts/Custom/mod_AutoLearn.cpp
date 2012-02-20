@@ -7,6 +7,7 @@ bool SpellRiding            = true;
 bool DualSpec               = true;
 bool AutoLearnCheckLevel    = true;
 bool SpellMount             = true;
+bool SpellMountOrClass      = true;
 bool SpellWeapon            = true;
 //bool SpellProfession      = true;
 
@@ -31,6 +32,7 @@ class Mod_AutoLearn_WorldScript : public WorldScript
         SpellRiding             = ConfigMgr::GetBoolDefault("AutoLearn.SpellRiding",        true);
         DualSpec                = ConfigMgr::GetBoolDefault("AutoLearn.DualSpec",           true);
         SpellMount              = ConfigMgr::GetBoolDefault("AutoLearn.SpellMount",         true);
+        SpellMountOrClass       = ConfigMgr::GetBoolDefault("AutoLearn.SpellMountOrClass",  true);
         SpellWeapon             = ConfigMgr::GetBoolDefault("AutoLearn.SpellWeapon",        true);
         //SpellProfession       = ConfigMgr::GetBoolDefault("AutoLearn.SpellProfession",    true);
     }
@@ -198,57 +200,63 @@ class Mod_AutoLearn_PlayerScript : public PlayerScript
         if (!SpellMount || level < 20) return;
 
         uint32 race = character->getRace();
+        uint32 chrClass = character->getClass();
 
-        if (race == RACE_HUMAN)
+        if (!SpellMountOrClass || (chrClass != CLASS_PALADIN  && chrClass != CLASS_DEATH_KNIGHT && chrClass != CLASS_WARLOCK))
         {
-            if (level > 19) learn(458);// Гнедой конь
-            if (level > 39) learn(23228); // Стремительный белый рысак
+            if (race == RACE_HUMAN)
+            {
+                if (level > 19) learn(458);// Гнедой конь
+                if (level > 39) learn(23228); // Стремительный белый рысак
+            }
+            else if (race == RACE_ORC)
+            {
+                if (level > 19) learn(64658);// Черный волк
+                if (level > 39) learn(23251);// Стремительный лесной волк
+            }
+            else if (race == RACE_DWARF)
+            {
+                if (level > 19) learn(6898);// Белый баран
+                if (level > 39) learn(23240);// Стремительный белый баран
+            }
+            else if (race == RACE_NIGHTELF)
+            {
+                if (level > 19) learn(8394);// Полосатый ледопард
+                if (level > 39) learn(23221);// Стремительный ледопард
+            }
+            else if (race == RACE_UNDEAD_PLAYER)
+            {
+                if (level > 19) learn(64977);// Черный конь-скелет
+                if (level > 39) learn(23246);// Лиловый боевой конь-скелет
+            }
+            else if (race == RACE_TAUREN)
+            {
+                if (level > 19) learn(64657);// Белый кодо
+                if (level > 39) learn(23248);// Огромный серый кодо
+            }
+            else if (race == RACE_GNOME)
+            {
+                if (level > 19) learn(10873);// Красный механодолгоног
+                if (level > 39) learn(23225);// Стремительный зеленый механодолгоног
+            }
+            else if (race == RACE_TROLL)
+            {
+                if (level > 19) learn(8395);// Изумрудный ящер
+                if (level > 39) learn(23241);// Стремительный синий ящер
+            }
+            else if (race == RACE_BLOODELF)
+            {
+                if (level > 19) learn(35022);// Черный крылобег
+                if (level > 39) learn(33660);// Стремительный розовый крылобег
+            }
+            else if (race == RACE_DRAENEI)
+            {
+                if (level > 19) learn(35710);// Серый элекк
+                if (level > 39) learn(35713);// Большой синий элекк
+            }
         }
-        else if (race == RACE_ORC)
-        {
-            if (level > 19) learn(64658);// Черный волк
-            if (level > 39) learn(23251);// Стремительный лесной волк
-        }
-        else if (race == RACE_DWARF)
-        {
-            if (level > 19) learn(6898);// Белый баран
-            if (level > 39) learn(23240);// Стремительный белый баран
-        }
-        else if (race == RACE_NIGHTELF)
-        {
-            if (level > 19) learn(8394);// Полосатый ледопард
-            if (level > 39) learn(23221);// Стремительный ледопард
-        }
-        else if (race == RACE_UNDEAD_PLAYER)
-        {
-            if (level > 19) learn(64977);// Черный конь-скелет
-            if (level > 39) learn(23246);// Лиловый боевой конь-скелет
-        }
-        else if (race == RACE_TAUREN)
-        {
-            if (level > 19) learn(64657);// Белый кодо
-            if (level > 39) learn(23248);// Огромный серый кодо
-        }
-        else if (race == RACE_GNOME)
-        {
-            if (level > 19) learn(10873);// Красный механодолгоног
-            if (level > 39) learn(23225);// Стремительный зеленый механодолгоног
-        }
-        else if (race == RACE_TROLL)
-        {
-            if (level > 19) learn(8395);// Изумрудный ящер
-            if (level > 39) learn(23241);// Стремительный синий ящер
-        }
-        else if (race == RACE_BLOODELF)
-        {
-            if (level > 19) learn(35022);// Черный крылобег
-            if (level > 39) learn(33660);// Стремительный розовый крылобег
-        }
-        else if (race == RACE_DRAENEI)
-        {
-            if (level > 19) learn(35710);// Серый элекк
-            if (level > 39) learn(35713);// Большой синий элекк
-        }
+
+        if (SpellMountOrClass && chrClass == CLASS_DRUID) return;
 
         if (level < 60) return;
 
