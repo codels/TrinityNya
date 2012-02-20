@@ -759,6 +759,7 @@ class Mod_AutoLearn_PlayerScript : public PlayerScript
     {
 
             if (level >= 1 && !character->HasSpell(8017)) character->learnSpell(8017, false); //Оружие камнедробителя Уровень 1
+            if (level >= 4 && !character->HasSpell(8071)) character->learnSpell(8071, false); //Тотем каменной кожи Уровень 1
             if (level >= 4 && !character->HasSpell(8042)) character->learnSpell(8042, false); //Земной шок Уровень 1
             if (level >= 6 && !character->HasSpell(332) && character->HasSpell(331)) character->learnSpell(332, false); //Волна исцеления Уровень 2
             if (level >= 6 && !character->HasSpell(2484)) character->learnSpell(2484, false); //Тотем оков земли 
@@ -767,6 +768,7 @@ class Mod_AutoLearn_PlayerScript : public PlayerScript
             if (level >= 8 && !character->HasSpell(529) && character->HasSpell(403)) character->learnSpell(529, false); //Молния Уровень 2
             if (level >= 8 && !character->HasSpell(8018) && character->HasSpell(8017)) character->learnSpell(8018, false); //Оружие камнедробителя Уровень 2
             if (level >= 8 && !character->HasSpell(324)) character->learnSpell(324, false); //Щит молний Уровень 1
+            if (level >= 10 && !character->HasSpell(3599)) character->learnSpell(3599, false); //Опаляющий тотем Уровень 1
             if (level >= 10 && !character->HasSpell(8050)) character->learnSpell(8050, false); //Огненный шок Уровень 1
             if (level >= 10 && !character->HasSpell(8024)) character->learnSpell(8024, false); //Оружие языка пламени Уровень 1
             if (level >= 10 && !character->HasSpell(8075)) character->learnSpell(8075, false); //Тотем силы земли Уровень 1
@@ -787,6 +789,7 @@ class Mod_AutoLearn_PlayerScript : public PlayerScript
             if (level >= 18 && !character->HasSpell(8027) && character->HasSpell(8024)) character->learnSpell(8027, false); //Оружие языка пламени Уровень 2
             if (level >= 18 && !character->HasSpell(8143)) character->learnSpell(8143, false); //Тотем трепета 
             if (level >= 18 && !character->HasSpell(8052) && character->HasSpell(8050)) character->learnSpell(8052, false); //Огненный шок Уровень 2
+            if (level >= 20 && !character->HasSpell(5394)) character->learnSpell(5394, false); //Тотем исцеляющего потока Уровень 1
             if (level >= 20 && !character->HasSpell(8004)) character->learnSpell(8004, false); //Малая волна исцеления Уровень 1
             if (level >= 20 && !character->HasSpell(915) && character->HasSpell(403)) character->learnSpell(915, false); //Молния Уровень 4
             if (level >= 20 && !character->HasSpell(8033)) character->learnSpell(8033, false); //Оружие ледяного клейма Уровень 1
@@ -1195,6 +1198,7 @@ class Mod_AutoLearn_PlayerScript : public PlayerScript
             if (level >= 10 && !character->HasSpell(1022)) character->learnSpell(1022, false); //Длань защиты Уровень 1
             if (level >= 12 && !character->HasSpell(53408)) character->learnSpell(53408, false); //Правосудие мудрости 
             if (level >= 12 && !character->HasSpell(19834) && character->HasSpell(19740)) character->learnSpell(19834, false); //Благословение могущества Уровень 2
+            if (level >= 12 && !character->HasSpell(7328)) character->learnSpell(7328, false); //Искупление Уровень 1
             if (level >= 14 && !character->HasSpell(19742)) character->learnSpell(19742, false); //Благословение мудрости Уровень 1
             if (level >= 14 && !character->HasSpell(31789)) character->learnSpell(31789, false); //Праведная защита 
             if (level >= 14 && !character->HasSpell(647) && character->HasSpell(635)) character->learnSpell(647, false); //Свет небес Уровень 3
@@ -1202,6 +1206,8 @@ class Mod_AutoLearn_PlayerScript : public PlayerScript
             if (level >= 16 && !character->HasSpell(7294)) character->learnSpell(7294, false); //Аура воздаяния Уровень 1
             if (level >= 16 && !character->HasSpell(62124)) character->learnSpell(62124, false); //Длань возмездия 
             if (level >= 18 && !character->HasSpell(1044)) character->learnSpell(1044, false); //Длань свободы 
+            if (character->GetTeam() == HORDE && level >= 20 && !character->HasSpell(34769)) character->learnSpell(34769, false); //Призыв боевого коня
+            if (character->GetTeam() == ALLIANCE && level >= 20 && !character->HasSpell(13819)) character->learnSpell(13819, false); //Призыв боевого коня
             if (level >= 20 && !character->HasSpell(19750)) character->learnSpell(19750, false); //Вспышка Света Уровень 1
             if (level >= 20 && !character->HasSpell(5502)) character->learnSpell(5502, false); //Чутье на нежить 
             if (level >= 20 && !character->HasSpell(20217)) character->learnSpell(20217, false); //Благословение королей 
@@ -1241,6 +1247,8 @@ class Mod_AutoLearn_PlayerScript : public PlayerScript
             if (level >= 38 && !character->HasSpell(10278) && character->HasSpell(1022)) character->learnSpell(10278, false); //Длань защиты Уровень 3
             if (level >= 38 && !character->HasSpell(20166)) character->learnSpell(20166, false); //Печать мудрости 
             if (level >= 38 && !character->HasSpell(3472) && character->HasSpell(635)) character->learnSpell(3472, false); //Свет небес Уровень 6
+            if (character->GetTeam() == ALLIANCE && level >= 40 && !character->HasSpell(23214)) character->learnSpell(23214, false); //Призыв скакуна
+            if (character->GetTeam() == HORDE && level >= 40 && !character->HasSpell(34767)) character->learnSpell(34767, false); //Призыв скакуна
             if (level >= 40 && !character->HasSpell(19895) && character->HasSpell(19876)) character->learnSpell(19895, false); //Аура защиты от темной магии Уровень 2
             if (level >= 40 && !character->HasSpell(750)) character->learnSpell(750, false); //Латы 
             if (level >= 40 && !character->HasSpell(1032) && character->HasSpell(465)) character->learnSpell(1032, false); //Аура благочестия Уровень 5
@@ -1297,6 +1305,8 @@ class Mod_AutoLearn_PlayerScript : public PlayerScript
             if (level >= 62 && !character->HasSpell(32223)) character->learnSpell(32223, false); //Аура воина Света 
             if (level >= 62 && !character->HasSpell(27135) && character->HasSpell(635)) character->learnSpell(27135, false); //Свет небес Уровень 10
             if (level >= 63 && !character->HasSpell(27151) && character->HasSpell(19876)) character->learnSpell(27151, false); //Аура защиты от темной магии Уровень 4
+            if (character->GetTeam() == ALLIANCE && level >= 64 && !character->HasSpell(31801)) character->learnSpell(31801, false); //Печать мщения
+            if (character->GetTeam() == HORDE && level >= 66 && !character->HasSpell(53736)) character->learnSpell(53736, false); //Печать порчи
             if (level >= 64 && !character->HasSpell(27174) && character->HasSpell(20473)) character->learnSpell(27174, false); //Шок небес Уровень 4
             if (level >= 65 && !character->HasSpell(27142) && character->HasSpell(19742)) character->learnSpell(27142, false); //Благословение мудрости Уровень 7
             if (level >= 65 && !character->HasSpell(27143) && character->HasSpell(25894)) character->learnSpell(27143, false); //Великое благословение мудрости Ур. 3
@@ -2106,6 +2116,7 @@ class Mod_AutoLearn_PlayerScript : public PlayerScript
             if (level >= 40 && !character->HasSpell(20755) && character->HasSpell(693)) character->learnSpell(20755, false); //Создание камня души Уровень 3
             if (level >= 40 && !character->HasSpell(18869) && character->HasSpell(17877)) character->learnSpell(18869, false); //Ожог Тьмы Уровень 4
             //if (level >= 40 && !character->HasSpell(23160)) character->learnSpell(23160, false); //Изучить призывание коня погибели Призыв
+            if (level >= 40 && !character->HasSpell(23161)) character->learnSpell(23161, false); //Конь ужаса
             if (level >= 42 && !character->HasSpell(11739) && character->HasSpell(6229)) character->learnSpell(11739, false); //Заслон от темной магии Уровень 2
             if (level >= 42 && !character->HasSpell(11683) && character->HasSpell(1949)) character->learnSpell(11683, false); //Адское Пламя Уровень 2
             if (level >= 42 && !character->HasSpell(17921) && character->HasSpell(5676)) character->learnSpell(17921, false); //Жгучая боль Уровень 4
@@ -2443,7 +2454,7 @@ class Mod_AutoLearn_PlayerScript : public PlayerScript
             if (!character->HasSpell(22827) && character->HasSpell(22568)) character->learnSpell(22827, false); //Свирепый укус Уровень 2
             if (!character->HasSpell(62600)) character->learnSpell(62600, false); //Дикая защита Пассивная
             if (!character->HasSpell(8910) && character->HasSpell(774)) character->learnSpell(8910, false); //Омоложение Уровень 7
-            if (!character->HasSpell(6783)) character->learnSpell(6783, false); //Крадущийся зверь Уровень 2
+            //if (!character->HasSpell(6783)) character->learnSpell(6783, false); //Крадущийся зверь Уровень 2
             if (!character->HasSpell(8907) && character->HasSpell(1126)) character->learnSpell(8907, false); //Знак дикой природы Уровень 5
             if (!character->HasSpell(8918) && character->HasSpell(740)) character->learnSpell(8918, false); //Спокойствие Уровень 2
             if (!character->HasSpell(8929) && character->HasSpell(8921)) character->learnSpell(8929, false); //Лунный огонь Уровень 7
@@ -2543,7 +2554,7 @@ class Mod_AutoLearn_PlayerScript : public PlayerScript
             if (!character->HasSpell(53223) && character->HasSpell(50516)) character->learnSpell(53223, false); //Тайфун Уровень 2
             if (!character->HasSpell(31018) && character->HasSpell(22568)) character->learnSpell(31018, false); //Свирепый укус Уровень 5
             if (!character->HasSpell(50765) && character->HasSpell(50769)) character->learnSpell(50765, false); // unk
-            if (!character->HasSpell(33950)) character->learnSpell(33950, false); //Воздушный облик Смена облика
+            if (!character->HasSpell(33943)) character->learnSpell(33943, false); //Воздушный облик Смена облика
             if (!character->HasSpell(31709) && character->HasSpell(8998)) character->learnSpell(31709, false); //Попятиться Уровень 4
             if (!character->HasSpell(25299) && character->HasSpell(774)) character->learnSpell(25299, false); //Омоложение Уровень 11
             if (!character->HasSpell(25298) && character->HasSpell(2912)) character->learnSpell(25298, false); //Звездный огонь Уровень 7
@@ -2553,7 +2564,7 @@ class Mod_AutoLearn_PlayerScript : public PlayerScript
             if (!character->HasSpell(9846) && character->HasSpell(5217)) character->learnSpell(9846, false); //Тигриное неистовство Уровень 4
             if (!character->HasSpell(17402) && character->HasSpell(16914)) character->learnSpell(17402, false); //Гроза Уровень 3
             if (!character->HasSpell(25297) && character->HasSpell(5185)) character->learnSpell(25297, false); //Целительное прикосновение Уровень 11
-            if (!character->HasSpell(9913)) character->learnSpell(9913, false); //Крадущийся зверь Уровень 3
+            //if (!character->HasSpell(9913)) character->learnSpell(9913, false); //Крадущийся зверь Уровень 3
             if (!character->HasSpell(9858) && character->HasSpell(8936)) character->learnSpell(9858, false); //Восстановление Уровень 9
             if (!character->HasSpell(9885) && character->HasSpell(1126)) character->learnSpell(9885, false); //Знак дикой природы Уровень 7
             if (!character->HasSpell(9896) && character->HasSpell(1079)) character->learnSpell(9896, false); //Разорвать Уровень 6
@@ -2618,7 +2629,8 @@ class Mod_AutoLearn_PlayerScript : public PlayerScript
             if (!character->HasSpell(50764) && character->HasSpell(50769)) character->learnSpell(50764, false); // unk
 
             if (level < 70) return;
-            
+
+            if (!character->HasSpell(40120)) character->learnSpell(40120, false); //Облик стремительной птицы
             if (!character->HasSpell(53248) && character->HasSpell(48438)) character->learnSpell(53248, false); //Буйный рост Уровень 2
             if (!character->HasSpell(53225) && character->HasSpell(50516)) character->learnSpell(53225, false); //Тайфун Уровень 3
             if (!character->HasSpell(53199) && character->HasSpell(48505)) character->learnSpell(53199, false); // unk
