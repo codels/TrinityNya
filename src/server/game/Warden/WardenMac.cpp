@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2011 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
  * Copyright (C) 2005-2011 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
 #include "WardenMac.h"
 #include "WardenModuleMac.h"
 
-WardenMac::WardenMac()
+WardenMac::WardenMac() : Warden()
 {
 }
 
@@ -64,14 +64,14 @@ void WardenMac::Init(WorldSession *pClient, BigNumber *K)
     sLog->outDebug(LOG_FILTER_WARDEN, "  Seed: %s", ByteArrayToHexStr(_seed, 16).c_str());
     sLog->outDebug(LOG_FILTER_WARDEN, "Loading Module...");
 
-    _module = GetModuleForClient(_session);
+    _module = GetModuleForClient();
 
     sLog->outDebug(LOG_FILTER_WARDEN, "Module Key: %s", ByteArrayToHexStr(_module->Key, 16).c_str());
     sLog->outDebug(LOG_FILTER_WARDEN, "Module ID: %s", ByteArrayToHexStr(_module->Id, 16).c_str());
     RequestModule();
 }
 
-ClientWardenModule *WardenMac::GetModuleForClient(WorldSession *session)
+ClientWardenModule* WardenMac::GetModuleForClient()
 {
     ClientWardenModule *mod = new ClientWardenModule;
 

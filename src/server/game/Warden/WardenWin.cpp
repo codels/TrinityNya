@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2011 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
  * Copyright (C) 2005-2011 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@
 #include "WardenCheckMgr.h"
 #include "AccountMgr.h"
 
-WardenWin::WardenWin()
+WardenWin::WardenWin() : Warden()
 {
 }
 
@@ -68,14 +68,14 @@ void WardenWin::Init(WorldSession* session, BigNumber *k)
     sLog->outDebug(LOG_FILTER_WARDEN, "  Seed: %s", ByteArrayToHexStr(_seed, 16).c_str());
     sLog->outDebug(LOG_FILTER_WARDEN, "Loading Module...");
 
-    _module = GetModuleForClient(_session);
+    _module = GetModuleForClient();
 
     sLog->outDebug(LOG_FILTER_WARDEN, "Module Key: %s", ByteArrayToHexStr(_module->Key, 16).c_str());
     sLog->outDebug(LOG_FILTER_WARDEN, "Module ID: %s", ByteArrayToHexStr(_module->Id, 16).c_str());
     RequestModule();
 }
 
-ClientWardenModule *WardenWin::GetModuleForClient(WorldSession *session)
+ClientWardenModule* WardenWin::GetModuleForClient()
 {
     ClientWardenModule *mod = new ClientWardenModule;
 
@@ -205,7 +205,7 @@ void WardenWin::RequestData()
 
     _serverTicks = getMSTime();
 
-    uint32 id;
+    uint16 id;
     uint8 type;
     WardenCheck* wd;
     _currentChecks.clear();
@@ -339,7 +339,7 @@ void WardenWin::RequestData()
     for (std::list<uint16>::iterator itr = _currentChecks.begin(); itr != _currentChecks.end(); ++itr)
         stream << *itr << " ";
 
-    sLog->outWarden(stream.str().c_str());
+    sLog->outWarden("%s", stream.str().c_str());
 }
 
 void WardenWin::HandleData(ByteBuffer &buff)

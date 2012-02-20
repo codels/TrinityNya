@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2011 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
  * Copyright (C) 2005-2011 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -70,14 +70,14 @@ struct WardenInitModuleRequest
 class WorldSession;
 class Warden;
 
-class WardenWin : Warden
+class WardenWin : public Warden
 {
     public:
         WardenWin();
         ~WardenWin();
 
         void Init(WorldSession* session, BigNumber* K);
-        ClientWardenModule* GetModuleForClient(WorldSession* session);
+        ClientWardenModule* GetModuleForClient();
         void InitializeModule();
         void RequestHash();
         void HandleHashResult(ByteBuffer &buff);
