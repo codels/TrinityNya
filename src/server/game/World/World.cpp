@@ -1199,7 +1199,7 @@ void World::LoadConfigSettings(bool reload)
 
     // MySQL ping time interval
     m_int_configs[CONFIG_DB_PING_INTERVAL] = ConfigMgr::GetIntDefault("MaxPingTime", 30);
-	
+    
     //Wintergrasp
     m_bool_configs[CONFIG_OUTDOORPVP_WINTERGRASP_ENABLED]         = ConfigMgr::GetBoolDefault("OutdoorPvP.Wintergrasp.Enabled", true);
     m_int_configs[CONFIG_OUTDOORPVP_WINTERGRASP_SAVESTATE_PERIOD] = ConfigMgr::GetIntDefault("OutdoorPvP.Wintergrasp.SaveState.Period", 10000);
@@ -1676,6 +1676,7 @@ void World::SetInitialWorldSettings()
 
     sLog->outString("Initializing Scripts...");
     sScriptMgr->Initialize();
+    sScriptMgr->OnConfigLoad(false); // Need Call after Initialize
 
     sLog->outString("Validating spell scripts...");
     sObjectMgr->ValidateSpellScripts();
