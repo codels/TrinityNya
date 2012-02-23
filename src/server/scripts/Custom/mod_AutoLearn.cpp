@@ -3,9 +3,9 @@
 
 #define SPELL_TYPE_CLASS        1
 #define SPELL_TYPE_RIDING       2
-#define SPELL_TYPE_MOUNT        3
-#define SPELL_TYPE_WEAPON       4
-#define SPELL_TYPE_PROFESSION   5
+#define SPELL_TYPE_MOUNT        4
+#define SPELL_TYPE_WEAPON       8
+#define SPELL_TYPE_PROFESSION   16
 
 bool AutoLearnEnable        = true;
 bool SpellClass             = true;
@@ -20,7 +20,7 @@ bool SpellProfession        = false;
 struct LearnSpellForClassInfo
 {
     uint32  SpellId;
-    uint8   SpellType;
+    uint16  SpellMask;
     uint32  RequiredClassMask;
     uint32  RequiredRaceMask;
     uint8   RequiredLevel;
@@ -48,10 +48,12 @@ class Mod_AutoLearn_WorldScript : public WorldScript
     {
         Clear();
 
-        QueryResult result = WorldDatabase.PQuery("SELECT SpellId, SpellType, RequiredClassMask, RequiredRaceMask, RequiredLevel, RequiredSpellId, RequiredSkillId, RequiredSkillValue FROM `world_autolearn`");
+        QueryResult result = WorldDatabase.PQuery("SELECT SpellId, SpellMask, RequiredClassMask, RequiredRaceMask, RequiredLevel, RequiredSpellId, RequiredSkillId, RequiredSkillValue FROM `world_autolearn`");
 
         if (!result)
             return;
+
+        uint16 count = 0;
 
         do
         {
@@ -60,7 +62,7 @@ class Mod_AutoLearn_WorldScript : public WorldScript
             LearnSpellForClassInfo Spell;
 
             Spell.SpellId               = fields[0].GetUInt32();
-            Spell.SpellType             = fields[1].GetUInt8();
+            Spell.SpellMask             = fields[1].GetUInt16();
             Spell.RequiredClassMask     = fields[2].GetUInt32();
             Spell.RequiredRaceMask      = fields[3].GetUInt32();
             Spell.RequiredLevel         = fields[4].GetUInt8();
@@ -74,13 +76,13 @@ class Mod_AutoLearn_WorldScript : public WorldScript
                 continue;
             }
 
-            if (!(Spell.RequiredClassMask & CLASSMASK_ALL_PLAYABLE))
+            if (Spell.RequiredClassMask != 0 && !(Spell.RequiredClassMask & CLASSMASK_ALL_PLAYABLE))
             {
                 sLog->outErrorDb("AutoLearn: Spell (ID: %u) RequiredClassMask (Mask: %u) non-existing ", Spell.SpellId, Spell.RequiredClassMask);
                 continue;
             }
 
-            if (!(Spell.RequiredRaceMask & RACEMASK_ALL_PLAYABLE))
+            if (Spell.RequiredRaceMask != 0 && !(Spell.RequiredRaceMask & RACEMASK_ALL_PLAYABLE))
             {
                 sLog->outErrorDb("AutoLearn: Spell (ID: %u) RequiredRaceMask (Mask: %u) non-existing ", Spell.SpellId, Spell.RequiredRaceMask);
                 continue;
@@ -93,8 +95,11 @@ class Mod_AutoLearn_WorldScript : public WorldScript
             }
 
             LearnSpellForClass.push_back(Spell);
+            ++count;
         }
         while (result->NextRow());
+
+        sLog->outString("Loaded AutoLearn: %u spells", count);
     }
 
     void OnConfigLoad(bool reload)
@@ -113,6 +118,8 @@ class Mod_AutoLearn_WorldScript : public WorldScript
         SpellMountOrClass       = ConfigMgr::GetBoolDefault("AutoLearn.SpellMountOrClass",  true);
         SpellWeapon             = ConfigMgr::GetBoolDefault("AutoLearn.SpellWeapon",        true);
         SpellProfession         = ConfigMgr::GetBoolDefault("AutoLearn.SpellProfession",    false);
+
+        LoadDataFromDataBase();
     }
 };
 
@@ -139,41 +146,39 @@ class Mod_AutoLearn_PlayerScript : public PlayerScript
     {
         if (!AutoLearnEnable) return;
 
-        if (SpellClass)
-            CheckSpellType(SPELL_TYPE_CLASS, Player);
-        if (SpellRiding)
-            CheckSpellType(SPELL_TYPE_RIDING, Player);
-        if (SpellMount)
-            CheckSpellType(SPELL_TYPE_MOUNT, Player);
-        if (SpellWeapon)
-            CheckSpellType(SPELL_TYPE_WEAPON, Player);
-        if (SpellProfession)
-            CheckSpellType(SPELL_TYPE_PROFESSION, Player);
+        uint16 SpellMask = 0;
+
+        if (SpellClass)         SpellMask += SPELL_TYPE_CLASS;
+        if (SpellRiding)        SpellMask += SPELL_TYPE_RIDING;
+        if (SpellMount)         SpellMask += SPELL_TYPE_MOUNT;
+        if (SpellWeapon)        SpellMask += SPELL_TYPE_WEAPON;
+        if (SpellProfession)    SpellMask += SPELL_TYPE_PROFESSION;
+
+        if (SpellMask != 0)     AutoLearnSpell(SpellMask, Player);
 
         level = Player->getLevel();
         character = Player;
 
         learnDualSpec();
         learnSpellClass();
-        learnMount();
     }
 
-    void OnPlayerSkillUpdate(Player* player, uint16 SkillId, uint16 SkillValue, uint16 SkillNewValue)
+    void OnPlayerSkillUpdate(Player* player, uint16 SkillId, uint16 /*SkillValue*/, uint16 SkillNewValue)
     {
-        if (!AutoLearnEnable || !SpellProfession) return;
+        if (AutoLearnEnable && SpellProfession)
+            AutoLearnSpell(SPELL_TYPE_PROFESSION, player, SkillId, SkillNewValue);
     }
 
-    void CheckSpellType(uint8 SpellType, Player* Player, uint16 SkillId = 0, uint16 SkillValue = 0)
+    void AutoLearnSpell(uint16 SpellMask, Player* Player, uint16 SkillId = 0, uint16 SkillValue = 0)
     {
-        uint16  PlayerClassMask = Player->getClassMask();
-        uint16  PlayerRaceMask  = Player->getRaceMask();
+        uint32  PlayerClassMask = Player->getClassMask();
+        uint32  PlayerRaceMask  = Player->getRaceMask();
         uint8   PlayerLevel     = Player->getLevel();
-        uint16  PlayerTeam      = Player->GetTeam();
 
         for (uint16 i = 0; i < LearnSpellForClass.size(); ++i)
         {
             LearnSpellForClassInfo &Spell = LearnSpellForClass[i];
-            if (Spell.SpellType != SpellType) continue;
+            if (!(Spell.SpellMask & SpellMask)) continue;
             if (Spell.RequiredClassMask != 0 && !(Spell.RequiredClassMask & PlayerClassMask)) continue;
             if (Spell.RequiredRaceMask != 0 && !(Spell.RequiredRaceMask & PlayerRaceMask)) continue;
             if (Spell.RequiredLevel > PlayerLevel) continue;
@@ -195,80 +200,6 @@ class Mod_AutoLearn_PlayerScript : public PlayerScript
         if (required != 0 && !character->HasSpell(required)) return;
 
         character->learnSpell(spell, false);
-    }
-    
-    void learnMount()
-    {
-        if (!SpellMount || level < 20) return;
-
-        uint32 race = character->getRace();
-        uint32 chrClass = character->getClass();
-
-        if (!SpellMountOrClass || (chrClass != CLASS_PALADIN  && chrClass != CLASS_DEATH_KNIGHT && chrClass != CLASS_WARLOCK))
-        {
-            if (race == RACE_HUMAN)
-            {
-                if (level > 19) learn(458);// Гнедой конь
-                if (level > 39) learn(23228); // Стремительный белый рысак
-            }
-            else if (race == RACE_ORC)
-            {
-                if (level > 19) learn(64658);// Черный волк
-                if (level > 39) learn(23251);// Стремительный лесной волк
-            }
-            else if (race == RACE_DWARF)
-            {
-                if (level > 19) learn(6898);// Белый баран
-                if (level > 39) learn(23240);// Стремительный белый баран
-            }
-            else if (race == RACE_NIGHTELF)
-            {
-                if (level > 19) learn(8394);// Полосатый ледопард
-                if (level > 39) learn(23221);// Стремительный ледопард
-            }
-            else if (race == RACE_UNDEAD_PLAYER)
-            {
-                if (level > 19) learn(64977);// Черный конь-скелет
-                if (level > 39) learn(23246);// Лиловый боевой конь-скелет
-            }
-            else if (race == RACE_TAUREN)
-            {
-                if (level > 19) learn(64657);// Белый кодо
-                if (level > 39) learn(23248);// Огромный серый кодо
-            }
-            else if (race == RACE_GNOME)
-            {
-                if (level > 19) learn(10873);// Красный механодолгоног
-                if (level > 39) learn(23225);// Стремительный зеленый механодолгоног
-            }
-            else if (race == RACE_TROLL)
-            {
-                if (level > 19) learn(8395);// Изумрудный ящер
-                if (level > 39) learn(23241);// Стремительный синий ящер
-            }
-            else if (race == RACE_BLOODELF)
-            {
-                if (level > 19) learn(35022);// Черный крылобег
-                if (level > 39) learn(33660);// Стремительный розовый крылобег
-            }
-            else if (race == RACE_DRAENEI)
-            {
-                if (level > 19) learn(35710);// Серый элекк
-                if (level > 39) learn(35713);// Большой синий элекк
-            }
-        }
-
-        if (SpellMountOrClass && chrClass == CLASS_DRUID) return;
-
-        if (level < 60) return;
-
-        if (character->GetTeam() == ALLIANCE) learn(32240);// Белоснежный грифон
-        else learn(32243);// Рыжий ветрокрыл
-
-        if (level < 70) return;
-
-        if (character->GetTeam() == ALLIANCE) learn(32289);// Стремительный красный грифон
-        else learn(32246);// Стремительный красный ветрокрыл
     }
 
     void learnDualSpec()
