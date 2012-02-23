@@ -1,6 +1,12 @@
 #include "ScriptPCH.h"
 #include "Config.h"
 
+#define SPELL_TYPE_CLASS        1
+#define SPELL_TYPE_RIDING       2
+#define SPELL_TYPE_MOUNT        3
+#define SPELL_TYPE_WEAPON       4
+#define SPELL_TYPE_PROFESSION   5
+
 bool AutoLearnEnable        = true;
 bool SpellClass             = true;
 bool SpellRiding            = true;
@@ -9,7 +15,21 @@ bool AutoLearnCheckLevel    = true;
 bool SpellMount             = true;
 bool SpellMountOrClass      = true;
 bool SpellWeapon            = true;
-//bool SpellProfession      = true;
+bool SpellProfession        = false;
+
+struct LearnSpellForClassInfo
+{
+    uint32  SpellId;
+    uint8   SpellType;
+    uint32  RequiredClassMask;
+    uint32  RequiredRaceMask;
+    uint8   RequiredLevel;
+    uint32  RequiredSpellId;
+    uint16  RequiredSkillId;
+    uint16  RequiredSkillValue;
+};
+
+std::vector<LearnSpellForClassInfo> LearnSpellForClass;
 
 class Mod_AutoLearn_WorldScript : public WorldScript
 {
@@ -18,6 +38,64 @@ class Mod_AutoLearn_WorldScript : public WorldScript
             : WorldScript("Mod_AutoLearn_WorldScript")
         {
         }
+
+    void Clear()
+    {
+        LearnSpellForClass.clear();
+    }
+
+    void LoadDataFromDataBase()
+    {
+        Clear();
+
+        QueryResult result = WorldDatabase.PQuery("SELECT SpellId, SpellType, RequiredClassMask, RequiredRaceMask, RequiredLevel, RequiredSpellId, RequiredSkillId, RequiredSkillValue FROM `world_autolearn`");
+
+        if (!result)
+            return;
+
+        do
+        {
+            Field* fields = result->Fetch();
+
+            LearnSpellForClassInfo Spell;
+
+            Spell.SpellId               = fields[0].GetUInt32();
+            Spell.SpellType             = fields[1].GetUInt8();
+            Spell.RequiredClassMask     = fields[2].GetUInt32();
+            Spell.RequiredRaceMask      = fields[3].GetUInt32();
+            Spell.RequiredLevel         = fields[4].GetUInt8();
+            Spell.RequiredSpellId       = fields[5].GetUInt32();
+            Spell.RequiredSkillId       = fields[6].GetUInt16();
+            Spell.RequiredSkillValue    = fields[7].GetUInt16();
+
+            if (!sSpellMgr->GetSpellInfo(Spell.SpellId))
+            {
+                sLog->outErrorDb("AutoLearn: Spell (ID: %u) non-existing", Spell.SpellId);
+                continue;
+            }
+
+            if (!(Spell.RequiredClassMask & CLASSMASK_ALL_PLAYABLE))
+            {
+                sLog->outErrorDb("AutoLearn: Spell (ID: %u) RequiredClassMask (Mask: %u) non-existing ", Spell.SpellId, Spell.RequiredClassMask);
+                continue;
+            }
+
+            if (!(Spell.RequiredRaceMask & RACEMASK_ALL_PLAYABLE))
+            {
+                sLog->outErrorDb("AutoLearn: Spell (ID: %u) RequiredRaceMask (Mask: %u) non-existing ", Spell.SpellId, Spell.RequiredRaceMask);
+                continue;
+            }
+
+            if (Spell.RequiredSpellId != 0 && !sSpellMgr->GetSpellInfo(Spell.RequiredSpellId))
+            {
+                sLog->outErrorDb("AutoLearn: Spell (ID: %u) RequiredSpellId (ID: %u) non-existing", Spell.SpellId, Spell.RequiredSpellId);
+                continue;
+            }
+
+            LearnSpellForClass.push_back(Spell);
+        }
+        while (result->NextRow());
+    }
 
     void OnConfigLoad(bool reload)
     {
@@ -34,7 +112,7 @@ class Mod_AutoLearn_WorldScript : public WorldScript
         SpellMount              = ConfigMgr::GetBoolDefault("AutoLearn.SpellMount",         true);
         SpellMountOrClass       = ConfigMgr::GetBoolDefault("AutoLearn.SpellMountOrClass",  true);
         SpellWeapon             = ConfigMgr::GetBoolDefault("AutoLearn.SpellWeapon",        true);
-        //SpellProfession       = ConfigMgr::GetBoolDefault("AutoLearn.SpellProfession",    true);
+        SpellProfession         = ConfigMgr::GetBoolDefault("AutoLearn.SpellProfession",    false);
     }
 };
 
@@ -57,18 +135,55 @@ class Mod_AutoLearn_PlayerScript : public PlayerScript
         CheckSpell(player);
     }
 
-    void CheckSpell(Player* player)
+    void CheckSpell(Player* Player)
     {
         if (!AutoLearnEnable) return;
 
-        level = player->getLevel();
-        character = player;
+        if (SpellClass)
+            CheckSpellType(SPELL_TYPE_CLASS, Player);
+        if (SpellRiding)
+            CheckSpellType(SPELL_TYPE_RIDING, Player);
+        if (SpellMount)
+            CheckSpellType(SPELL_TYPE_MOUNT, Player);
+        if (SpellWeapon)
+            CheckSpellType(SPELL_TYPE_WEAPON, Player);
+        if (SpellProfession)
+            CheckSpellType(SPELL_TYPE_PROFESSION, Player);
 
-        learnSpellRiding();
+        level = Player->getLevel();
+        character = Player;
+
         learnDualSpec();
         learnSpellClass();
         learnMount();
-        learnWeapon();
+    }
+
+    void OnPlayerSkillUpdate(Player* player, uint16 SkillId, uint16 SkillValue, uint16 SkillNewValue)
+    {
+        if (!AutoLearnEnable || !SpellProfession) return;
+    }
+
+    void CheckSpellType(uint8 SpellType, Player* Player, uint16 SkillId = 0, uint16 SkillValue = 0)
+    {
+        uint16  PlayerClassMask = Player->getClassMask();
+        uint16  PlayerRaceMask  = Player->getRaceMask();
+        uint8   PlayerLevel     = Player->getLevel();
+        uint16  PlayerTeam      = Player->GetTeam();
+
+        for (uint16 i = 0; i < LearnSpellForClass.size(); ++i)
+        {
+            LearnSpellForClassInfo &Spell = LearnSpellForClass[i];
+            if (Spell.SpellType != SpellType) continue;
+            if (Spell.RequiredClassMask != 0 && !(Spell.RequiredClassMask & PlayerClassMask)) continue;
+            if (Spell.RequiredRaceMask != 0 && !(Spell.RequiredRaceMask & PlayerRaceMask)) continue;
+            if (Spell.RequiredLevel > PlayerLevel) continue;
+            if (Spell.RequiredSkillId != SkillId) continue;
+            if (Spell.RequiredSkillValue > SkillValue) continue;
+            if (Player->HasSpell(Spell.SpellId)) continue;
+            if (Spell.RequiredSpellId != 0 && !Player->HasSpell(Spell.RequiredSpellId)) continue;
+
+            Player->learnSpell(Spell.SpellId, false);
+        }
     }
 
     void learn(uint32 spell, uint32 required = 0)
@@ -80,119 +195,6 @@ class Mod_AutoLearn_PlayerScript : public PlayerScript
         if (required != 0 && !character->HasSpell(required)) return;
 
         character->learnSpell(spell, false);
-    }
-
-    void learnWeapon()
-    {
-        if (!SpellWeapon) return;
-
-        if (character->getClass() == CLASS_ROGUE) {
-            learn(5011);// Арбалеты
-            learn(264);// Луки
-            learn(266);// Ружья
-            learn(2567);// Метательное оружие
-            learn(1180);// Кинжалы
-            learn(15590);// Кулачное оружие
-            learn(198);// Одноручное дробящее оружие
-            learn(201);// Одноручные мечи
-            learn(196);// Одноручные топоры
-        } else if (character->getClass() == CLASS_HUNTER) {
-            learn(5011);// Арбалеты
-            learn(202);// Двуручные мечи
-            learn(197);// Двуручные топоры
-            learn(200);// Древковое оружие
-            learn(1180);// Кинжалы
-            learn(15590);// Кулачное оружие
-            learn(264);// Луки
-            learn(201);// Одноручные мечи
-            learn(196);// Одноручные топоры
-            learn(227);// Посохи
-            learn(266);// Ружья
-        } else if (character->getClass() == CLASS_SHAMAN) {
-            learn(199);// Двуручное дробящее оружие
-            learn(197);// Двуручные топоры
-            learn(1180);// Кинжалы
-            learn(15590);// Кулачное оружие
-            learn(198);// Одноручное дробящее оружие
-            learn(196);// Одноручные топоры
-            learn(227);// Посохи
-        } else if (character->getClass() == CLASS_WARRIOR) {
-            learn(196);// Одноручные топоры
-            learn(197);// Двуручные топоры
-            learn(198);// Одноручное дробящее оружие
-            learn(199);// Двуручное дробящее оружие
-            learn(266);// Ружья
-            learn(15590);// Кулачное оружие
-            learn(264);// Луки
-            learn(2567);// Метательное оружие
-            learn(15590);// Кулачное оружие
-            learn(200);// Древковое оружие
-            learn(201);// Одноручные мечи
-            learn(202);// Двуручные мечи
-            learn(227);// Посохи
-            learn(5011);// Арбалеты
-            learn(1180);// Кинжалы
-            learn(2567);// Метательное оружие
-            learn(5011);// Арбалеты
-        } else if (character->getClass() == CLASS_PALADIN) {
-            learn(202);// Двуручные мечи
-            learn(199);// Двуручное дробящее оружие
-            learn(197);// Двуручные топоры
-            learn(200);// Древковое оружие
-            learn(198);// Одноручное дробящее оружие
-            learn(201);// Одноручные мечи
-            learn(196);// Одноручные топоры
-        } else if (character->getClass() == CLASS_PRIEST) {
-            learn(227);// Посохи
-            learn(198);// Одноручное дробящее оружие
-            learn(1180);// Кинжалы
-        } else if (character->getClass() == CLASS_DEATH_KNIGHT) {
-            learn(199);// Двуручное дробящее оружие
-            learn(202);// Двуручные мечи
-            learn(197);// Двуручные топоры
-            learn(200);// Древковое оружие
-            learn(198);// Одноручное дробящее оружие
-            learn(201);// Одноручные мечи
-            learn(196);// Одноручные топоры
-        } else if (character->getClass() == CLASS_MAGE) {
-            learn(1180);// Кинжалы
-            learn(201);// Одноручные мечи
-            learn(227);// Посохи
-        } else if (character->getClass() == CLASS_WARLOCK) {
-            learn(1180);// Кинжалы
-            learn(201);// Одноручные мечи
-            learn(227);// Посохи
-        } else if (character->getClass() == CLASS_DRUID) {
-            learn(199);// Двуручное дробящее оружие
-            learn(200);// Древковое оружие
-            learn(1180);// Кинжалы
-            learn(15590);// Кулачное оружие
-            learn(198);// Одноручное дробящее оружие
-            learn(227);// Посохи
-        }
-    }
-
-    void learnSpellRiding()
-    {
-        if (!SpellRiding || level < 20) return;
-        
-        learn(33388);// Верховая езда (ученик)
-
-        if (level < 40) return;
-        
-        learn(33391);// Верховая езда (подмастерье)
-
-        if (level < 60) return;
-        
-        learn(34090);// Верховая езда (умелец)
-
-        if (level < 70) return;
-
-        learn(34091);// Верховая езда (искусник)
-
-        if (level < 77) return;
-
-        learn(54197);// Полеты в непогоду
     }
     
     void learnMount()
