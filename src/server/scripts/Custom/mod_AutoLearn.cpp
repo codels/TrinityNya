@@ -6,15 +6,10 @@
 #define SPELL_MASK_MOUNT        4
 #define SPELL_MASK_WEAPON       8
 #define SPELL_MASK_PROFESSION   16
+#define SPELL_MASK_DUAL_SPEC    32
 
-bool AutoLearnEnable        = true;
-bool AutoLearnCheckLevel    = true;
-bool DualSpec               = true;
-bool SpellClass             = true;
-bool SpellRiding            = true;
-bool SpellMount             = true;
-bool SpellWeapon            = true;
-bool SpellProfession        = false;
+uint16  OnLevelSpellMask    = 0;
+uint16  OnSkillSpellMask    = 0;
 
 struct LearnSpellForClassInfo
 {
@@ -38,6 +33,28 @@ class Mod_AutoLearn_WorldScript : public WorldScript
         {
         }
 
+    void OnConfigLoad(bool reload)
+    {
+        OnLevelSpellMask = 0;
+        OnSkillSpellMask = 0;
+
+        if (!ConfigMgr::GetBoolDefault("AutoLearn.Enable", true))
+            return;
+
+        if (ConfigMgr::GetBoolDefault("AutoLearn.Check.Level", true)) {
+            if (ConfigMgr::GetBoolDefault("AutoLearn.SpellClass", true)) OnLevelSpellMask += SPELL_MASK_CLASS;
+            if (ConfigMgr::GetBoolDefault("AutoLearn.SpellRiding", true)) OnLevelSpellMask += SPELL_MASK_RIDING;
+            if (ConfigMgr::GetBoolDefault("AutoLearn.SpellMount", true)) OnLevelSpellMask += SPELL_MASK_MOUNT;
+            if (ConfigMgr::GetBoolDefault("AutoLearn.SpellWeapon", true)) OnLevelSpellMask += SPELL_MASK_WEAPON;
+            if (ConfigMgr::GetBoolDefault("AutoLearn.DualSpec", true)) OnLevelSpellMask += SPELL_MASK_DUAL_SPEC;
+        }
+
+        if (ConfigMgr::GetBoolDefault("AutoLearn.SpellProfession", false))
+            OnSkillSpellMask += SPELL_MASK_PROFESSION;
+
+        LoadDataFromDataBase();
+    }
+
     void Clear()
     {
         LearnSpellForClass.clear();
@@ -46,9 +63,6 @@ class Mod_AutoLearn_WorldScript : public WorldScript
     void LoadDataFromDataBase()
     {
         Clear();
-
-        if (!AutoLearnEnable)
-            return;
 
         sLog->outString();
         sLog->outString("Loading AutoLearn...");
@@ -82,23 +96,8 @@ class Mod_AutoLearn_WorldScript : public WorldScript
                 continue;
             }
 
-            if (!SpellClass && Spell.SpellMask & SPELL_MASK_CLASS)
-                Spell.SpellMask -= SPELL_MASK_CLASS;
-
-            if (!SpellRiding && Spell.SpellMask & SPELL_MASK_RIDING)
-                Spell.SpellMask -= SPELL_MASK_RIDING;
-
-            if (!SpellMount && Spell.SpellMask & SPELL_MASK_MOUNT)
-                Spell.SpellMask -= SPELL_MASK_MOUNT;
-
-            if (!SpellWeapon && Spell.SpellMask & SPELL_MASK_WEAPON)
-                Spell.SpellMask -= SPELL_MASK_WEAPON;
-
-            if (!SpellProfession && Spell.SpellMask & SPELL_MASK_PROFESSION)
-                Spell.SpellMask -= SPELL_MASK_PROFESSION;
-
             // Skip spell
-            if (Spell.SpellMask == 0)
+            if (!(Spell.SpellMask & OnLevelSpellMask) && !(Spell.SpellMask & OnSkillSpellMask))
                 continue;
 
             if (Spell.RequiredClassMask != 0 && !(Spell.RequiredClassMask & CLASSMASK_ALL_PLAYABLE))
@@ -127,25 +126,6 @@ class Mod_AutoLearn_WorldScript : public WorldScript
         sLog->outString(">> Loaded %u spells for AutoLearn in %u ms", count, GetMSTimeDiffToNow(oldMSTime));
         sLog->outString();
     }
-
-    void OnConfigLoad(bool reload)
-    {
-        AutoLearnEnable         = ConfigMgr::GetBoolDefault("AutoLearn.Enable",             true);
-
-        if (!AutoLearnEnable)
-            return;
-
-        AutoLearnCheckLevel     = ConfigMgr::GetBoolDefault("AutoLearn.Check.Level",        true);
-        DualSpec                = ConfigMgr::GetBoolDefault("AutoLearn.DualSpec",           true);
-
-        SpellClass              = ConfigMgr::GetBoolDefault("AutoLearn.SpellClass",         true);
-        SpellRiding             = ConfigMgr::GetBoolDefault("AutoLearn.SpellRiding",        true);
-        SpellMount              = ConfigMgr::GetBoolDefault("AutoLearn.SpellMount",         true);
-        SpellWeapon             = ConfigMgr::GetBoolDefault("AutoLearn.SpellWeapon",        true);
-        SpellProfession         = ConfigMgr::GetBoolDefault("AutoLearn.SpellProfession",    false);
-
-        LoadDataFromDataBase();
-    }
 };
 
 class Mod_AutoLearn_PlayerScript : public PlayerScript
@@ -158,28 +138,22 @@ class Mod_AutoLearn_PlayerScript : public PlayerScript
 
     void OnLevelChanged(Player* Player, uint8 oldLevel)
     {
-        if (!AutoLearnEnable || !AutoLearnCheckLevel) return;
-
-        uint16 SpellMask = 0;
-
-        if (SpellClass)         SpellMask += SPELL_MASK_CLASS;
-        if (SpellRiding)        SpellMask += SPELL_MASK_RIDING;
-        if (SpellMount)         SpellMask += SPELL_MASK_MOUNT;
-        if (SpellWeapon)        SpellMask += SPELL_MASK_WEAPON;
-        if (SpellProfession)    SpellMask += SPELL_MASK_PROFESSION;
-
-        AutoLearnSpell(SpellMask, Player);
-        learnDualSpec(Player);
+        AutoLearnSpell(OnLevelSpellMask, Player);
     }
 
     void OnPlayerSkillUpdate(Player* Player, uint16 SkillId, uint16 /*SkillValue*/, uint16 SkillNewValue)
     {
-        if (AutoLearnEnable && SpellProfession)
-            AutoLearnSpell(SPELL_MASK_PROFESSION, Player, SkillId, SkillNewValue);
+        AutoLearnSpell(OnSkillSpellMask, Player, SkillId, SkillNewValue);
     }
 
     void AutoLearnSpell(uint16 SpellMask, Player* Player, uint16 SkillId = 0, uint16 SkillValue = 0)
     {
+        if (SpellMask & SPELL_MASK_DUAL_SPEC)
+        {
+            learnDualSpec(Player);
+            SpellMask -= SPELL_MASK_DUAL_SPEC;
+        }
+
         if (SpellMask == 0) return;
 
         uint32  PlayerClassMask = Player->getClassMask();
@@ -204,8 +178,6 @@ class Mod_AutoLearn_PlayerScript : public PlayerScript
 
     void learnDualSpec(Player* Player)
     {
-        if (!DualSpec) return;
-
         if (Player->getLevel() < sWorld->getIntConfig(CONFIG_MIN_DUALSPEC_LEVEL)) return;
 
         if (Player->GetSpecsCount() != 1) return;
