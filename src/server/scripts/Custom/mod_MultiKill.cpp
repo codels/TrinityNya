@@ -12,7 +12,7 @@ bool    MultiKillBattleGround           = true;
 bool    MultiKillLog                    = true;
 int     MultiKillTimeBetween            = 15;
 
-uint32  MultiKillRewardGold             = 50;
+uint32  MultiKillRewardGold             = 25;
 uint32  MultiKillRewardGoldKills        = 2;
 bool    MultiKillRewardGoldScale        = true;
 
@@ -53,7 +53,7 @@ class Mod_MultiKill_WorldScript : public WorldScript
         MultiKillLog = ConfigMgr::GetBoolDefault("MultiKill.Log", true);
         MultiKillTimeBetween = ConfigMgr::GetIntDefault("MultiKill.Time.Between", 15);
 
-        MultiKillRewardGold = ConfigMgr::GetIntDefault("MultiKill.Reward.Gold.Count", 50);
+        MultiKillRewardGold = ConfigMgr::GetIntDefault("MultiKill.Reward.Gold.Count", 25);
         MultiKillRewardGoldKills = ConfigMgr::GetIntDefault("MultiKill.Reward.Gold.Kills", 2);
         MultiKillRewardGoldScale = ConfigMgr::GetBoolDefault("MultiKill.Reward.Gold.Scale", true);
 
