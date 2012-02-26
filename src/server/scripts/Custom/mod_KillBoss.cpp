@@ -143,7 +143,10 @@ class Mod_KillBoss_AllCreatureScript : public AllCreatureScript
             strBoss << sGuildMgr->GetGuildById(GuildId)->GetName();
             strBoss << "\", составом в ";
             strBoss << KillerCount;
-            strBoss << (KillerCount > 4) ? " человек" : " человекa";
+            if (KillerCount > 4)
+                strBoss << " человек";
+            else
+                strBoss << " человекa";
 
             sWorld->SendWorldText(LANG_AUTO_BROADCAST, strBoss.str().c_str());
         }
