@@ -461,10 +461,10 @@ bool OutdoorPvPWG::SetupOutdoorPvP()
     else
         RemoveOfflinePlayerWGAuras();
 
-	//wowkarelia
-	sObjectMgr->RemoveGraveYardLink(1328, 4197, 67, false);
-	sObjectMgr->RemoveGraveYardLink(1328, 4197, 469, false);
-	sObjectMgr->AddGraveYardLink(1328, 4197, getDefenderTeam() == TEAM_HORDE ? 67 : 469, false);
+    //wowkarelia
+    sObjectMgr->RemoveGraveYardLink(1328, 4197, 67, false);
+    sObjectMgr->RemoveGraveYardLink(1328, 4197, 469, false);
+    sObjectMgr->AddGraveYardLink(1328, 4197, getDefenderTeam() == TEAM_HORDE ? 67 : 469, false);
 
     return true;
 }
@@ -736,6 +736,8 @@ OutdoorPvPWGCreType OutdoorPvPWG::GetCreatureType(uint32 entry) const
         case 39173: case 39172: // Ros'slai && Marshal Magruder
         case 30870: case 30869: // Flight Masters
             return CREATURE_SPECIAL;
+        case 27852: // Wintergrasp Control Arms (Target for summon vehicle)
+            return CREATURE_SYSTEM;
         default:
             return CREATURE_OTHER; // Revenants, Elementals, etc
     }
@@ -1022,11 +1024,14 @@ bool OutdoorPvPWG::UpdateCreatureInfo(Creature *creature)
             creature->SetVisible(isWarTime());
             return false;
         case CREATURE_OTHER:
-            if (isWarTime())
-                creature->setFaction(35);
-            else
-                creature->RestoreFaction();
-            creature->SetVisible(!isWarTime());
+            if (!creature->isTrigger())
+            {
+                if (isWarTime())
+                    creature->setFaction(35);
+                else
+                    creature->RestoreFaction();
+                creature->SetVisible(!isWarTime());
+            }
             return false;
         case CREATURE_SPIRIT_GUIDE:
             /* Uncomment if want to disable ressurect for both factions at the same time at fortress graveyard
@@ -1046,6 +1051,7 @@ bool OutdoorPvPWG::UpdateCreatureInfo(Creature *creature)
         case CREATURE_SPIRIT_HEALER:
             creature->SetVisible(!isWarTime());
             return false;
+        case CREATURE_SYSTEM:
         case CREATURE_ENGINEER:
            return false;
         case CREATURE_SIEGE_VEHICLE:
@@ -1640,8 +1646,8 @@ void OutdoorPvPWG::StartBattle()
             plr->RemoveAurasByType(SPELL_AURA_FLY);
             plr->CastSpell(plr, 45472, true); // prevent die if fall
             plr->PlayDirectSound(OutdoorPvP_WG_SOUND_START_BATTLE); // START Battle
-			//inside
-			plr->CastSpell(plr, SPELL_TELEPORT_FORTRESS, true);
+            //inside
+            plr->CastSpell(plr, SPELL_TELEPORT_FORTRESS, true);
         }
     }
 
@@ -1657,11 +1663,11 @@ void OutdoorPvPWG::StartBattle()
             plr->RemoveAurasByType(SPELL_AURA_FLY);
             plr->CastSpell(plr, 45472, true); // prevent die if fall
             plr->PlayDirectSound(OutdoorPvP_WG_SOUND_START_BATTLE); // START Battle
-			//outside
-			if (plr->ToPlayer()->GetTeam() == ALLIANCE)
-				plr->CastSpell(plr, SPELL_TELEPORT_ALLIANCE_CAMP, true);
-			else
-				plr->CastSpell(plr, SPELL_TELEPORT_HORDE_CAMP, true);
+            //outside
+            if (plr->ToPlayer()->GetTeam() == ALLIANCE)
+                plr->CastSpell(plr, SPELL_TELEPORT_ALLIANCE_CAMP, true);
+            else
+                plr->CastSpell(plr, SPELL_TELEPORT_HORDE_CAMP, true);
         }
     }
 
@@ -1720,10 +1726,10 @@ void OutdoorPvPWG::StartBattle()
     // Update timer in players battlegrounds tab
     sWorld->SendWintergraspState();
 
-	//wowkarelia
-	sObjectMgr->RemoveGraveYardLink(1328, 4197, 67, false);
-	sObjectMgr->RemoveGraveYardLink(1328, 4197, 469, false);
-	sObjectMgr->AddGraveYardLink(1328, 4197, getDefenderTeam() == TEAM_HORDE ? 67 : 469, false);
+    //wowkarelia
+    sObjectMgr->RemoveGraveYardLink(1328, 4197, 67, false);
+    sObjectMgr->RemoveGraveYardLink(1328, 4197, 469, false);
+    sObjectMgr->AddGraveYardLink(1328, 4197, getDefenderTeam() == TEAM_HORDE ? 67 : 469, false);
 }
 
 void OutdoorPvPWG::EndBattle()
@@ -1885,10 +1891,10 @@ void OutdoorPvPWG::EndBattle()
         UpdateGameObjectInfo(*itr);
 
 
-	//wowkarelia
-	sObjectMgr->RemoveGraveYardLink(1328, 4197, 67, false);
-	sObjectMgr->RemoveGraveYardLink(1328, 4197, 469, false);
-	sObjectMgr->AddGraveYardLink(1328, 4197, getDefenderTeam() == TEAM_HORDE ? 67 : 469, false);
+    //wowkarelia
+    sObjectMgr->RemoveGraveYardLink(1328, 4197, 67, false);
+    sObjectMgr->RemoveGraveYardLink(1328, 4197, 469, false);
+    sObjectMgr->AddGraveYardLink(1328, 4197, getDefenderTeam() == TEAM_HORDE ? 67 : 469, false);
 }
 
 bool OutdoorPvPWG::CanBuildVehicle(OPvPCapturePointWG *workshop) const

@@ -121,6 +121,7 @@ enum OutdoorPvPWGCreType
     CREATURE_SPIRIT_GUIDE,
     CREATURE_SPIRIT_HEALER,
     CREATURE_QUESTGIVER,
+    CREATURE_SYSTEM,
 };
 
 enum OutdoorPvPWGBuildingType
