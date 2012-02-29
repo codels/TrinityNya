@@ -39,7 +39,7 @@ class Mod_KillBoss_AllCreatureScript : public AllCreatureScript
         if (!KillBossEnable)
             return;
 
-        if (creature->GetCreatureInfo()->rank != CREATURE_ELITE_WORLDBOSS)
+        if (creature->GetCreatureTemplate()->rank != CREATURE_ELITE_WORLDBOSS)
             return;
 
         Player* recipient = creature->GetLootRecipient();
