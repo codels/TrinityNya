@@ -1022,12 +1022,9 @@ class ScriptMgr
         void OnPlayerCreate(Player* player);
         void OnPlayerDelete(uint64 guid);
         void OnPlayerBindToInstance(Player* player, Difficulty difficulty, uint32 mapid, bool permanent);
-<<<<<<< HEAD
         void OnPlayerSkillUpdate(Player* player, uint16 SkillId, uint16 SkillValue, uint16 SkillNewValue);
         void OnPlayerSave(Player* player);
-=======
         void OnPlayerUpdateZone(Player* player, uint32 newZone, uint32 newArea);
->>>>>>> trinity/master
 
     public: /* GuildScript */
 
