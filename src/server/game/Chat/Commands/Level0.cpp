@@ -91,13 +91,13 @@ bool ChatHandler::HandleServerInfoCommand(const char* /*args*/)
     uint32 maxActiveClientsNum = sWorld->GetMaxActiveSessionCount();
     uint32 maxQueuedClientsNum = sWorld->GetMaxQueuedSessionCount();
     std::string uptime = secsToTimeString(sWorld->GetUptime());
-    uint32 updateTime = sWorld->GetUpdateTime();
+    //uint32 updateTime = sWorld->GetUpdateTime();
 
     SendSysMessage(_FULLVERSION);
     PSendSysMessage(LANG_CONNECTED_PLAYERS, playersNum, maxPlayersNum);
     PSendSysMessage(LANG_CONNECTED_USERS, activeClientsNum, maxActiveClientsNum, queuedClientsNum, maxQueuedClientsNum);
     PSendSysMessage(LANG_UPTIME, uptime.c_str());
-    PSendSysMessage(LANG_UPDATE_DIFF, updateTime);
+    //PSendSysMessage(LANG_UPDATE_DIFF, updateTime); wtf???
     //! Can't use sWorld->ShutdownMsg here in case of console command
     if (sWorld->IsShuttingDown())
         PSendSysMessage(LANG_SHUTDOWN_TIMELEFT, secsToTimeString(sWorld->GetShutDownTimeLeft()).c_str());
