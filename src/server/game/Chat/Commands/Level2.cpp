@@ -872,18 +872,26 @@ bool ChatHandler::HandleWaterwalkCommand(const char* args)
         return false;
 
     if (strncmp(args, "on", 3) == 0)
-        player->SetMovement(MOVE_WATER_WALK);               // ON
+    {
+        player->SetMovement(MOVE_WATER_WALK);
+        PSendSysMessage(LANG_YOU_SET_WATERWALK, GetTrinityString(LANG_ON), GetNameLink(player).c_str());
+        if (needReportToTarget(player))
+            ChatHandler(player).PSendSysMessage(LANG_YOUR_WATERWALK_SET, GetTrinityString(LANG_ON), GetNameLink().c_str());
+        
+    }
     else if (strncmp(args, "off", 4) == 0)
-        player->SetMovement(MOVE_LAND_WALK);                // OFF
+    {
+        player->SetMovement(MOVE_LAND_WALK);
+        PSendSysMessage(LANG_YOU_SET_WATERWALK, GetTrinityString(LANG_OFF), GetNameLink(player).c_str());
+        if (needReportToTarget(player))
+            ChatHandler(player).PSendSysMessage(LANG_YOUR_WATERWALK_SET, GetTrinityString(LANG_OFF), GetNameLink().c_str());
+    }
     else
     {
         SendSysMessage(LANG_USE_BOL);
         return false;
     }
 
-    PSendSysMessage(LANG_YOU_SET_WATERWALK, args, GetNameLink(player).c_str());
-    if (needReportToTarget(player))
-        ChatHandler(player).PSendSysMessage(LANG_YOUR_WATERWALK_SET, args, GetNameLink().c_str());
     return true;
 }
 
