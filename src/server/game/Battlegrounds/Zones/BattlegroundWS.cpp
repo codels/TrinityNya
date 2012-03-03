@@ -368,6 +368,8 @@ void BattlegroundWS::EventPlayerDroppedFlag(Player* Source)
                 Source->RemoveAurasDueToSpell(BG_WS_SPELL_SILVERWING_FLAG);
             }
         }
+        Source->RemoveAurasDueToSpell(BG_WS_SPELL_FOCUSED_ASSAULT);
+        Source->RemoveAurasDueToSpell(BG_WS_SPELL_BRUTAL_ASSAULT);
         return;
     }
 
