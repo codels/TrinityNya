@@ -8,13 +8,13 @@
 #define SPELL_MASK_PROFESSION   16
 #define SPELL_MASK_DUAL_SPEC    32
 
-uint16  OnLevelSpellMask    = 0;
-uint16  OnSkillSpellMask    = 0;
+uint8  OnLevelSpellMask    = 0;
+uint8  OnSkillSpellMask    = 0;
 
 struct LearnSpellForClassInfo
 {
     uint32  SpellId;
-    uint16  SpellMask;
+    uint8  SpellMask;
     uint32  RequiredClassMask;
     uint32  RequiredRaceMask;
     uint8   RequiredLevel;
@@ -28,13 +28,11 @@ std::vector<LearnSpellForClassInfo> LearnSpellForClass;
 class Mod_AutoLearn_WorldScript : public WorldScript
 {
     public:
-        Mod_AutoLearn_WorldScript()
-            : WorldScript("Mod_AutoLearn_WorldScript")
-        {
-        }
+        Mod_AutoLearn_WorldScript() : WorldScript("Mod_AutoLearn_WorldScript") { }
 
     void OnConfigLoad(bool reload)
     {
+        uint8 loadSpellMask = OnLevelSpellMask | OnSkillSpellMask;
         OnLevelSpellMask = 0;
         OnSkillSpellMask = 0;
 
@@ -52,7 +50,8 @@ class Mod_AutoLearn_WorldScript : public WorldScript
         if (ConfigMgr::GetBoolDefault("AutoLearn.SpellProfession", false))
             OnSkillSpellMask += SPELL_MASK_PROFESSION;
 
-        LoadDataFromDataBase();
+        if (loadSpellMask != OnLevelSpellMask | OnSkillSpellMask)
+            LoadDataFromDataBase();
     }
 
     void Clear()
@@ -74,6 +73,7 @@ class Mod_AutoLearn_WorldScript : public WorldScript
             return;
 
         uint16 count = 0;
+        uint8 spellMask = OnLevelSpellMask | OnSkillSpellMask;
 
         do
         {
@@ -97,18 +97,18 @@ class Mod_AutoLearn_WorldScript : public WorldScript
             }
 
             // Skip spell
-            if (!(Spell.SpellMask & OnLevelSpellMask) && !(Spell.SpellMask & OnSkillSpellMask))
+            if (!(Spell.SpellMask & spellMask))
                 continue;
 
             if (Spell.RequiredClassMask != 0 && !(Spell.RequiredClassMask & CLASSMASK_ALL_PLAYABLE))
             {
-                sLog->outErrorDb("AutoLearn: Spell (ID: %u) RequiredClassMask (Mask: %u) non-existing ", Spell.SpellId, Spell.RequiredClassMask);
+                sLog->outErrorDb("AutoLearn: Spell (ID: %u) RequiredClassMask (Mask: %u) non-existing", Spell.SpellId, Spell.RequiredClassMask);
                 continue;
             }
 
             if (Spell.RequiredRaceMask != 0 && !(Spell.RequiredRaceMask & RACEMASK_ALL_PLAYABLE))
             {
-                sLog->outErrorDb("AutoLearn: Spell (ID: %u) RequiredRaceMask (Mask: %u) non-existing ", Spell.SpellId, Spell.RequiredRaceMask);
+                sLog->outErrorDb("AutoLearn: Spell (ID: %u) RequiredRaceMask (Mask: %u) non-existing", Spell.SpellId, Spell.RequiredRaceMask);
                 continue;
             }
 
@@ -146,7 +146,7 @@ class Mod_AutoLearn_PlayerScript : public PlayerScript
         AutoLearnSpell(OnSkillSpellMask, Player, SkillId, SkillNewValue);
     }
 
-    void AutoLearnSpell(uint16 SpellMask, Player* Player, uint16 SkillId = 0, uint16 SkillValue = 0)
+    void AutoLearnSpell(uint8 SpellMask, Player* Player, uint16 SkillId = 0, uint16 SkillValue = 0)
     {
         if (SpellMask & SPELL_MASK_DUAL_SPEC)
         {
