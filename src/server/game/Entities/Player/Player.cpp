@@ -7387,6 +7387,9 @@ void Player::UpdateArea(uint32 newArea)
 
 void Player::UpdateZone(uint32 newZone, uint32 newArea)
 {
+    if (newZone == m_zoneUpdateId && newArea == m_areaUpdateId)
+        return;
+
     if (m_zoneUpdateId != newZone)
     {
         sOutdoorPvPMgr->HandlePlayerLeaveZone(this, m_zoneUpdateId);
@@ -9095,13 +9098,6 @@ void Player::SendInitWorldStates(uint32 zoneid, uint32 areaid)
     data << uint32(0xC77) << uint32(sWorld->getBoolConfig(CONFIG_ARENA_SEASON_IN_PROGRESS));
                                                             // 8 Arena season id
     data << uint32(0xF3D) << uint32(sWorld->getIntConfig(CONFIG_ARENA_SEASON_ID));
-
-    // May be send timer to start Wintergrasp
-    if(sWorld->GetWintergrapsState()==4354)
-        data << uint32(0x1102) << sWorld->GetWintergrapsTimer();
-    else
-        data << uint32(0xEC5) << sWorld->GetWintergrapsTimer();
-    // ---
 
     if (mapid == 530)                                       // Outland
     {

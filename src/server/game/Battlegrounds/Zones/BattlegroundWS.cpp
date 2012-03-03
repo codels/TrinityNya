@@ -795,8 +795,8 @@ WorldSafeLocsEntry const* BattlegroundWS::GetClosestGraveYard(Player* player)
 
 void BattlegroundWS::FillInitialWorldStates(WorldPacket& data)
 {
-    data << uint32(BG_WS_FLAG_CAPTURES_ALLIANCE) << uint32(GetTeamScore(ALLIANCE));
-    data << uint32(BG_WS_FLAG_CAPTURES_HORDE) << uint32(GetTeamScore(HORDE));
+    data << uint32(BG_WS_FLAG_CAPTURES_ALLIANCE) << GetTeamScore(ALLIANCE);
+    data << uint32(BG_WS_FLAG_CAPTURES_HORDE) << GetTeamScore(HORDE);
 
     if (_flagState[BG_TEAM_ALLIANCE] == BG_WS_FLAG_STATE_ON_GROUND)
         data << uint32(BG_WS_FLAG_UNK_ALLIANCE) << uint32(-1);
@@ -814,14 +814,6 @@ void BattlegroundWS::FillInitialWorldStates(WorldPacket& data)
 
     data << uint32(BG_WS_FLAG_CAPTURES_MAX) << uint32(BG_WS_MAX_TEAM_SCORE);
 
-    if (GetStatus() == STATUS_IN_PROGRESS)
-    {
-        data << uint32(BG_WS_STATE_TIMER_ACTIVE) << uint32(1);
-        data << uint32(BG_WS_STATE_TIMER) << uint32(25-_minutesElapsed);
-    }
-    else
-        data << uint32(BG_WS_STATE_TIMER_ACTIVE) << uint32(0);
-
     if (_flagState[BG_TEAM_HORDE] == BG_WS_FLAG_STATE_ON_PLAYER)
         data << uint32(BG_WS_FLAG_STATE_ALLIANCE) << uint32(2);
     else
@@ -832,5 +824,7 @@ void BattlegroundWS::FillInitialWorldStates(WorldPacket& data)
     else
         data << uint32(BG_WS_FLAG_STATE_HORDE) << uint32(1);
 
+    data << uint32(BG_WS_STATE_TIMER_ACTIVE) << uint32(1);
+    data << uint32(BG_WS_STATE_TIMER) << uint32(25-_minutesElapsed);
 }
 
