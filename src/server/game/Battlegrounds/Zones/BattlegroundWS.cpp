@@ -344,6 +344,9 @@ void BattlegroundWS::EventPlayerCapturedFlag(Player* Source)
 
 void BattlegroundWS::EventPlayerDroppedFlag(Player* Source)
 {
+    Source->RemoveAurasDueToSpell(BG_WS_SPELL_FOCUSED_ASSAULT);
+    Source->RemoveAurasDueToSpell(BG_WS_SPELL_BRUTAL_ASSAULT);
+
     if (GetStatus() != STATUS_IN_PROGRESS)
     {
         // if not running, do not cast things at the dropper player (prevent spawning the "dropped" flag), neither send unnecessary messages
@@ -368,8 +371,6 @@ void BattlegroundWS::EventPlayerDroppedFlag(Player* Source)
                 Source->RemoveAurasDueToSpell(BG_WS_SPELL_SILVERWING_FLAG);
             }
         }
-        Source->RemoveAurasDueToSpell(BG_WS_SPELL_FOCUSED_ASSAULT);
-        Source->RemoveAurasDueToSpell(BG_WS_SPELL_BRUTAL_ASSAULT);
         return;
     }
 
