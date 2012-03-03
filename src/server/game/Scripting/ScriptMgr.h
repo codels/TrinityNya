@@ -745,6 +745,9 @@ class PlayerScript : public ScriptObject
 
         // Called when a player SaveToDB
         virtual void OnPlayerSave(Player* /*player*/) { }
+
+        // Called when a player switches to a new zone
+        virtual void OnUpdateZone(Player* /*player*/, uint32 /*newZone*/, uint32 /*newArea*/) { }
 };
 
 class GuildScript : public ScriptObject
@@ -1019,8 +1022,12 @@ class ScriptMgr
         void OnPlayerCreate(Player* player);
         void OnPlayerDelete(uint64 guid);
         void OnPlayerBindToInstance(Player* player, Difficulty difficulty, uint32 mapid, bool permanent);
+<<<<<<< HEAD
         void OnPlayerSkillUpdate(Player* player, uint16 SkillId, uint16 SkillValue, uint16 SkillNewValue);
         void OnPlayerSave(Player* player);
+=======
+        void OnPlayerUpdateZone(Player* player, uint32 newZone, uint32 newArea);
+>>>>>>> trinity/master
 
     public: /* GuildScript */
 

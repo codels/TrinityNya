@@ -785,20 +785,9 @@ uint32 Unit::DealDamage(Unit* victim, uint32 damage, CleanDamage const* cleanDam
         // last damage from duel opponent
         if (duel_hasEnded)
         {
-            Player* he;
+            Player* he = duel_wasMounted ? victim->GetCharmer()->ToPlayer() : victim->ToPlayer();
 
-            if (duel_wasMounted)
-            {
-                ASSERT(victim->GetCharmer()->GetTypeId() == TYPEID_PLAYER);
-                he = victim->GetCharmer()->ToPlayer();
-            }
-            else
-            {
-                ASSERT(victim->GetTypeId() == TYPEID_PLAYER);
-                he = victim->ToPlayer();
-            }
-
-            ASSERT(he->duel);
+            ASSERT(he && he->duel);
 
             if (duel_wasMounted) // In this case victim==mount
                 victim->SetHealth(1);
@@ -17181,12 +17170,16 @@ bool Unit::UpdatePosition(float x, float y, float z, float orientation, bool tel
             GetMap()->CreatureRelocation(ToCreature(), x, y, z, orientation);
     }
     else if (turn)
-        SetOrientation(orientation);
-
-    if ((relocated || turn) && IsVehicle())
-        GetVehicleKit()->RelocatePassengers(x, y, z, orientation);
+        UpdateOrientation(orientation);
 
     return (relocated || turn);
+}
+
+void Unit::UpdateOrientation(float orientation)
+{
+    SetOrientation(orientation);
+    if (IsVehicle())
+        GetVehicleKit()->RelocatePassengers(GetPositionX(), GetPositionY(), GetPositionZ(), GetOrientation());
 }
 
 void Unit::SendThreatListUpdate()
