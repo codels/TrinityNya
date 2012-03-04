@@ -492,9 +492,9 @@ void WorldSession::HandleZoneUpdateOpcode(WorldPacket & recv_data)
     sLog->outDetail("WORLD: Recvd ZONE_UPDATE: %u", newZone);
 
     // use server size data
-    uint32 newzone, newarea;
-    GetPlayer()->GetZoneAndAreaId(newzone, newarea);
-    GetPlayer()->UpdateZone(newzone, newarea);
+    //uint32 newzone, newarea;
+    //GetPlayer()->GetZoneAndAreaId(newzone, newarea);
+    GetPlayer()->UpdateZone(/*newzone, newarea*/);
     //GetPlayer()->SendInitWorldStates(true, newZone);
 }
 

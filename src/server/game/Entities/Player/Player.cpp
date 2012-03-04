@@ -1688,7 +1688,8 @@ void Player::Update(uint32 p_time)
     {
         if (p_time >= m_zoneUpdateTimer)
         {
-            uint32 newzone, newarea;
+            UpdateZone();
+            /*uint32 newzone, newarea;
             GetZoneAndAreaId(newzone, newarea);
 
             if (m_zoneUpdateId != newzone)
@@ -1701,7 +1702,7 @@ void Player::Update(uint32 p_time)
                     UpdateArea(newarea);
 
                 m_zoneUpdateTimer = ZONE_UPDATE_INTERVAL;
-            }
+            }*/
         }
         else
             m_zoneUpdateTimer -= p_time;
@@ -5125,7 +5126,7 @@ void Player::ResurrectPlayer(float restore_percent, bool applySickness)
     // trigger update zone for alive state zone updates
     uint32 newzone, newarea;
     GetZoneAndAreaId(newzone, newarea);
-    UpdateZone(newzone, newarea);
+    UpdateZone(true/*newzone, newarea*/);
     sOutdoorPvPMgr->HandlePlayerResurrects(this, newzone);
 
     if (InBattleground())
@@ -7385,10 +7386,17 @@ void Player::UpdateArea(uint32 newArea)
         RemoveByteFlag(UNIT_FIELD_BYTES_2, 1, UNIT_BYTE2_FLAG_SANCTUARY);
 }
 
-void Player::UpdateZone(uint32 newZone, uint32 newArea)
+void Player::UpdateZone(bool ressurect)
 {
-    if (newZone == m_zoneUpdateId && newArea == m_areaUpdateId)
+    uint32 newZone, newArea;
+    GetZoneAndAreaId(newZone, newArea);
+
+    if (!ressurect && m_zoneUpdateId == newZone)
+    {
+        if (m_areaUpdateId != newArea)
+             UpdateArea(newArea);
         return;
+    }
 
     if (m_zoneUpdateId != newZone)
     {
@@ -7459,8 +7467,8 @@ void Player::UpdateZone(uint32 newZone, uint32 newArea)
             break;
     }
 
-    // TRINITY_NYA
-    bool spec = (GetMapId() == 1 && GetZoneId() == 440 && GetAreaId() == 2317);
+    // TRINITY_NYA: isles in tanaris
+    bool spec = (GetMapId() == 1 && newZone == 440 && newArea == 2317);
 
     if (zone->flags & AREA_FLAG_CAPITAL || spec)                     // in capital city
     {
@@ -21861,9 +21869,9 @@ void Player::SendInitialPacketsAfterAddToMap()
     UpdateVisibilityForPlayer();
 
     // update zone
-    uint32 newzone, newarea;
-    GetZoneAndAreaId(newzone, newarea);
-    UpdateZone(newzone, newarea);                            // also call SendInitWorldStates();
+    //uint32 newzone, newarea;
+    //GetZoneAndAreaId(newzone, newarea);
+    UpdateZone(/*newzone, newarea*/);                            // also call SendInitWorldStates();
 
     ResetTimeSync();
     SendTimeSync();

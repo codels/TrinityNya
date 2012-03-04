@@ -1777,7 +1777,7 @@ class Player : public Unit, public GridObject<Player>
                 (*itr)->SetPvP(state);
         }
         void UpdatePvP(bool state, bool override=false);
-        void UpdateZone(uint32 newZone, uint32 newArea);
+        void UpdateZone(/*uint32 newZone, uint32 newArea*/bool ressurect = false);
         void UpdateArea(uint32 newArea);
 
         void UpdateZoneDependentAuras(uint32 zone_id);    // zones
