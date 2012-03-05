@@ -192,11 +192,12 @@ const float BG_SA_NpcSpawnlocs[BG_SA_MAXNPC + BG_SA_DEMOLISHER_AMOUNT][4] =
 
 enum BG_SA_Objects
 {
-    BG_SA_GREEN_GATE = 0,
-    BG_SA_YELLOW_GATE,
+    BG_SA_NONE = 0,
+    BG_SA_GREEN_GATE,
     BG_SA_BLUE_GATE,
     BG_SA_RED_GATE,
     BG_SA_PURPLE_GATE,
+    BG_SA_YELLOW_GATE,
     BG_SA_ANCIENT_GATE,
     BG_SA_TITAN_RELIC,
     BG_SA_BOAT_ONE,
@@ -223,11 +224,12 @@ enum BG_SA_Objects
 
 const float BG_SA_ObjSpawnlocs[BG_SA_MAXOBJ][4] =
 {
+    { 0.0f, 0.0f, 0.0f, 0.0f }, // Null object
     { 1411.57f, 108.163f, 28.692f, 5.441f },
-    { 1055.452f, -108.1f, 82.134f, 0.034f },
     { 1431.3413f, -219.437f, 30.893f, 0.9736f },
     { 1227.667f, -212.555f, 55.372f, 0.5023f },
     { 1214.681f, 81.21f, 53.413f, 5.745f },
+    { 1055.452f, -108.1f, 82.134f, 0.034f },
     { 878.555f, -108.2f, 117.845f, 0.0f },
     { 836.5f, -108.8f, 120.219f, 0.0f },
     //Ships
@@ -339,11 +341,12 @@ const float BG_SA_ObjSpawnlocs[BG_SA_MAXOBJ][4] =
 
 const uint32 BG_SA_ObjEntries[BG_SA_MAXOBJ + BG_SA_FLAG_AMOUNT] =
 {
+    0,
     190722,
-    190727,
     190724,
     190726,
     190723,
+    190727,
     192549,
     192834,
     0, // Boat
@@ -549,7 +552,7 @@ class BattlegroundSA : public Battleground
         /// For know if boats has start moving or not yet
         bool ShipsStarted;
         /// Status of each gate (Destroy/Damage/Intact)
-        BG_SA_GateState GateStatus[6];
+        BG_SA_GateState GateStatus[BG_SA_TITAN_RELIC];
         /// Statu of battle (Start or not, and what round)
         BG_SA_Status Status;
         /// Team witch conntrol each graveyard
