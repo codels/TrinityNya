@@ -1,4 +1,22 @@
 //TRINITY NYA DEV
+#include "ScriptPCH.h"
+#include "Config.h"
+
+bool    DynamicInstanceEnable   = false;
+
+class Mod_DynamicInstance_WorldScript : public WorldScript
+{
+    public:
+        Mod_DynamicInstance_WorldScript() : WorldScript("Mod_DynamicInstance_WorldScript") { }
+
+    void OnConfigLoad(bool reload)
+    {
+        DynamicInstanceEnable = ConfigMgr::GetBoolDefault("DynamicInstance.Enable", false);
+
+        if (!DynamicInstanceEnable)
+            return;
+    }
+};
 /*
 void Creature::DynamicInstanceUpdate(uint32 level)
 {
@@ -125,22 +143,22 @@ void Unit::Kill(Unit* victim, bool durabilityLoss)
             }
 
 
-			void OnCreatureCreate(Creature* creature)
-			{
-				Map::PlayerList const &players = instance->GetPlayers();
-				uint32 instanceLevel = 20;
+            void OnCreatureCreate(Creature* creature)
+            {
+                Map::PlayerList const &players = instance->GetPlayers();
+                uint32 instanceLevel = 20;
 
-				if (!players.isEmpty())
-				{
-					if (Player* player = players.begin()->getSource())
-						instanceLevel = player->getLevel();
-				}
+                if (!players.isEmpty())
+                {
+                    if (Player* player = players.begin()->getSource())
+                        instanceLevel = player->getLevel();
+                }
 
-				if (creature && creature->getLevel() != instanceLevel)
-				{
-					creature->DynamicInstanceUpdate(instanceLevel);
-				}
-			}
+                if (creature && creature->getLevel() != instanceLevel)
+                {
+                    creature->DynamicInstanceUpdate(instanceLevel);
+                }
+            }
 */
 
 void AddSC_Mod_DynamicInstance()
