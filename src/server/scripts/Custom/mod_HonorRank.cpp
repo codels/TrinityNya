@@ -41,7 +41,7 @@ class Mod_HonorRank_WorldScript : public WorldScript
         {
         }
 
-    void OnConfigLoad(bool reload)
+    void OnConfigLoad(bool /*reload*/)
     {
         HonorRankEnable         = ConfigMgr::GetBoolDefault("HonorRank.Enable", true);
 
@@ -57,10 +57,7 @@ class Mod_HonorRank_WorldScript : public WorldScript
 class Mod_HonorRank_PlayerScript : public PlayerScript
 {
     public:
-        Mod_HonorRank_PlayerScript()
-            : PlayerScript("Mod_HonorRank_PlayerScript")
-        {
-        }
+        Mod_HonorRank_PlayerScript() : PlayerScript("Mod_HonorRank_PlayerScript") { }
 
     bool CheckTitleIndex(uint8 i, Player* player)
     {
@@ -91,7 +88,7 @@ class Mod_HonorRank_PlayerScript : public PlayerScript
                 break;
     }
 
-    void OnPVPKill(Player* killer, Player* killed)
+    void OnPVPKill(Player* killer, Player* /*killed*/)
     {
         if (!HonorRankEnable || !HonorRankCheckLogin) return;
 

@@ -30,7 +30,7 @@ class Mod_AutoLearn_WorldScript : public WorldScript
     public:
         Mod_AutoLearn_WorldScript() : WorldScript("Mod_AutoLearn_WorldScript") { }
 
-    void OnConfigLoad(bool reload)
+    void OnConfigLoad(bool /*reload*/)
     {
         uint8 loadSpellMask = OnLevelSpellMask | OnSkillSpellMask;
         OnLevelSpellMask = 0;
@@ -50,7 +50,7 @@ class Mod_AutoLearn_WorldScript : public WorldScript
         if (ConfigMgr::GetBoolDefault("AutoLearn.SpellProfession", false))
             OnSkillSpellMask += SPELL_MASK_PROFESSION;
 
-        if (loadSpellMask != OnLevelSpellMask | OnSkillSpellMask)
+        if (loadSpellMask != (OnLevelSpellMask | OnSkillSpellMask))
             LoadDataFromDataBase();
     }
 
@@ -136,7 +136,7 @@ class Mod_AutoLearn_PlayerScript : public PlayerScript
         {
         }
 
-    void OnLevelChanged(Player* Player, uint8 oldLevel)
+    void OnLevelChanged(Player* Player, uint8 /*oldLevel*/)
     {
         AutoLearnSpell(OnLevelSpellMask, Player);
     }

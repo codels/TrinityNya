@@ -28,27 +28,24 @@ AnticheatMgr::~AnticheatMgr()
     m_Players.clear();
 }
 
-void AnticheatMgr::JumpHackDetection(Player* player, MovementInfo movementInfo,uint32 opcode)
+void AnticheatMgr::JumpHackDetection(Player* player, MovementInfo /*movementInfo*/, uint32 opcode)
 {
     if ((sWorld->getIntConfig(CONFIG_ANTICHEAT_DETECTIONS_ENABLED) & JUMP_HACK_DETECTION) == 0)
         return;
 
-    uint32 key = player->GetGUIDLow();
-
-    if (m_Players[key].GetLastOpcode() == MSG_MOVE_JUMP && opcode == MSG_MOVE_JUMP)
+    if (m_Players[player->GetGUIDLow()].GetLastOpcode() == MSG_MOVE_JUMP && opcode == MSG_MOVE_JUMP)
     {
-        BuildReport(player,JUMP_HACK_REPORT);
-        sLog->outError("AnticheatMgr:: Jump-Hack detected player GUID (low) %u",player->GetGUIDLow());
+        BuildReport(player, JUMP_HACK_REPORT);
+        sLog->outError("AnticheatMgr:: Jump-Hack detected player GUID (low) %u", player->GetGUIDLow());
     }
 }
 
-void AnticheatMgr::WalkOnWaterHackDetection(Player* player, MovementInfo movementInfo)
+void AnticheatMgr::WalkOnWaterHackDetection(Player* player, MovementInfo /*movementInfo*/)
 {
     if ((sWorld->getIntConfig(CONFIG_ANTICHEAT_DETECTIONS_ENABLED) & WALK_WATER_HACK_DETECTION) == 0)
         return;
 
-    uint32 key = player->GetGUIDLow();
-    if (!m_Players[key].GetLastMovementInfo().HasMovementFlag(MOVEMENTFLAG_WATERWALKING))
+    if (!m_Players[player->GetGUIDLow()].GetLastMovementInfo().HasMovementFlag(MOVEMENTFLAG_WATERWALKING))
         return;
 
     // if we are a ghost we can walk on water
@@ -60,18 +57,17 @@ void AnticheatMgr::WalkOnWaterHackDetection(Player* player, MovementInfo movemen
         player->HasAuraType(SPELL_AURA_WATER_WALK))
         return;
 
-    sLog->outError("AnticheatMgr:: Walk on Water - Hack detected player GUID (low) %u",player->GetGUIDLow());
-    BuildReport(player,WALK_WATER_HACK_REPORT);
+    sLog->outError("AnticheatMgr:: Walk on Water - Hack detected player GUID (low) %u", player->GetGUIDLow());
+    BuildReport(player, WALK_WATER_HACK_REPORT);
 
 }
 
-void AnticheatMgr::FlyHackDetection(Player* player, MovementInfo movementInfo)
+void AnticheatMgr::FlyHackDetection(Player* player, MovementInfo /*movementInfo*/)
 {
     if ((sWorld->getIntConfig(CONFIG_ANTICHEAT_DETECTIONS_ENABLED) & FLY_HACK_DETECTION) == 0)
         return;
 
-    uint32 key = player->GetGUIDLow();
-    if (!m_Players[key].GetLastMovementInfo().HasMovementFlag(MOVEMENTFLAG_FLYING))
+    if (!m_Players[player->GetGUIDLow()].GetLastMovementInfo().HasMovementFlag(MOVEMENTFLAG_FLYING))
         return;
 
     if (player->HasAuraType(SPELL_AURA_FLY) ||
@@ -79,8 +75,8 @@ void AnticheatMgr::FlyHackDetection(Player* player, MovementInfo movementInfo)
         player->HasAuraType(SPELL_AURA_MOD_INCREASE_FLIGHT_SPEED))
         return;
 
-    sLog->outError("AnticheatMgr:: Fly-Hack detected player GUID (low) %u",player->GetGUIDLow());
-    BuildReport(player,FLY_HACK_REPORT);
+    sLog->outError("AnticheatMgr:: Fly-Hack detected player GUID (low) %u", player->GetGUIDLow());
+    BuildReport(player, FLY_HACK_REPORT);
 }
 
 void AnticheatMgr::TeleportPlaneHackDetection(Player* player, MovementInfo movementInfo)
@@ -108,8 +104,8 @@ void AnticheatMgr::TeleportPlaneHackDetection(Player* player, MovementInfo movem
     // we are not really walking there
     if (z_diff > 1.0f)
     {
-        sLog->outError("AnticheatMgr:: Teleport To Plane - Hack detected player GUID (low) %u",player->GetGUIDLow());
-        BuildReport(player,TELEPORT_PLANE_HACK_REPORT);
+        sLog->outError("AnticheatMgr:: Teleport To Plane - Hack detected player GUID (low) %u", player->GetGUIDLow());
+        BuildReport(player, TELEPORT_PLANE_HACK_REPORT);
     }
 }
 
@@ -170,7 +166,7 @@ void AnticheatMgr::ClimbHackDetection(Player *player, MovementInfo movementInfo,
     if (angle > CLIMB_ANGLE)
     {
         sLog->outError("AnticheatMgr:: Climb-Hack detected player GUID (low) %u", player->GetGUIDLow());
-        BuildReport(player,CLIMB_HACK_REPORT);
+        BuildReport(player, CLIMB_HACK_REPORT);
     }
 }
 
@@ -231,8 +227,8 @@ void AnticheatMgr::HandlePlayerLogin(Player* player)
     // we must delete this to prevent errors in case of crash
     CharacterDatabase.PExecute("DELETE FROM players_reports_status WHERE guid=%u",player->GetGUIDLow());
     // we initialize the pos of lastMovementPosition var.
-    m_Players[player->GetGUIDLow()].SetPosition(player->GetPositionX(),player->GetPositionY(),player->GetPositionZ(),player->GetOrientation());
-    QueryResult resultDB = CharacterDatabase.PQuery("SELECT * FROM daily_players_reports WHERE guid=%u;",player->GetGUIDLow());
+    m_Players[player->GetGUIDLow()].SetPosition(player->GetPositionX(), player->GetPositionY(), player->GetPositionZ(), player->GetOrientation());
+    QueryResult resultDB = CharacterDatabase.PQuery("SELECT * FROM daily_players_reports WHERE guid=%u;", player->GetGUIDLow());
 
     if (resultDB)
         m_Players[player->GetGUIDLow()].SetDailyReportState(true);

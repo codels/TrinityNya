@@ -564,6 +564,8 @@ void OutdoorPvPWG::ProcessEvent(WorldObject *obj, uint32 eventId)
                         (*itr)->PlayDirectSound(TeamIDsound); // Wintergrasp Fortress under Siege
                     }
                     break;
+                default:
+                    break;
             }
         }
         else if (eventId == go->GetGOInfo()->building.destroyedEvent)
@@ -651,6 +653,8 @@ void OutdoorPvPWG::ProcessEvent(WorldObject *obj, uint32 eventId)
                             TeamIDsound = OutdoorPvP_WG_ALLIANCE_CAPTAIN; // Horde Worn Sound
                         (*itr)->PlayDirectSound(TeamIDsound); // Wintergrasp Fortress destroyed Siege
                     }
+                    break;
+                default:
                     break;
             }
             BroadcastStateChange(state);
@@ -1260,8 +1264,8 @@ void OutdoorPvPWG::HandlePlayerResurrects(Player* pPlayer, uint32 zone)
         if (pPlayer->getLevel() > 74)
         {
             // Tenacity
-            if (pPlayer->GetTeamId() == TEAM_ALLIANCE && m_tenacityStack > 0 ||
-                pPlayer->GetTeamId() == TEAM_HORDE && m_tenacityStack < 0)
+            if ((pPlayer->GetTeamId() == TEAM_ALLIANCE && m_tenacityStack > 0) ||
+                (pPlayer->GetTeamId() == TEAM_HORDE && m_tenacityStack < 0))
             {
                 if (pPlayer->HasAura(SPELL_TENACITY))
                     pPlayer->RemoveAurasDueToSpell(SPELL_TENACITY);
@@ -1306,8 +1310,7 @@ void OutdoorPvPWG::HandlePlayerLeaveZone(Player* pPlayer, uint32 zone)
 
 void OutdoorPvPWG::PromotePlayer(Player *killer) const
 {
-    Aura * aur;
-    if (aur = killer->GetAura(SPELL_RECRUIT))
+    if (Aura * aur = killer->GetAura(SPELL_RECRUIT))
     {
         if (aur->GetStackAmount() >= 5)
         {
@@ -1318,7 +1321,7 @@ void OutdoorPvPWG::PromotePlayer(Player *killer) const
         else
             killer->CastSpell(killer, SPELL_RECRUIT, true);
     }
-    else if (aur = killer->GetAura(SPELL_CORPORAL))
+    else if (Aura * aur = killer->GetAura(SPELL_CORPORAL))
     {
         if (aur->GetStackAmount() >= 5)
         {
@@ -1357,6 +1360,8 @@ void OutdoorPvPWG::HandleKill(Player *killer, Unit *victim)
                 break;
             case CREATURE_TURRET:
                 ok = true;
+                break;
+            default:
                 break;
         }
     }
@@ -1493,25 +1498,24 @@ bool OutdoorPvPWG::Update(uint32 diff)
                 {
                     for (std::map<uint64, std::vector<uint64> >::iterator itr = m_ReviveQueue.begin(); itr != m_ReviveQueue.end(); ++itr)
                     {
-                        Creature* sh = NULL;
                         for (std::vector<uint64>::const_iterator itr2 = (itr->second).begin(); itr2 != (itr->second).end(); ++itr2)
                         {
                             Player *plr = ObjectAccessor::FindPlayer(*itr2);
-                            if (!plr)
+                            if (!plr || !plr->IsInWorld())
                                 continue;
-                            if (!sh && plr->IsInWorld())
-                            {
-                                // only for visual effect
-                                if (sh = plr->GetMap()->GetCreature(itr->first))
-                                    // Spirit Heal, effect 117
-                                    sh->CastSpell(sh, SPELL_SPIRIT_HEAL, true);
-                            }
 
-                            // Resurrection visual
-                            if (sh && plr->GetDistance2d(sh) <= 18.0f)
+                            // only for visual effect
+                            if (Creature* sh = plr->GetMap()->GetCreature(itr->first))
                             {
-                                plr->CastSpell(plr, SPELL_RESURRECTION_VISUAL, true);
-                                m_ResurrectQueue.push_back(*itr2);
+                                // Spirit Heal, effect 117
+                                sh->CastSpell(sh, SPELL_SPIRIT_HEAL, true);
+
+                                // Resurrection visual
+                                if (plr->GetDistance2d(sh) <= 18.0f)
+                                {
+                                    plr->CastSpell(plr, SPELL_RESURRECTION_VISUAL, true);
+                                    m_ResurrectQueue.push_back(*itr2);
+                                }
                             }
                         }
                         (itr->second).clear();

@@ -78,7 +78,7 @@ class Mod_FriendChat_PlayerScript : public PlayerScript
             FriendChat[guid].enable = false;
     }
 
-    void OnChat(Player* player, uint32 type, uint32 lang, std::string& msg, Player* receiver)
+    void OnChat(Player* player, uint32 /*type*/, uint32 /*lang*/, std::string& msg, Player* receiver)
     {
         if (!FriendChat[receiver->GetGUID()].enable)
             return;

@@ -54,18 +54,18 @@ class instance_archavon : public InstanceMapScript
                 {
                     if (OutdoorPvPWG *pvpWG = (OutdoorPvPWG*)sOutdoorPvPMgr->GetOutdoorPvPToZoneId(4197))
                     {
-						if (m_player->ToPlayer()->GetTeam() == ALLIANCE)
-						{
-							if (pvpWG->getDefenderTeam() == TEAM_ALLIANCE)
-								return;
-							else
-								m_player->CastSpell(m_player, SPELL_TELEPORT_ALLIANCE_CAMP, true);
-						} else {
-							if (pvpWG->getDefenderTeam() == HORDE)
-								return;
-							else
-								m_player->CastSpell(m_player, SPELL_TELEPORT_HORDE_CAMP, true);
-						}
+                        if (m_player->ToPlayer()->GetTeam() == TEAM_ALLIANCE)
+                        {
+                            if (pvpWG->getDefenderTeam() == TEAM_ALLIANCE)
+                                return;
+                            else
+                                m_player->CastSpell(m_player, SPELL_TELEPORT_ALLIANCE_CAMP, true);
+                        } else {
+                            if (pvpWG->getDefenderTeam() == TEAM_HORDE)
+                                return;
+                            else
+                                m_player->CastSpell(m_player, SPELL_TELEPORT_HORDE_CAMP, true);
+                        }
                     }
                 }
             }

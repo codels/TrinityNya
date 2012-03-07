@@ -9,7 +9,7 @@ class Mod_DynamicInstance_WorldScript : public WorldScript
     public:
         Mod_DynamicInstance_WorldScript() : WorldScript("Mod_DynamicInstance_WorldScript") { }
 
-    void OnConfigLoad(bool reload)
+    void OnConfigLoad(bool /*reload*/)
     {
         DynamicInstanceEnable = ConfigMgr::GetBoolDefault("DynamicInstance.Enable", false);
 

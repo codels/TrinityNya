@@ -15,7 +15,7 @@ class Mod_KillBoss_WorldScript : public WorldScript
         {
         }
 
-    void OnConfigLoad(bool reload)
+    void OnConfigLoad(bool /*reload*/)
     {
         KillBossEnable = ConfigMgr::GetBoolDefault("KillBoss.Enable", true);
 

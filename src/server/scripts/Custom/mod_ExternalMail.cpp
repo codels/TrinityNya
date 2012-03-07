@@ -17,7 +17,7 @@ class Mod_ExternalMail_WorldScript : public WorldScript
         {
         }
 
-    void OnConfigLoad(bool reload)
+    void OnConfigLoad(bool /*reload*/)
     {
         ExternalMail            = ConfigMgr::GetBoolDefault("ExternalMail", false);
 

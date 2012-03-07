@@ -925,24 +925,28 @@ void Battleground::EndBattleground(uint32 winner)
             WinnerCount++;
             TeamWinner += PeopleData.str();
 
-            if(GuildWinnerBattle)
+            if (GuildWinnerBattle)
+			{
                 if((GuildWinnerId == 0 || GuildWinnerId == GuildPlayer) && GuildPlayer > 0)
                 {
                     if(GuildWinnerId == 0)
                         GuildWinnerId = GuildPlayer;
                 } else
                     GuildWinnerBattle = false;
+			}
         } else {
             LooserCount++;
             TeamLooser += PeopleData.str();
 
-            if(GuildLooserBattle)
+            if (GuildLooserBattle)
+			{
                 if((GuildLooserId == 0 || GuildLooserId == GuildPlayer) && GuildPlayer > 0)
                 {
                     if(GuildLooserId == 0)
                         GuildLooserId = GuildPlayer;
                 } else
                     GuildLooserBattle = false;
+			}
         }
 
         /*****************************************

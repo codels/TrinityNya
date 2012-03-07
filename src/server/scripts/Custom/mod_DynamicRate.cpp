@@ -27,7 +27,7 @@ class Mod_DynamicRate_WorldScript : public WorldScript
         {
         }
 
-    void OnConfigLoad(bool reload)
+    void OnConfigLoad(bool /*reload*/)
     {
         DynamicRateEnable = ConfigMgr::GetBoolDefault("DynamicRate.Enable", true);
 

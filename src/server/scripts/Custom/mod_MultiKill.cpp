@@ -42,7 +42,7 @@ class Mod_MultiKill_WorldScript : public WorldScript
         {
         }
 
-    void OnConfigLoad(bool reload)
+    void OnConfigLoad(bool /*reload*/)
     {
         MultiKillEnable = ConfigMgr::GetBoolDefault("MultiKill.Enable", true);
 
