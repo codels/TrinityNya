@@ -207,6 +207,8 @@ Battleground::Battleground()
     StartMessageIds[BG_STARTING_EVENT_SECOND] = LANG_BG_WS_START_ONE_MINUTE;
     StartMessageIds[BG_STARTING_EVENT_THIRD]  = LANG_BG_WS_START_HALF_MINUTE;
     StartMessageIds[BG_STARTING_EVENT_FOURTH] = LANG_BG_WS_HAS_BEGUN;
+    //trinity_nya
+    firstkill = true;
 }
 
 Battleground::~Battleground()
@@ -1328,6 +1330,8 @@ void Battleground::AddPlayer(Player* player)
     PlayerAddedToBGCheckIfBGIsRunning(player);
     AddOrSetPlayerToCorrectBgGroup(player, team);
 
+    sScriptMgr->OnPlayerJoinedBattleground(player, this);
+
     // Log
     sLog->outDetail("BATTLEGROUND: Player %s joined the battle.", player->GetName());
 }
@@ -1501,6 +1505,11 @@ void Battleground::UpdatePlayerScore(Player* Source, uint32 type, uint32 value, 
     {
         case SCORE_KILLING_BLOWS:                           // Killing blows
             itr->second->KillingBlows += value;
+            if (firstkill)
+            {
+                sScriptMgr->OnPlayerFirstKillBattleground(Source, this);
+                firstkill = false;
+            }
             break;
         case SCORE_DEATHS:                                  // Deaths
             itr->second->Deaths += value;

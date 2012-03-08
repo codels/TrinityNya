@@ -1093,17 +1093,6 @@ enum TrinityStrings
     LANG_RATE_SET_ACCOUNT					= 11004, // "Установлены новый множитель опыта для учетной записи"
     LANG_RATE_SET_CHARACTER					= 11005, // "Установлены новый множитель опыта: %f для персонажа %s"
 
-	LANG_MULTIKILL_GOLD						= 11006,
-	LANG_MULTIKILL_KILL						= 11007,
-	LANG_MULTIKILL_START					= 11008,
-	LANG_MULTIKILL_3						= 11009,
-	LANG_MULTIKILL_4						= 11010,
-	LANG_MULTIKILL_5						= 11011,
-	LANG_MULTIKILL_6						= 11012,
-	LANG_MULTIKILL_7						= 11013,
-	LANG_MULTIKILL_8						= 11014,
-	LANG_MULTIKILL_END						= 11015,
-
     // NOT RESERVED IDS                   12000-1999999999
     // `db_script_string` table index     2000000000-2000009999 (MIN_DB_SCRIPT_STRING_ID-MAX_DB_SCRIPT_STRING_ID)
     // For other tables maybe             2000010000-2147483647 (max index)

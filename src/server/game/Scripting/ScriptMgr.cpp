@@ -1316,6 +1316,16 @@ void ScriptMgr::OnPlayerSave(Player* player)
     FOREACH_SCRIPT(PlayerScript)->OnPlayerSave(player);
 }
 
+void ScriptMgr::OnPlayerJoinedBattleground(Player* player, Battleground* bg)
+{
+    FOREACH_SCRIPT(PlayerScript)->OnPlayerJoinedBattleground(player, bg);
+}
+
+void ScriptMgr::OnPlayerFirstKillBattleground(Player* player, Battleground* bg)
+{
+    FOREACH_SCRIPT(PlayerScript)->OnPlayerFirstKillBattleground(player, bg);
+}
+
 void ScriptMgr::OnPlayerUpdateZone(Player* player, uint32 newZone, uint32 newArea)
 {
     FOREACH_SCRIPT(PlayerScript)->OnUpdateZone(player, newZone, newArea);

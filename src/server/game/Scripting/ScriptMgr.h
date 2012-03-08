@@ -746,6 +746,11 @@ class PlayerScript : public ScriptObject
         // Called when a player SaveToDB
         virtual void OnPlayerSave(Player* /*player*/) { }
 
+        // Called when a player joined the battle
+        virtual void OnPlayerJoinedBattleground(Player* /*player*/, Battleground* /*bg*/) { }
+
+        virtual void OnPlayerFirstKillBattleground(Player* /*player*/, Battleground* /*bg*/) { }
+
         // Called when a player switches to a new zone
         virtual void OnUpdateZone(Player* /*player*/, uint32 /*newZone*/, uint32 /*newArea*/) { }
 };
@@ -1024,6 +1029,8 @@ class ScriptMgr
         void OnPlayerBindToInstance(Player* player, Difficulty difficulty, uint32 mapid, bool permanent);
         void OnPlayerSkillUpdate(Player* player, uint16 SkillId, uint16 SkillValue, uint16 SkillNewValue);
         void OnPlayerSave(Player* player);
+        void OnPlayerJoinedBattleground(Player* player, Battleground* bg);
+        void OnPlayerFirstKillBattleground(Player* player, Battleground* bg);
         void OnPlayerUpdateZone(Player* player, uint32 newZone, uint32 newArea);
 
     public: /* GuildScript */
