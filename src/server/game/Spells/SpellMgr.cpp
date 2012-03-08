@@ -1143,7 +1143,7 @@ bool SpellArea::IsFitToRequirements(Player const* player, uint32 newZone, uint32
             break;
         case 58045: // Essence of Wintergrasp - Wintergrasp
         case 57940: // Essence of Wintergrasp - Northrend
-             if (!player || player->GetTeamId() != sWorld->getWorldState(WORLDSTATE_WINTERGRASP_CONTROLING_FACTION))
+             if (!player || uint64(player->GetTeamId()) != sWorld->getWorldState(WORLDSTATE_WINTERGRASP_CONTROLING_FACTION))
              return false;
         case 68719: // Oil Refinery - Isle of Conquest.
         case 68720: // Quarry - Isle of Conquest.
