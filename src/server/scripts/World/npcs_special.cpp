@@ -2028,7 +2028,7 @@ public:
         {
             me->SetControlled(true, UNIT_STATE_STUNNED);//disable rotate
             me->ApplySpellImmune(0, IMMUNITY_EFFECT, SPELL_EFFECT_KNOCK_BACK, true);//imune to knock aways like blast wave
-			me->ApplySpellImmune(0, IMMUNITY_ID, 49560, true);
+            me->ApplySpellImmune(0, IMMUNITY_ID, 49560, true);
 
             resetTimer = 5000;
             despawnTimer = 15000;
@@ -3096,6 +3096,37 @@ public:
     };
 };
 
+
+class npc_vendor_titleFive : public CreatureScript
+{
+public:
+    npc_vendor_titleFive() : CreatureScript("npc_vendor_titleFive") { }
+
+    bool OnGossipHello(Player* player, Creature* creature)
+    {
+        if (creature->isQuestGiver())
+            player->PrepareQuestMenu(creature->GetGUID());
+
+        if (player->HasTitle(6) || player->HasTitle(20))
+        {
+            if (creature->isVendor())
+                player->ADD_GOSSIP_ITEM(GOSSIP_ICON_VENDOR, GOSSIP_TEXT_BROWSE_GOODS, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_TRADE);
+        }
+
+        player->SEND_GOSSIP_MENU(40034, creature->GetGUID());
+        return true;
+    }
+
+    bool OnGossipSelect(Player* player, Creature* creature, uint32 /*sender*/, uint32 action)
+    {
+        player->PlayerTalkClass->ClearMenus();
+        if (action == GOSSIP_ACTION_TRADE)
+            player->GetSession()->SendListInventory(creature->GetGUID());
+
+        return true;
+    }
+};
+
 void AddSC_npcs_special()
 {
     new npc_air_force_bots;
@@ -3128,5 +3159,6 @@ void AddSC_npcs_special()
     new npc_fire_elemental;
     new npc_earth_elemental;
     new npc_firework;
-    new npc_spring_rabbit();
+    new npc_spring_rabbit;
+    new npc_vendor_titleFive;
 }
