@@ -1227,7 +1227,8 @@ void World::LoadConfigSettings(bool reload)
     m_int_configs[CONFIG_ANTICHEAT_DETECTIONS_ENABLED] = ConfigMgr::GetIntDefault("Anticheat.DetectionsEnabled",31);
     m_int_configs[CONFIG_ANTICHEAT_MAX_REPORTS_FOR_DAILY_REPORT] = ConfigMgr::GetIntDefault("Anticheat.MaxReportsForDailyReport",70);
 
-    sScriptMgr->OnConfigLoad(reload);
+    if (reload)
+        sScriptMgr->OnConfigLoad(reload);
 }
 
 extern void LoadGameObjectModelList();

@@ -1,5 +1,3 @@
-SET FOREIGN_KEY_CHECKS=0;
-
 -- ----------------------------
 -- Table structure for `_battlegroundLog`
 -- ----------------------------
@@ -25,27 +23,7 @@ CREATE TABLE `_battlegroundLog` (
   `peopleDataLose` longtext,
   `battleDate` datetime NOT NULL,
   PRIMARY KEY (`guid`)
-) ENGINE=InnoDB AUTO_INCREMENT=5326 DEFAULT CHARSET=utf8;
-
--- ----------------------------
--- Table structure for `_killLog`
--- ----------------------------
-DROP TABLE IF EXISTS `_killLog`;
-CREATE TABLE `_killLog` (
-  `guid` bigint(20) NOT NULL AUTO_INCREMENT,
-  `guildId` bigint(20) NOT NULL,
-  `creatureEntry` bigint(20) NOT NULL,
-  `creatureName` varchar(255) DEFAULT NULL,
-  `creatureParent` bigint(20) DEFAULT NULL,
-  `killerCount` bigint(20) DEFAULT NULL,
-  `killDate` datetime DEFAULT NULL,
-  `killData` longtext,
-  `isRaid` tinyint(1) DEFAULT NULL,
-  `mapId` int(4) DEFAULT NULL,
-  `mapName` varchar(255) DEFAULT NULL,
-  `instanceMode` tinyint(1) DEFAULT NULL,
-  PRIMARY KEY (`guid`)
-) ENGINE=MyISAM AUTO_INCREMENT=1233 DEFAULT CHARSET=cp1251;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 
 -- ----------------------------
 -- Table structure for `accountHistory`
@@ -61,4 +39,4 @@ CREATE TABLE `accountHistory` (
   `dataNew` varchar(255) DEFAULT NULL,
   `connectIp` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`guid`)
-) ENGINE=MyISAM AUTO_INCREMENT=122624 DEFAULT CHARSET=cp1251;
+) ENGINE=MyISAM AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
