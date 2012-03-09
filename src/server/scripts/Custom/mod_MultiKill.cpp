@@ -89,13 +89,13 @@ void LoadDataFromDataBase()
 
         if (MultiKillTemp.BuffFirst != 0 && !sSpellMgr->GetSpellInfo(MultiKillTemp.BuffFirst))
         {
-            sLog->outErrorDb("MultiKill: Spell (ID: %u) non-existing", MultiKillTemp.BuffFirst);
+            sLog->outErrorDb("MultiKill: BuffFirst spell (ID: %u) non-existing", MultiKillTemp.BuffFirst);
             MultiKillTemp.BuffFirst = 0;
         }
 
         if (MultiKillTemp.BuffSecond != 0 && !sSpellMgr->GetSpellInfo(MultiKillTemp.BuffSecond))
         {
-            sLog->outErrorDb("MultiKill: Spell (ID: %u) non-existing", MultiKillTemp.BuffSecond);
+            sLog->outErrorDb("MultiKill: BuffSecond spell (ID: %u) non-existing", MultiKillTemp.BuffSecond);
             MultiKillTemp.BuffSecond = 0;
         }
 
