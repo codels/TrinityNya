@@ -183,8 +183,13 @@ class Mod_MultiKill_PlayerScript : public PlayerScript
                     player->RewardHonor(NULL, 1, MultiKillInfo[i].Honor);
 
                 // TrinityStringId
-                if (MultiKillInfo[i].Text != 0 && bg)
-                    bg->SendWarningToAll(MultiKillInfo[i].Text, player->GetName());
+                if (MultiKillInfo[i].Text != 0)
+                {
+                    if (bg)
+                        bg->SendWarningToAll(MultiKillInfo[i].Text, player->GetName());
+                    else
+                        sWorld->SendWorldText(MultiKillInfo[i].Text, player->GetName());
+                }
 
                 // KillCredit for quests/achi.
                 if (MultiKillInfo[i].KillCredit != 0)
@@ -207,6 +212,7 @@ class Mod_MultiKill_PlayerScript : public PlayerScript
     {
         MultiKillPlayer[guid].count = 0;
         MultiKillPlayer[guid].total = 0;
+        MultiKillPlayer[guid].last = time(NULL);
     }
         
     void OnPVPKill(Player* killer, Player* killed)
@@ -263,11 +269,7 @@ class Mod_MultiKill_PlayerScript : public PlayerScript
 
     void OnLogin(Player* player)
     {
-        uint32 guid = player->GetGUID();
-
-        MultiKillPlayer[guid].count = 0;
-        MultiKillPlayer[guid].total = 0;
-        MultiKillPlayer[guid].last = time(NULL);
+        ResetCounter(player->GetGUID());
     }
 
     void OnLogout(Player* player)
