@@ -274,9 +274,11 @@ void ScriptMgr::Unload()
     SCR_CLEAR(BattlegroundMapScript);
     SCR_CLEAR(ItemScript);
     SCR_CLEAR(CreatureScript);
+    SCR_CLEAR(AllCreatureScript);
     SCR_CLEAR(GameObjectScript);
     SCR_CLEAR(AreaTriggerScript);
     SCR_CLEAR(BattlegroundScript);
+    SCR_CLEAR(AllBattlegroundScript);
     SCR_CLEAR(OutdoorPvPScript);
     SCR_CLEAR(CommandScript);
     SCR_CLEAR(WeatherScript);
@@ -289,7 +291,6 @@ void ScriptMgr::Unload()
     SCR_CLEAR(PlayerScript);
     SCR_CLEAR(GuildScript);
     SCR_CLEAR(GroupScript);
-    SCR_CLEAR(AllCreatureScript);
 
     #undef SCR_CLEAR
 }
@@ -981,6 +982,11 @@ Battleground* ScriptMgr::CreateBattleground(BattlegroundTypeId /*typeId*/)
     return NULL;
 }
 
+void ScriptMgr::AllBattlegroundEnd(Battleground* bg)
+{
+    FOREACH_SCRIPT(AllBattlegroundScript)->AllBattlegroundEnd(bg);
+}
+
 OutdoorPvP* ScriptMgr::CreateOutdoorPvP(OutdoorPvPData const* data)
 {
     ASSERT(data);
@@ -1506,6 +1512,12 @@ BattlegroundScript::BattlegroundScript(const char* name)
     ScriptRegistry<BattlegroundScript>::AddScript(this);
 }
 
+AllBattlegroundScript::AllBattlegroundScript(const char* name)
+    : ScriptObject(name)
+{
+    ScriptRegistry<AllBattlegroundScript>::AddScript(this);
+}
+
 OutdoorPvPScript::OutdoorPvPScript(const char* name)
     : ScriptObject(name)
 {
@@ -1596,6 +1608,7 @@ template class ScriptRegistry<AllCreatureScript>;
 template class ScriptRegistry<GameObjectScript>;
 template class ScriptRegistry<AreaTriggerScript>;
 template class ScriptRegistry<BattlegroundScript>;
+template class ScriptRegistry<AllBattlegroundScript>;
 template class ScriptRegistry<OutdoorPvPScript>;
 template class ScriptRegistry<CommandScript>;
 template class ScriptRegistry<WeatherScript>;

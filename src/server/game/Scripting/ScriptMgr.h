@@ -516,6 +516,18 @@ class BattlegroundScript : public ScriptObject
         virtual Battleground* GetBattleground() const = 0;
 };
 
+class AllBattlegroundScript : public ScriptObject
+{
+    protected:
+
+        AllBattlegroundScript(const char* name);
+
+    public:
+               
+        // Called when die creature
+        virtual void AllBattlegroundEnd(Battleground* /*bg*/) { }
+};
+
 class OutdoorPvPScript : public ScriptObject
 {
     protected:
@@ -950,6 +962,10 @@ class ScriptMgr
     public: /* BattlegroundScript */
 
         Battleground* CreateBattleground(BattlegroundTypeId typeId);
+
+    public: /* AllBattlegroundScript */
+
+        void AllBattlegroundEnd(Battleground* bg);
 
     public: /* OutdoorPvPScript */
 

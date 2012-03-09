@@ -1055,6 +1055,8 @@ void Battleground::EndBattleground(uint32 winner)
 
     if (winmsg_id)
         SendMessageToAll(winmsg_id, CHAT_MSG_BG_SYSTEM_NEUTRAL);
+
+    sScriptMgr->AllBattlegroundEnd(this);
 }
 
 uint32 Battleground::GetBonusHonorFromKill(uint32 kills) const
