@@ -523,8 +523,7 @@ class AllBattlegroundScript : public ScriptObject
         AllBattlegroundScript(const char* name);
 
     public:
-               
-        // Called when die creature
+
         virtual void AllBattlegroundEnd(Battleground* /*bg*/) { }
 };
 

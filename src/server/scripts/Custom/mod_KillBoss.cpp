@@ -79,10 +79,10 @@ class Mod_KillBoss_AllCreatureScript : public AllCreatureScript
                     std::ostringstream PeopleData;
                     PeopleData << Temp->GetGUIDLow() << DATA_SEPARATOR;
                     PeopleData << Temp->GetName() << DATA_SEPARATOR;
-                    PeopleData << Temp->getLevel() << DATA_SEPARATOR;
+                    PeopleData << uint32(Temp->getLevel()) << DATA_SEPARATOR;
                     PeopleData << playerGuildId << DATA_SEPARATOR;
-                    PeopleData << int(Temp->isAlive()) << DATA_SEPARATOR;
-                    PeopleData << int(Temp->IsAtGroupRewardDistance(creature)) << PEOPLE_SEPARATOR;
+                    PeopleData << uint32(Temp->isAlive()) << DATA_SEPARATOR;
+                    PeopleData << uint32(Temp->IsAtGroupRewardDistance(creature)) << PEOPLE_SEPARATOR;
                     TeamKill += PeopleData.str();
                 }
 
@@ -106,10 +106,10 @@ class Mod_KillBoss_AllCreatureScript : public AllCreatureScript
                 std::ostringstream PeopleData;
                 PeopleData << recipient->GetGUIDLow() << DATA_SEPARATOR;
                 PeopleData << recipient->GetName() << DATA_SEPARATOR;
-                PeopleData << recipient->getLevel() << DATA_SEPARATOR;
+                PeopleData << uint32(recipient->getLevel()) << DATA_SEPARATOR;
                 PeopleData << recipient->GetGuildId() << DATA_SEPARATOR;
-                PeopleData << int(recipient->isAlive()) << DATA_SEPARATOR;
-                PeopleData << 1 << PEOPLE_SEPARATOR;
+                PeopleData << uint32(recipient->isAlive()) << DATA_SEPARATOR;
+                PeopleData << uint32(1) << PEOPLE_SEPARATOR;
                 TeamKill += PeopleData.str();
             }
         }

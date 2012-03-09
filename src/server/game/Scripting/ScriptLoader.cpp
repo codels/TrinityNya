@@ -28,6 +28,7 @@ void AddSC_Mod_KillBoss();
 void AddSC_Mod_ExternalMail();
 void AddSC_Mod_DynamicInstance();
 void AddSC_Mod_AccountHistory();
+void AddSC_Mod_BattlegroundHistory();
 
 //examples
 void AddSC_example_creature();
@@ -1264,6 +1265,7 @@ void AddCustomScripts()
     AddSC_Mod_ExternalMail();
     AddSC_Mod_DynamicInstance();
     AddSC_Mod_AccountHistory();
+    AddSC_Mod_BattlegroundHistory();
 
 #endif
 }

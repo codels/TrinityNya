@@ -19,6 +19,7 @@ set(scripts_STAT_SRCS
   Custom/mod_ExternalMail.cpp
   Custom/mod_DynamicInsctane.cpp
   Custom/mod_AccountHistory.cpp
+  Custom/mod_BattlegroundHistory.cpp
 )
 
 message("  -> Prepared: Custom")
