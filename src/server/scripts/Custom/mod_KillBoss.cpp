@@ -70,10 +70,10 @@ class Mod_KillBoss_AllCreatureScript : public AllCreatureScript
                 Player* Temp = itr->getSource();
 
                 if(!Temp)
-					continue;
+                    continue;
 
                 KillerCount++;
-				uint32 playerGuildId = Temp->GetGuildId();
+                uint32 playerGuildId = Temp->GetGuildId();
                 if (KillBossLog)
                 {
                     std::ostringstream PeopleData;
@@ -89,9 +89,9 @@ class Mod_KillBoss_AllCreatureScript : public AllCreatureScript
                 if (IsGuildKill)
                 {
                     if (GuildId == 0)
-						GuildId = playerGuildId;
+                        GuildId = playerGuildId;
 
-					IsGuildKill = GuildId != 0 && playerGuildId == GuildId;
+                    IsGuildKill = GuildId != 0 && playerGuildId == GuildId;
                 }
             }
         }
@@ -99,7 +99,7 @@ class Mod_KillBoss_AllCreatureScript : public AllCreatureScript
         {
             KillerCount = 1;
             GuildId = recipient->GetGuildId();
-			IsGuildKill = GuildId != 0;
+            IsGuildKill = GuildId != 0;
 
             if (KillBossLog)
             {
@@ -117,8 +117,8 @@ class Mod_KillBoss_AllCreatureScript : public AllCreatureScript
         if (GuildId == 0 && IsGuildKill)
             IsGuildKill = false;
 
-		if (!IsGuildKill)
-			GuildId = 0;
+        if (!IsGuildKill)
+            GuildId = 0;
 
         if (IsGuildKill)
         {
@@ -139,7 +139,7 @@ class Mod_KillBoss_AllCreatureScript : public AllCreatureScript
 
         if (!KillBossLog) return;
 
-		CharacterDatabase.EscapeString(TeamKill);
+        CharacterDatabase.EscapeString(TeamKill);
         CharacterDatabase.EscapeString(bossName);
         CharacterDatabase.EscapeString(mapName);
         CharacterDatabase.PExecute(SQL_KILLBOSS_LOG, GuildId, Entry, KillerCount, TeamKill.c_str(), spawnMode, map->GetId(), uint8(map->IsRaid()), bossName.c_str(), mapName.c_str());
