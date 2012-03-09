@@ -6,7 +6,7 @@ SET FOREIGN_KEY_CHECKS=0;
 DROP TABLE IF EXISTS `world_autolearn`;
 CREATE TABLE `world_autolearn` (
   `SpellId` mediumint(8) unsigned NOT NULL DEFAULT '0',
-  `SpellMask` smallint(5) unsigned NOT NULL DEFAULT '0',
+  `SpellMask` tinyint(3) unsigned NOT NULL DEFAULT '0',
   `RequiredClassMask` mediumint(8) unsigned NOT NULL DEFAULT '0',
   `RequiredRaceMask` mediumint(8) unsigned NOT NULL DEFAULT '0',
   `RequiredLevel` tinyint(3) unsigned NOT NULL DEFAULT '0',
