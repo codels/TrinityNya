@@ -24,19 +24,3 @@ CREATE TABLE `_battlegroundLog` (
   `battleDate` datetime NOT NULL,
   PRIMARY KEY (`guid`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
-
--- ----------------------------
--- Table structure for `accountHistory`
--- ----------------------------
-DROP TABLE IF EXISTS `accountHistory`;
-CREATE TABLE `accountHistory` (
-  `guid` bigint(20) NOT NULL AUTO_INCREMENT,
-  `accountId` int(20) NOT NULL,
-  `dateInsert` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `historyText` varchar(255) NOT NULL,
-  `characterGuid` varchar(255) DEFAULT NULL,
-  `dataOld` varchar(255) DEFAULT NULL,
-  `dataNew` varchar(255) DEFAULT NULL,
-  `connectIp` varchar(255) DEFAULT NULL,
-  PRIMARY KEY (`guid`)
-) ENGINE=MyISAM AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;

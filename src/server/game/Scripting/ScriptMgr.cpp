@@ -1296,9 +1296,9 @@ void ScriptMgr::OnPlayerCreate(Player* player)
     FOREACH_SCRIPT(PlayerScript)->OnCreate(player);
 }
 
-void ScriptMgr::OnPlayerDelete(uint64 guid)
+void ScriptMgr::OnPlayerDelete(uint64 guid, const char* name, WorldSession* session)
 {
-    FOREACH_SCRIPT(PlayerScript)->OnDelete(guid);
+    FOREACH_SCRIPT(PlayerScript)->OnDelete(guid, name, session);
 }
 
 void ScriptMgr::OnPlayerBindToInstance(Player* player, Difficulty difficulty, uint32 mapid, bool permanent)

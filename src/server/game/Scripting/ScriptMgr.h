@@ -735,7 +735,7 @@ class PlayerScript : public ScriptObject
         virtual void OnCreate(Player* /*player*/) { }
 
         // Called when a player is deleted.
-        virtual void OnDelete(uint64 /*guid*/) { }
+        virtual void OnDelete(uint64 /*guid*/, const char* /*name*/, WorldSession* /*session*/) { }
 
         // Called when a player is bound to an instance
         virtual void OnBindToInstance(Player* /*player*/, Difficulty /*difficulty*/, uint32 /*mapId*/, bool /*permanent*/) { }
@@ -1025,7 +1025,7 @@ class ScriptMgr
         void OnPlayerLogin(Player* player);
         void OnPlayerLogout(Player* player);
         void OnPlayerCreate(Player* player);
-        void OnPlayerDelete(uint64 guid);
+        void OnPlayerDelete(uint64 guid, const char* name, WorldSession* session);
         void OnPlayerBindToInstance(Player* player, Difficulty difficulty, uint32 mapid, bool permanent);
         void OnPlayerSkillUpdate(Player* player, uint16 SkillId, uint16 SkillValue, uint16 SkillNewValue);
         void OnPlayerSave(Player* player);
