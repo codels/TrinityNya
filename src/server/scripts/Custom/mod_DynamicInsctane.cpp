@@ -2,7 +2,91 @@
 #include "ScriptPCH.h"
 #include "Config.h"
 
+#define DI_SQL_GET "SELECT `InstanceId`, `InstanceLevel` FROM `world_instance`"
+#define DI_SQL_SAVE "REPLACE INTO `world_instance` (`InstanceId`, `InstanceLevel`) VALUES ('%u', '%u')"
+#define DI_SQL_DELETE "DELETE FROM `world_instance` WHERE `InstanceId` = '%u'"
+
 bool    DynamicInstanceEnable   = false;
+
+struct DITemplate
+{
+    DITemplate() : level(0) {}
+    uint8 level;
+
+    bool isValid() const { return level != 0; }
+};
+
+typedef std::map<uint32, DITemplate> DIMap;
+DIMap DIData;
+
+void DISaveData(uint32 instanceid)
+{
+    //debug
+    sLog->outError("DISaveData: instance %u level %u", instanceid, DIData[instanceid].level);
+
+    if (!DIData[instanceid].isValid())
+        return;
+
+    CharacterDatabase.PExecute(DI_SQL_SAVE, instanceid, DIData[instanceid].level);
+}
+
+void DIRemoveData(uint32 instanceid)
+{
+    //debug
+    sLog->outError("DIRemoveData: instance %u", instanceid);
+
+    if (DIData.empty())
+        return;
+
+    if (!DIData[instanceid].isValid())
+        return;
+
+    CharacterDatabase.PExecute(DI_SQL_DELETE, instanceid);
+
+    DIMap::iterator itr;
+
+    for (itr = DIData.begin(); itr != DIData.end();)
+    {
+        if (itr->first == instanceid)
+        {
+            DIData.erase(itr);
+            return;
+        }
+        else
+            ++itr;
+    }
+}
+
+void DILoadDataFromDB()
+{
+    DIData.clear();
+
+    sLog->outString();
+    sLog->outString("Loading DynamicInstance...");
+    uint32 oldMSTime = getMSTime();
+
+    QueryResult result = CharacterDatabase.PQuery(DI_SQL_GET);
+
+    uint16 count = 0;
+
+    if (!result)
+    {
+        sLog->outString(">> Loaded %u instances for DynamicInstance in %u ms", count, GetMSTimeDiffToNow(oldMSTime));
+        sLog->outString();
+        return;
+    }
+
+    do
+    {
+        Field* fields = result->Fetch();
+
+        DIData[fields[0].GetUInt32()].level = fields[1].GetUInt8();
+    }
+    while (result->NextRow());
+
+    sLog->outString(">> Loaded %u instances for DynamicInstance in %u ms", count, GetMSTimeDiffToNow(oldMSTime));
+    sLog->outString();
+}
 
 class Mod_DynamicInstance_WorldScript : public WorldScript
 {
@@ -15,6 +99,8 @@ class Mod_DynamicInstance_WorldScript : public WorldScript
 
         if (!DynamicInstanceEnable)
             return;
+
+        DILoadDataFromDB();
     }
 };
 
@@ -27,12 +113,32 @@ class Mod_DynamicInstance_AllInstanceScript : public AllInstanceScript
     {
         if (!DynamicInstanceEnable)
             return;
+
+        //DISaveData(instanceSave->GetInstanceId());
     }
 
-    void AllInstanceDeleteFromDB(uint32 /*instanceid*/)
+    void AllInstanceDeleteFromDB(uint32 instanceid)
     {
         if (!DynamicInstanceEnable)
             return;
+
+        DIRemoveData(instanceid);
+    }
+
+    void AllInstanceOnPlayerEnter(Map* map, Player* /*player*/)
+    {
+        uint32 instanceid = map->GetInstanceId();
+
+        if (DIData[instanceid].isValid())
+            return;
+
+        Map::PlayerList const &players = map->GetPlayers();
+
+        if (!players.isEmpty())
+            if (Player* player = players.begin()->getSource())
+                DIData[instanceid].level = player->getLevel();
+
+        DISaveData(instanceid);
     }
 };
 /*
@@ -181,5 +287,6 @@ void Unit::Kill(Unit* victim, bool durabilityLoss)
 
 void AddSC_Mod_DynamicInstance()
 {
-    //new Mod_DynamicInstance_WorldScript;
+    new Mod_DynamicInstance_WorldScript;
+    new Mod_DynamicInstance_AllInstanceScript;
 }

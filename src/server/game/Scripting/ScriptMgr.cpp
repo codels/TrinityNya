@@ -672,6 +672,9 @@ void ScriptMgr::OnPlayerEnterMap(Map* map, Player* player)
     SCR_MAP_BGN(BattlegroundMapScript, map, itr, end, entry, IsBattleground);
         itr->second->OnPlayerEnter((BattlegroundMap*)map, player);
     SCR_MAP_END;
+
+    if (map->IsDungeon())
+        FOREACH_SCRIPT(AllInstanceScript)->AllInstanceOnPlayerEnter(map, player);
 }
 
 void ScriptMgr::OnPlayerLeaveMap(Map* map, Player* player)

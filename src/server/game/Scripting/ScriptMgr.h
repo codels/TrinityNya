@@ -377,6 +377,7 @@ class AllInstanceScript : public ScriptObject
                
         virtual void AllInstanceAdd(InstanceSave* /*instanceSave*/) { }
         virtual void AllInstanceDeleteFromDB(uint32 /*instanceid*/) { }
+        virtual void AllInstanceOnPlayerEnter(Map* /*map*/, Player* /*player*/) {}
 };
 
 class BattlegroundMapScript : public ScriptObject, public MapScript<BattlegroundMap>
@@ -932,6 +933,7 @@ class ScriptMgr
 
         void AllInstanceAdd(InstanceSave* instanceSave);
         void AllInstanceDeleteFromDB(uint32 instanceid);
+        void AllInstanceOnPlayerEnter(Map* map, Player* player);
 
     public: /* ItemScript */
 
