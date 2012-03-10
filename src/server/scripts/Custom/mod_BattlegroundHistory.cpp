@@ -98,8 +98,6 @@ class Mod_BattlegroundHistory_AllBattlegroundScript : public AllBattlegroundScri
 
                     winIsGuild = winGuildId != 0 && playerGuildId == winGuildId;
                 }
-                else if (winGuildId != 0)
-                    winGuildId = 0;
             }
             else
             {
@@ -113,15 +111,13 @@ class Mod_BattlegroundHistory_AllBattlegroundScript : public AllBattlegroundScri
 
                     loseIsGuild = loseGuildId != 0 && playerGuildId == loseGuildId;
                 }
-                else if (loseGuildId != 0)
-                    loseGuildId = 0;
             }
         }
 
-        if(winGuildId != 0)
+        if(winIsGuild && winGuildId != 0)
             winGuild = sGuildMgr->GetGuildById(winGuildId);
 
-        if(loseGuildId != 0)
+        if(loseIsGuild && loseGuildId != 0)
             loseGuild = sGuildMgr->GetGuildById(loseGuildId);
 
         if(!bg->isArena() && (winGuild || loseGuild))
