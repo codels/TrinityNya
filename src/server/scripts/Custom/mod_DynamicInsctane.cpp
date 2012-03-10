@@ -17,6 +17,24 @@ class Mod_DynamicInstance_WorldScript : public WorldScript
             return;
     }
 };
+
+class Mod_DynamicInstance_AllInstanceScript : public AllInstanceScript
+{
+    public:
+        Mod_DynamicInstance_AllInstanceScript() : AllInstanceScript("Mod_DynamicInstance_AllInstanceScript") { }
+
+    void AllInstanceAdd(InstanceSave* /*instanceSave*/)
+    {
+        if (!DynamicInstanceEnable)
+            return;
+    }
+
+    void AllInstanceDeleteFromDB(uint32 /*instanceid*/)
+    {
+        if (!DynamicInstanceEnable)
+            return;
+    }
+};
 /*
 void Creature::DynamicInstanceUpdate(uint32 level)
 {

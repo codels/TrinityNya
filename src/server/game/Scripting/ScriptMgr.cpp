@@ -271,6 +271,7 @@ void ScriptMgr::Unload()
     SCR_CLEAR(FormulaScript);
     SCR_CLEAR(WorldMapScript);
     SCR_CLEAR(InstanceMapScript);
+    SCR_CLEAR(AllInstanceScript);
     SCR_CLEAR(BattlegroundMapScript);
     SCR_CLEAR(ItemScript);
     SCR_CLEAR(CreatureScript);
@@ -717,6 +718,16 @@ InstanceScript* ScriptMgr::CreateInstanceData(InstanceMap* map)
 
     GET_SCRIPT_RET(InstanceMapScript, map->GetScriptId(), tmpscript, NULL);
     return tmpscript->GetInstanceScript(map);
+}
+
+void ScriptMgr::AllInstanceAdd(InstanceSave* instanceSave)
+{
+    FOREACH_SCRIPT(AllInstanceScript)->AllInstanceAdd(instanceSave);
+}
+
+void ScriptMgr::AllInstanceDeleteFromDB(uint32 instanceid)
+{
+    FOREACH_SCRIPT(AllInstanceScript)->AllInstanceDeleteFromDB(instanceid);
 }
 
 bool ScriptMgr::OnDummyEffect(Unit* caster, uint32 spellId, SpellEffIndex effIndex, Item* target)
@@ -1467,6 +1478,12 @@ InstanceMapScript::InstanceMapScript(const char* name, uint32 mapId)
     ScriptRegistry<InstanceMapScript>::AddScript(this);
 }
 
+AllInstanceScript::AllInstanceScript(const char* name)
+    : ScriptObject(name)
+{
+    ScriptRegistry<AllInstanceScript>::AddScript(this);
+}
+
 BattlegroundMapScript::BattlegroundMapScript(const char* name, uint32 mapId)
     : ScriptObject(name), MapScript<BattlegroundMap>(mapId)
 {
@@ -1601,6 +1618,7 @@ template class ScriptRegistry<WorldScript>;
 template class ScriptRegistry<FormulaScript>;
 template class ScriptRegistry<WorldMapScript>;
 template class ScriptRegistry<InstanceMapScript>;
+template class ScriptRegistry<AllInstanceScript>;
 template class ScriptRegistry<BattlegroundMapScript>;
 template class ScriptRegistry<ItemScript>;
 template class ScriptRegistry<CreatureScript>;

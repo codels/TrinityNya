@@ -367,6 +367,18 @@ class InstanceMapScript : public ScriptObject, public MapScript<InstanceMap>
         virtual InstanceScript* GetInstanceScript(InstanceMap* /*map*/) const { return NULL; }
 };
 
+class AllInstanceScript : public ScriptObject
+{
+    protected:
+
+        AllInstanceScript(const char* name);
+
+    public:
+               
+        virtual void AllInstanceAdd(InstanceSave* /*instanceSave*/) { }
+		virtual void AllInstanceDeleteFromDB(uint32 /*instanceid*/) { }
+};
+
 class BattlegroundMapScript : public ScriptObject, public MapScript<BattlegroundMap>
 {
     protected:
@@ -915,6 +927,11 @@ class ScriptMgr
     public: /* InstanceMapScript */
 
         InstanceScript* CreateInstanceData(InstanceMap* map);
+
+    public: /* AllInstanceScript */
+
+        void AllInstanceAdd(InstanceSave* instanceSave);
+		void AllInstanceDeleteFromDB(uint32 instanceid);
 
     public: /* ItemScript */
 

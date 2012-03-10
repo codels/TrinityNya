@@ -34,6 +34,7 @@
 #include "World.h"
 #include "Group.h"
 #include "InstanceScript.h"
+#include "ScriptMgr.h"
 
 uint16 InstanceSaveManager::ResetTimeDelay[] = {3600, 900, 300, 60};
 
@@ -112,6 +113,7 @@ InstanceSave* InstanceSaveManager::AddInstanceSave(uint32 mapId, uint32 instance
         save->SaveToDB();
 
     m_instanceSaveById[instanceId] = save;
+    sScriptMgr->AllInstanceAdd(save);
     return save;
 }
 
@@ -128,6 +130,7 @@ void InstanceSaveManager::DeleteInstanceFromDB(uint32 instanceid)
     trans->PAppend("DELETE FROM character_instance WHERE instance = '%u'", instanceid);
     trans->PAppend("DELETE FROM group_instance WHERE instance = '%u'", instanceid);
     CharacterDatabase.CommitTransaction(trans);
+    sScriptMgr->AllInstanceDeleteFromDB(instanceid);
     // respawn times should be deleted only when the map gets unloaded
 }
 
