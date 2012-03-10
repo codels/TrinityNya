@@ -114,24 +114,15 @@ class Mod_BattlegroundHistory_AllBattlegroundScript : public AllBattlegroundScri
             }
         }
 
-        if(winIsGuild && winGuildId != 0)
+        if (winIsGuild && winGuildId != 0)
             winGuild = sGuildMgr->GetGuildById(winGuildId);
+        else
+            winGuildId = 0;
 
-        if(loseIsGuild && loseGuildId != 0)
+        if (loseIsGuild && loseGuildId != 0)
             loseGuild = sGuildMgr->GetGuildById(loseGuildId);
-
-        if(!bg->isArena() && (winGuild || loseGuild))
-        {
-            if (winGuild)
-            {
-                if (loseGuild)
-                    sWorld->SendWorldText(BGHistoryGuildWinLosText, winGuild->GetName().c_str(), loseGuild->GetName().c_str(), damageDonePlayerName.c_str(), healingDonePlayerName.c_str());
-                else
-                    sWorld->SendWorldText(BGHistoryGuildWinText, winGuild->GetName().c_str(), damageDonePlayerName.c_str(), healingDonePlayerName.c_str());
-            }
-            else if (loseGuild)
-                sWorld->SendWorldText(BGHistoryGuildLosText, loseGuild->GetName().c_str(), damageDonePlayerName.c_str(), healingDonePlayerName.c_str());
-        }
+        else
+            loseGuildId = 0;
 
         uint32 winArenaTeam = 0;
         uint32 loseAreaTeam = 0;
@@ -143,6 +134,19 @@ class Mod_BattlegroundHistory_AllBattlegroundScript : public AllBattlegroundScri
         }
 
         CharacterDatabase.PExecute(SQL_HISTORY, bg->GetMapId(), bg->GetTypeID(), uint32(bg->isArena()), uint32(bg->isRated()), uint32(bg->GetStartTime()/1000), winGuildId, winCount, winTeam.c_str(), loseGuildId, loseCount, loseTeam.c_str(), winner, bg->GetBracketId(), bg->GetMinLevel(), bg->GetMaxLevel(), winArenaTeam, loseAreaTeam);
+
+        if(!bg->isArena() && (winGuild || loseGuild))
+        {
+            if (winIsGuild && winGuild)
+            {
+                if (loseIsGuild && loseGuild)
+                    sWorld->SendWorldText(BGHistoryGuildWinLosText, winGuild->GetName().c_str(), loseGuild->GetName().c_str(), damageDonePlayerName.c_str(), healingDonePlayerName.c_str());
+                else
+                    sWorld->SendWorldText(BGHistoryGuildWinText, winGuild->GetName().c_str(), damageDonePlayerName.c_str(), healingDonePlayerName.c_str());
+            }
+            else if (loseIsGuild && loseGuild)
+                sWorld->SendWorldText(BGHistoryGuildLosText, loseGuild->GetName().c_str(), damageDonePlayerName.c_str(), healingDonePlayerName.c_str());
+        }
     }
 };
 
