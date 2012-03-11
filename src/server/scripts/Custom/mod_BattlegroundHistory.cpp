@@ -4,12 +4,12 @@
 #include "Guild.h"
 #include "GuildMgr.h"
 
-#define SQL_HISTORY "INSERT INTO world_battleground (MapId, BattleTypeId, BattleIsArena, BattleIsRate, BattleTime, WinnerGuildId, WinnerCount, WinnerData, LooserGuildId, LooserCount, LooserData, WinnerTeam, BattleBracket, BattleLevelMin, BattleLevelMax, WinnerArenaTeamId, LooserArenaTeamId) VALUES ('%u', '%u', '%u', '%u', '%u', '%u', '%u', '%s', '%u', '%u', '%s', '%u', '%u', '%u', '%u', '%u', '%u')"
+#define SQL_HISTORY "INSERT INTO world_battleground (MapId, BattleTypeId, BattleIsArena, BattleIsRated, BattleTime, WinnerGuildId, WinnerCount, WinnerData, LooserGuildId, LooserCount, LooserData, WinnerTeam, BattleBracket, BattleLevelMin, BattleLevelMax, WinnerArenaTeamId, LooserArenaTeamId) VALUES ('%u', '%u', '%u', '%u', '%u', '%u', '%u', '%s', '%u', '%u', '%s', '%u', '%u', '%u', '%u', '%u', '%u')"
 
-bool    BGHistoryEnable             = true;
-int32   BGHistoryGuildWinText       = 11100;
-int32   BGHistoryGuildLosText       = 11101;
-int32   BGHistoryGuildWinLosText    = 11102;
+bool BGHistoryEnable = true;
+int32 BGHistoryGuildWinText = 11100;
+int32 BGHistoryGuildLooseText = 11101;
+int32 BGHistoryGuildWinLooseText = 11102;
 
 class Mod_BattlegroundHistory_WorldScript : public WorldScript
 {
@@ -35,19 +35,19 @@ class Mod_BattlegroundHistory_AllBattlegroundScript : public AllBattlegroundScri
 
         uint32 winner = bg->GetWinner() == WINNER_ALLIANCE ? ALLIANCE : HORDE;
 
-        bool winIsGuild = true;
-        bool loseIsGuild = true;
-        uint32 winGuildId = 0;
-        uint32 loseGuildId = 0;
-        uint32 winCount = 0;
-        uint32 loseCount = 0;
-        std::string winTeam;
-        std::string loseTeam;
-        Guild* winGuild = NULL;
-        Guild* loseGuild = NULL;
+        bool GuildWinIs = true;
+        bool GuildLooseIs = true;
+        uint32 GuildWinId = 0;
+        uint32 GuildLooseId = 0;
+        uint32 CountWin = 0;
+        uint32 CountLoose = 0;
+        std::string TeamWin;
+        std::string TeamLoose;
+        Guild* GuildWin = NULL;
+        Guild* GuildLoose = NULL;
 
-        uint32 damageDoneMaximum = 0;
-        uint32 healingDoneMaximum = 0;
+        uint32 totaldamagedone = 0;
+        uint32 totalhealdone = 0;
         std::string damageDonePlayerName;
         std::string healingDonePlayerName;
 
@@ -57,95 +57,95 @@ class Mod_BattlegroundHistory_AllBattlegroundScript : public AllBattlegroundScri
             if (!player)
                 return;
 
-            if(itr->second->DamageDone >= damageDoneMaximum)
+            if(itr->second->DamageDone >= totaldamagedone)
             {
-                damageDoneMaximum = itr->second->DamageDone;
+                totaldamagedone = itr->second->DamageDone;
                 damageDonePlayerName = player->GetName();
             }
 
-            if(itr->second->HealingDone >= healingDoneMaximum)
+            if(itr->second->HealingDone >= totalhealdone)
             {
-                healingDoneMaximum = itr->second->HealingDone;
+                totalhealdone = itr->second->HealingDone;
                 healingDonePlayerName = player->GetName();
-            }  
+            }
 
             uint32 playerGuildId = player->GetGuildId();
 
-            std::ostringstream PeopleData;
-            PeopleData << player->GetGUIDLow() << ":";
-            PeopleData << player->GetName() << ":";
-            PeopleData << uint32(player->getLevel()) << ":";
-            PeopleData << uint32(playerGuildId) << ":";
-            PeopleData << itr->second->KillingBlows << ":";
-            PeopleData << itr->second->Deaths << ":";
-            PeopleData << itr->second->HonorableKills << ":";
-            PeopleData << itr->second->DamageDone << ":";
-            PeopleData << itr->second->HealingDone << ":";
-            PeopleData << itr->second->BonusHonor << ":";
-            PeopleData << uint32(player->getRace()) << ":";
-            PeopleData << uint32(player->getClass()) << ":";
-            PeopleData << uint32(player->getGender()) << " ";
+            std::ostringstream Playerdata;
+            Playerdata << player->GetGUIDLow() << ":";
+            Playerdata << player->GetName() << ":";
+            Playerdata << uint32(player->getLevel()) << ":";
+            Playerdata << uint32(playerGuildId) << ":";
+            Playerdata << itr->second->KillingBlows << ":";
+            Playerdata << itr->second->Deaths << ":";
+            Playerdata << itr->second->HonorableKills << ":";
+            Playerdata << itr->second->DamageDone << ":";
+            Playerdata << itr->second->HealingDone << ":";
+            Playerdata << itr->second->BonusHonor << ":";
+            Playerdata << uint32(player->getRace()) << ":";
+            Playerdata << uint32(player->getClass()) << ":";
+            Playerdata << uint32(player->getGender()) << " ";
 
             if (bg->GetPlayerTeam(player->GetGUID()) == winner)
             {
-                winCount++;
-                winTeam += PeopleData.str();
+                CountWin++;
+                TeamWin += Playerdata.str();
 
-                if (winIsGuild)
+                if (GuildWinIs)
                 {
-                    if (winGuildId == 0)
-                        winGuildId = playerGuildId;
+                    if (GuildWinId == 0)
+                        GuildWinId = playerGuildId;
 
-                    winIsGuild = winGuildId != 0 && playerGuildId == winGuildId;
+                    GuildWinIs = GuildWinId != 0 && playerGuildId == GuildWinId;
                 }
             }
             else
             {
-                loseCount++;
-                loseTeam += PeopleData.str();
+                CountLoose++;
+                TeamLoose += Playerdata.str();
 
-                if (loseIsGuild)
+                if (GuildLooseIs)
                 {
-                    if (loseGuildId == 0)
-                        loseGuildId = playerGuildId;
+                    if (GuildLooseId == 0)
+                        GuildLooseId = playerGuildId;
 
-                    loseIsGuild = loseGuildId != 0 && playerGuildId == loseGuildId;
+                    GuildLooseIs = GuildLooseId != 0 && playerGuildId == GuildLooseId;
                 }
             }
         }
 
-        if (winIsGuild && winGuildId != 0)
-            winGuild = sGuildMgr->GetGuildById(winGuildId);
+        if (GuildWinIs && GuildWinId != 0)
+            GuildWin = sGuildMgr->GetGuildById(GuildWinId);
         else
-            winGuildId = 0;
+            GuildWinId = 0;
 
-        if (loseIsGuild && loseGuildId != 0)
-            loseGuild = sGuildMgr->GetGuildById(loseGuildId);
+        if (GuildLooseIs && GuildLooseId != 0)
+            GuildLoose = sGuildMgr->GetGuildById(GuildLooseId);
         else
-            loseGuildId = 0;
+            GuildLooseId = 0;
 
-        uint32 winArenaTeam = 0;
-        uint32 loseAreaTeam = 0;
+        uint32 ArenaTeamWin = 0;
+        uint32 AreaTeamLoose = 0;
 
         if(bg->isArena() && bg->isRated())
         {
-            winArenaTeam = bg->GetArenaTeamIdForTeam(winner);
-            loseAreaTeam = bg->GetArenaTeamIdForTeam(bg->GetOtherTeam(winner));
+            ArenaTeamWin = bg->GetArenaTeamIdForTeam(winner);
+            AreaTeamLoose = bg->GetArenaTeamIdForTeam(bg->GetOtherTeam(winner));
         }
 
-        CharacterDatabase.PExecute(SQL_HISTORY, bg->GetMapId(), bg->GetTypeID(), uint32(bg->isArena()), uint32(bg->isRated()), uint32(bg->GetStartTime()/1000), winGuildId, winCount, winTeam.c_str(), loseGuildId, loseCount, loseTeam.c_str(), winner, bg->GetBracketId(), bg->GetMinLevel(), bg->GetMaxLevel(), winArenaTeam, loseAreaTeam);
+        CharacterDatabase.PExecute(SQL_HISTORY, bg->GetMapId(), bg->GetTypeID(), uint32(bg->isArena()), uint32(bg->isRated()), uint32(bg->GetStartTime()/1000), GuildWinId, CountWin, TeamWin.c_str(), GuildLooseId, CountLoose, TeamLoose.c_str(), winner, bg->GetBracketId(), bg->GetMinLevel(), bg->GetMaxLevel(), ArenaTeamWin, AreaTeamLoose);
 
-        if(!bg->isArena() && (winGuild || loseGuild))
+        if(!bg->isArena() && (GuildWin || GuildLoose))
         {
-            if (winIsGuild && winGuild)
+            if (GuildWinIs && GuildWin)
             {
-                if (loseIsGuild && loseGuild)
-                    sWorld->SendWorldText(BGHistoryGuildWinLosText, winGuild->GetName().c_str(), loseGuild->GetName().c_str(), damageDonePlayerName.c_str(), healingDonePlayerName.c_str());
+                if (GuildLooseIs && GuildLoose)
+                    sWorld->SendWorldText(BGHistoryGuildWinLosText, GuildWin->GetName().c_str(), GuildLoose->GetName().c_str(), damageDonePlayerName.c_str(), healingDonePlayerName.c_str());
                 else
-                    sWorld->SendWorldText(BGHistoryGuildWinText, winGuild->GetName().c_str(), damageDonePlayerName.c_str(), healingDonePlayerName.c_str());
+                    sWorld->SendWorldText(BGHistoryGuildWinText, GuildWin->GetName().c_str(), damageDonePlayerName.c_str(), healingDonePlayerName.c_str());
             }
-            else if (loseIsGuild && loseGuild)
-                sWorld->SendWorldText(BGHistoryGuildLosText, loseGuild->GetName().c_str(), damageDonePlayerName.c_str(), healingDonePlayerName.c_str());
+            else if (GuildLooseIs && GuildLoose)
+                sWorld->SendWorldText(BGHistoryGuildLosText, GuildLoose->GetName().c_str(), damageDonePlayerName.c_str(), healingDonePlayerName.c_str());
         }
     }
 };
