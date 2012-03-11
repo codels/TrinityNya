@@ -140,7 +140,7 @@ class Mod_BattlegroundHistory_AllBattlegroundScript : public AllBattlegroundScri
             if (GuildWinIs && GuildWin)
             {
                 if (GuildLooseIs && GuildLoose)
-                    sWorld->SendWorldText(BGHistoryGuildWinLosText, GuildWin->GetName().c_str(), GuildLoose->GetName().c_str(), damageDonePlayerName.c_str(), healingDonePlayerName.c_str());
+                    sWorld->SendWorldText(BGHistoryGuildWinLooseText, GuildWin->GetName().c_str(), GuildLoose->GetName().c_str(), damageDonePlayerName.c_str(), healingDonePlayerName.c_str());
                 else
                     sWorld->SendWorldText(BGHistoryGuildWinText, GuildWin->GetName().c_str(), damageDonePlayerName.c_str(), healingDonePlayerName.c_str());
             }
