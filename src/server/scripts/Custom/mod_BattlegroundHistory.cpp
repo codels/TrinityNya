@@ -125,15 +125,15 @@ class Mod_BattlegroundHistory_AllBattlegroundScript : public AllBattlegroundScri
             GuildLooseId = 0;
 
         uint32 ArenaTeamWin = 0;
-        uint32 AreaTeamLoose = 0;
+        uint32 ArenaTeamLoose = 0;
 
         if(bg->isArena() && bg->isRated())
         {
             ArenaTeamWin = bg->GetArenaTeamIdForTeam(winner);
-            AreaTeamLoose = bg->GetArenaTeamIdForTeam(bg->GetOtherTeam(winner));
+            ArenaTeamLoose = bg->GetArenaTeamIdForTeam(bg->GetOtherTeam(winner));
         }
 
-        CharacterDatabase.PExecute(SQL_HISTORY, bg->GetMapId(), bg->GetTypeID(), uint32(bg->isArena()), uint32(bg->isRated()), uint32(bg->GetStartTime()/1000), GuildWinId, CountWin, TeamWin.c_str(), GuildLooseId, CountLoose, TeamLoose.c_str(), winner, bg->GetBracketId(), bg->GetMinLevel(), bg->GetMaxLevel(), ArenaTeamWin, AreaTeamLoose);
+        CharacterDatabase.PExecute(SQL_HISTORY, bg->GetMapId(), bg->GetTypeID(), uint32(bg->isArena()), uint32(bg->isRated()), uint32(bg->GetStartTime()/1000), GuildWinId, CountWin, TeamWin.c_str(), GuildLooseId, CountLoose, TeamLoose.c_str(), winner, bg->GetBracketId(), bg->GetMinLevel(), bg->GetMaxLevel(), ArenaTeamWin, ArenaTeamLoose);
 
         if(!bg->isArena() && (GuildWin || GuildLoose))
         {
