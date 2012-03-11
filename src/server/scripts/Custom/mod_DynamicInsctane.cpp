@@ -1,6 +1,7 @@
 //TRINITY NYA DEV
 #include "ScriptPCH.h"
 #include "Config.h"
+#include <math.h>
 
 #define DI_SQL_GET "SELECT `InstanceId`, `InstanceLevel` FROM `world_instance`"
 #define DI_SQL_SAVE "REPLACE INTO `world_instance` (`InstanceId`, `InstanceLevel`) VALUES ('%u', '%u')"
@@ -88,6 +89,109 @@ void DILoadDataFromDB()
     sLog->outString();
 }
 
+float _GetHealthMod(int32 Rank)
+{
+    switch (Rank)                                           // define rates for each elite rank
+    {
+        case CREATURE_ELITE_NORMAL:
+            return sWorld->getRate(RATE_CREATURE_NORMAL_HP);
+        case CREATURE_ELITE_ELITE:
+            return sWorld->getRate(RATE_CREATURE_ELITE_ELITE_HP);
+        case CREATURE_ELITE_RAREELITE:
+            return sWorld->getRate(RATE_CREATURE_ELITE_RAREELITE_HP);
+        case CREATURE_ELITE_WORLDBOSS:
+            return sWorld->getRate(RATE_CREATURE_ELITE_WORLDBOSS_HP);
+        case CREATURE_ELITE_RARE:
+            return sWorld->getRate(RATE_CREATURE_ELITE_RARE_HP);
+        default:
+            return sWorld->getRate(RATE_CREATURE_ELITE_ELITE_HP);
+    }
+}
+
+bool DICreatureCalcStats(Creature* creature)
+{
+    if (!DynamicInstanceEnable)
+        return false;
+
+    Map* map = creature->GetMap();
+
+    if (!map || !map->IsDungeon())
+        return false;
+
+    uint32 instanceid = map->GetInstanceId();
+
+    if (!DIData[instanceid].isValid())
+        return false;
+
+    const CreatureTemplate* cinfo = creature->GetCreatureTemplate();
+
+    if (cinfo->maxlevel == 1)
+        return false;
+
+    uint8 level = DIData[instanceid].level;
+
+    uint8 clevel = cinfo->maxlevel;
+    if (clevel > 80) clevel = 80;
+
+    creature->SetLevel(level);
+
+    uint8 expansion = 0;
+    if (level > 59) expansion++;
+    if (level > 69) expansion++;
+
+    uint32 rank = creature->isPet()? 0 : cinfo->rank;
+
+    CreatureBaseStats const* stats = sObjectMgr->GetCreatureBaseStats(level, cinfo->unit_class);
+
+    //damage
+    float damagemod = 1.0f;//_GetDamageMod(rank);
+
+    float healthmod = _GetHealthMod(rank);
+
+    if (rank != CREATURE_ELITE_NORMAL)
+    {
+        damagemod *= 2;
+        healthmod *= 3;
+    }
+    if (rank == CREATURE_ELITE_RAREELITE) damagemod *= 1.5;
+
+    uint32 basehp = stats->GenerateHealth(expansion, cinfo->ModHealth);
+    uint32 health = uint32(basehp * healthmod);
+
+    float dmgbase = 2.5 * pow(1.05, level * 2) / 2;
+    float dmgmin = dmgbase * 0.95;
+    float dmgmax = dmgbase * 1.05;
+
+    creature->SetCreateHealth(health);
+    creature->SetMaxHealth(health);
+    creature->SetHealth(health);
+    creature->ResetPlayerDamageReq();
+
+    // mana
+    uint32 mana = stats->GenerateMana(cinfo);
+
+    creature->SetCreateMana(mana);
+    creature->SetMaxPower(POWER_MANA, mana);                          //MAX Mana
+    creature->SetPower(POWER_MANA, mana);
+
+    // TODO: set UNIT_FIELD_POWER*, for some creature class case (energy, etc)
+    creature->SetModifierValue(UNIT_MOD_HEALTH, BASE_VALUE, (float)health);
+    creature->SetModifierValue(UNIT_MOD_MANA, BASE_VALUE, (float)mana);
+
+    creature->SetBaseWeaponDamage(BASE_ATTACK, MINDAMAGE, dmgmin * damagemod);
+    creature->SetBaseWeaponDamage(BASE_ATTACK, MAXDAMAGE, dmgmax * damagemod);
+
+    creature->SetFloatValue(UNIT_FIELD_MINRANGEDDAMAGE, dmgmin * damagemod);
+    creature->SetFloatValue(UNIT_FIELD_MAXRANGEDDAMAGE, dmgmax * damagemod);
+
+    creature->SetModifierValue(UNIT_MOD_ATTACK_POWER, BASE_VALUE, cinfo->attackpower * damagemod);
+
+    //ExtraLoot = 6;
+
+    creature->UpdateAllStats();
+    return true;
+}
+
 class Mod_DynamicInstance_WorldScript : public WorldScript
 {
     public:
@@ -141,95 +245,45 @@ class Mod_DynamicInstance_AllInstanceScript : public AllInstanceScript
         DISaveData(instanceid);
     }
 };
-/*
-void Creature::DynamicInstanceUpdate(uint32 level)
+
+class Mod_DynamicInstance_AllCreatureScript : public AllCreatureScript
 {
-    
-    DynamicInstanceLevel = level;
+    public:
+        Mod_DynamicInstance_AllCreatureScript() : AllCreatureScript("Mod_DynamicInstance_AllCreatureScript") { }
 
-    CreatureTemplate const* cinfo = GetCreatureInfo();
-
-    if (cinfo->maxlevel == 1)
-        return;
-
-    uint32 clevel = cinfo->maxlevel;
-    if (clevel > 80) clevel = 80;
-
-    DynamicInstanceSpellBonus = pow(1.05, (1.55 * (level - clevel)));
-
-    SetLevel(level);
-
-    uint8 expansion = 0;
-    if (level > 59) expansion++;
-    if (level > 69) expansion++;
-
-    uint32 rank = isPet()? 0 : cinfo->rank;
-
-    CreatureBaseStats const* stats = sObjectMgr->GetCreatureBaseStats(level, cinfo->unit_class);
-
-    //damage
-    float damagemod = 1.0f;//_GetDamageMod(rank);
-
-    float healthmod = _GetHealthMod(rank);
-
-    if (rank != CREATURE_ELITE_NORMAL)
+    void AllCreatureSelectLevel(Creature* creature, bool& needSetStats)
     {
-        damagemod *= 2;
-        healthmod *= 3;
+        needSetStats = !DICreatureCalcStats(creature);
     }
-    if (rank == CREATURE_ELITE_RAREELITE) damagemod *= 1.5;
 
-    uint32 basehp = stats->GenerateHealth(expansion, cinfo->ModHealth);
-    uint32 health = uint32(basehp * healthmod);
-
-    float dmgbase = 2.5 * pow(1.05, level * 2) / 2;
-    //sLog->outError("Creature::DynamicInstanceLevel dmgbase: %f", dmgbase);
-    float dmgmin = dmgbase * 0.95;
-    float dmgmax = dmgbase * 1.05;
-
-    SetCreateHealth(health);
-    SetMaxHealth(health);
-    SetHealth(health);
-    ResetPlayerDamageReq();
-
-    // mana
-    uint32 mana = stats->GenerateMana(cinfo);
-
-    SetCreateMana(mana);
-    SetMaxPower(POWER_MANA, mana);                          //MAX Mana
-    SetPower(POWER_MANA, mana);
-
-    // TODO: set UNIT_FIELD_POWER*, for some creature class case (energy, etc)
-
-    SetModifierValue(UNIT_MOD_HEALTH, BASE_VALUE, (float)health);
-    SetModifierValue(UNIT_MOD_MANA, BASE_VALUE, (float)mana);
-
-
-
-    SetBaseWeaponDamage(BASE_ATTACK, MINDAMAGE, dmgmin * damagemod);
-    SetBaseWeaponDamage(BASE_ATTACK, MAXDAMAGE, dmgmax * damagemod);
-
-    SetFloatValue(UNIT_FIELD_MINRANGEDDAMAGE, dmgmin * damagemod);
-    SetFloatValue(UNIT_FIELD_MAXRANGEDDAMAGE, dmgmax * damagemod);
-
-    SetModifierValue(UNIT_MOD_ATTACK_POWER, BASE_VALUE, cinfo->attackpower * damagemod);
-
-    ExtraLoot = 6;
-
-    UpdateAllStats();
-}*/
-
-/*
-void Creature::SelectLevel(const CreatureTemplate* cinfo)
-{
-    if (DynamicInstanceLevel != 0)
+    void AllCreatureCreate(Creature* creature)
     {
-        DynamicInstanceUpdate(DynamicInstanceLevel);
-        return;
+        DICreatureCalcStats(creature);
     }
-*/
 
-//, DynamicInstanceSpellBonus(0.0f), ExtraLoot(0), DynamicInstanceLevel(0)
+    void AllCreatureSpellDamageMod(Creature* creature, float& doneTotalMod)
+    {
+        if (!DynamicInstanceEnable)
+            return;
+
+        Map* map = creature->GetMap();
+
+        if (!map || !map->IsDungeon())
+            return;
+
+        uint32 instanceid = map->GetInstanceId();
+
+        if (!DIData[instanceid].isValid())
+            return;
+
+        uint8 level = creature->GetCreatureTemplate()->maxlevel;
+        if (level > 80) level = 80;
+
+        doneTotalMod *= pow(1.05, (1.55 * (DIData[instanceid].level - level)));
+    }
+};
+
+//ExtraLoot(0)
 
 /*
         uint32 DynamicInstanceLevel;
@@ -239,19 +293,6 @@ void Creature::SelectLevel(const CreatureTemplate* cinfo)
 */
 
 /*
-uint32 Unit::SpellDamageBonus(Unit* victim, SpellInfo const* spellProto, uint32 pdamage, DamageEffectType damagetype, uint32 stack)
-    // ..done
-    // Pet damage?
-    if (GetTypeId() == TYPEID_UNIT && !ToCreature()->isPet())
-    {
-        DoneTotalMod *= ToCreature()->GetSpellDamageMod(ToCreature()->GetCreatureInfo()->rank);
-
-        if (ToCreature()->DynamicInstanceSpellBonus != 0.0f)
-        {
-            DoneTotalMod *= ToCreature()->DynamicInstanceSpellBonus;
-        }
-    }
-
 void Unit::Kill(Unit* victim, bool durabilityLoss)
             loot->clear();
             if (uint32 lootid = creature->GetCreatureInfo()->lootid)
@@ -265,28 +306,11 @@ void Unit::Kill(Unit* victim, bool durabilityLoss)
                     loot->FillLoot(creature->ExtraLoot, LootTemplates_Creature, looter, false, false, creature->GetLootMode());
                 }
             }
-
-
-            void OnCreatureCreate(Creature* creature)
-            {
-                Map::PlayerList const &players = instance->GetPlayers();
-                uint32 instanceLevel = 20;
-
-                if (!players.isEmpty())
-                {
-                    if (Player* player = players.begin()->getSource())
-                        instanceLevel = player->getLevel();
-                }
-
-                if (creature && creature->getLevel() != instanceLevel)
-                {
-                    creature->DynamicInstanceUpdate(instanceLevel);
-                }
-            }
 */
 
 void AddSC_Mod_DynamicInstance()
 {
     new Mod_DynamicInstance_WorldScript;
     new Mod_DynamicInstance_AllInstanceScript;
+    new Mod_DynamicInstance_AllCreatureScript;
 }

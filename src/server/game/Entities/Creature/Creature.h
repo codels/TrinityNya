@@ -192,6 +192,7 @@ struct CreatureBaseStats
         return uint32((BaseHealth[info->expansion] * info->ModHealth) + 0.5f);
     }
 
+    // trinity_nya
     uint32 GenerateHealth(uint32 expansion, uint32 modhealth) const
     {
         return uint32((BaseHealth[expansion] * modhealth) + 0.5f);

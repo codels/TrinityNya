@@ -52,8 +52,6 @@
 #include "MoveSpline.h"
 // apply implementation of the singletons
 
-#include <math.h>
-
 TrainerSpell const* TrainerSpellData::Find(uint32 spell_id) const
 {
     TrainerSpellMap::const_iterator itr = spellList.find(spell_id);
@@ -185,6 +183,7 @@ void Creature::AddToWorld()
     {
         if (m_zoneScript)
             m_zoneScript->OnCreatureCreate(this);
+        sScriptMgr->AllCreatureCreate(this);
         sObjectAccessor->AddObject(this);
         Unit::AddToWorld();
         SearchFormation();
@@ -1118,6 +1117,12 @@ void Creature::SaveToDB(uint32 mapid, uint8 spawnMask, uint32 phaseMask)
 
 void Creature::SelectLevel(const CreatureTemplate* cinfo)
 {
+    bool needSetStats = true;
+    sScriptMgr->AllCreatureSelectLevel(this, needSetStats);
+
+    if (!needSetStats)
+        return;
+
     uint32 rank = isPet()? 0 : cinfo->rank;
 
     // level

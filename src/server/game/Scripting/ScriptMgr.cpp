@@ -885,6 +885,21 @@ void ScriptMgr::AllCreatureJustDied(Creature* creature)
     FOREACH_SCRIPT(AllCreatureScript)->AllCreatureJustDied(creature);
 }
 
+void ScriptMgr::AllCreatureSelectLevel(Creature* creature, bool& needSetStats)
+{
+    FOREACH_SCRIPT(AllCreatureScript)->AllCreatureSelectLevel(creature, needSetStats);
+}
+
+void ScriptMgr::AllCreatureCreate(Creature* creature)
+{
+    FOREACH_SCRIPT(AllCreatureScript)->AllCreatureCreate(creature);
+}
+
+void ScriptMgr::AllCreatureSpellDamageMod(Creature* creature, float& doneTotalMod)
+{
+    FOREACH_SCRIPT(AllCreatureScript)->AllCreatureSpellDamageMod(creature, doneTotalMod);
+}
+
 bool ScriptMgr::OnGossipHello(Player* player, GameObject* go)
 {
     ASSERT(player);

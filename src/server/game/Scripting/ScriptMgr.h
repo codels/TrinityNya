@@ -461,6 +461,12 @@ class AllCreatureScript : public ScriptObject
                
         // Called when die creature
         virtual void AllCreatureJustDied(Creature* /*creature*/) { }
+
+        virtual void AllCreatureSelectLevel(Creature* /*creature*/, bool& /*needSetStats*/) { }
+
+        virtual void AllCreatureCreate(Creature* /*creature*/) { }
+
+		virtual void AllCreatureSpellDamageMod(Creature* /*creature*/, float& /*doneTotalMod*/) { }
 };
 
 class GameObjectScript : public ScriptObject, public UpdatableScript<GameObject>
@@ -959,6 +965,9 @@ class ScriptMgr
     public: /* AllCreatureScript */
 
         void AllCreatureJustDied(Creature* creature);
+        void AllCreatureSelectLevel(Creature* creature, bool& needSetStats);
+        void AllCreatureCreate(Creature* creature);
+		void AllCreatureSpellDamageMod(Creature* creature, float& doneTotalMod);
 
     public: /* GameObjectScript */
 
