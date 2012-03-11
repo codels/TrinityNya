@@ -10,7 +10,7 @@ CREATE TABLE `world_battleground` (
   `BattleLevelMin` tinyint(3) NOT NULL DEFAULT '0',
   `BattleLevelMax` tinyint(3) NOT NULL DEFAULT '0',
   `BattleIsArena` tinyint(1) unsigned NOT NULL DEFAULT '0',
-  `BattleIsRate` tinyint(1) unsigned NOT NULL DEFAULT '0',
+  `BattleIsRated` tinyint(1) unsigned NOT NULL DEFAULT '0',
   `BattleTime` int(10) unsigned NOT NULL DEFAULT '0',
   `WinnerTeam` tinyint(3) NOT NULL DEFAULT '-1',
   `WinnerArenaTeamId` int(10) unsigned NOT NULL DEFAULT '0',
