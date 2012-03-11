@@ -72,7 +72,7 @@ void DILoadDataFromDB()
 
     if (!result)
     {
-        sLog->outString(">> Loaded %u instances for DynamicInstance in %u ms", count, GetMSTimeDiffToNow(oldMSTime));
+        sLog->outString(">> `world_instance` is empty");
         sLog->outString();
         return;
     }
@@ -87,6 +87,20 @@ void DILoadDataFromDB()
 
     sLog->outString(">> Loaded %u instances for DynamicInstance in %u ms", count, GetMSTimeDiffToNow(oldMSTime));
     sLog->outString();
+}
+
+bool DIGetLevel(Map* map)
+{
+    Map::PlayerList const &players = map->GetPlayers();
+
+    if (!players.isEmpty())
+        if (Player* player = players.begin()->getSource())
+        {
+            DIData[map->GetInstanceId()].level = player->getLevel();
+            DISaveData(map->GetInstanceId());
+            return true;
+        }
+    return false;
 }
 
 float _GetHealthMod(int32 Rank)
@@ -113,6 +127,9 @@ bool DICreatureCalcStats(Creature* creature)
     if (!DynamicInstanceEnable)
         return false;
 
+    if (creature->isTotem() || creature->isTrigger() || creature->GetCreatureType() == CREATURE_TYPE_CRITTER || creature->isSpiritService())
+        return false;
+
     Map* map = creature->GetMap();
 
     if (!map || !map->IsDungeon())
@@ -120,13 +137,10 @@ bool DICreatureCalcStats(Creature* creature)
 
     uint32 instanceid = map->GetInstanceId();
 
-    if (!DIData[instanceid].isValid())
+    if (!DIData[instanceid].isValid() && !DIGetLevel(map))
         return false;
 
     const CreatureTemplate* cinfo = creature->GetCreatureTemplate();
-
-    if (cinfo->maxlevel == 1)
-        return false;
 
     uint8 level = DIData[instanceid].level;
 
@@ -158,7 +172,7 @@ bool DICreatureCalcStats(Creature* creature)
     uint32 basehp = stats->GenerateHealth(expansion, cinfo->ModHealth);
     uint32 health = uint32(basehp * healthmod);
 
-    float dmgbase = 2.5 * pow(1.05, level * 2) / 2;
+    float dmgbase = (2.5 * pow(1.05, level * 2) / 2) * (cinfo->baseattacktime / 1000);
     float dmgmin = dmgbase * 0.95;
     float dmgmax = dmgbase * 1.05;
 
@@ -226,12 +240,19 @@ class Mod_DynamicInstance_AllInstanceScript : public AllInstanceScript
         if (!DynamicInstanceEnable)
             return;
 
+        sLog->outError("DI: AllInstanceDeleteFromDB instance %u", instanceid);
+
         DIRemoveData(instanceid);
     }
 
     void AllInstanceOnPlayerEnter(Map* map, Player* /*player*/)
     {
+        if (!DynamicInstanceEnable)
+            return;
+
         uint32 instanceid = map->GetInstanceId();
+
+        sLog->outError("DI: AllInstanceOnPlayerEnter instance %u", instanceid);
 
         if (DIData[instanceid].isValid())
             return;
@@ -253,20 +274,34 @@ class Mod_DynamicInstance_AllCreatureScript : public AllCreatureScript
 
     void AllCreatureSelectLevel(Creature* creature, bool& needSetStats)
     {
+        if (!DynamicInstanceEnable)
+            return;
+
         needSetStats = !DICreatureCalcStats(creature);
     }
 
     void AllCreatureCreate(Creature* creature)
     {
-        DICreatureCalcStats(creature);
-    }
-
-    void AllCreatureSpellDamageMod(Creature* creature, float& doneTotalMod)
-    {
         if (!DynamicInstanceEnable)
             return;
 
-        Map* map = creature->GetMap();
+        DICreatureCalcStats(creature);
+    }
+
+    void AllCreatureCreateLoot(Creature* /*creature*/, uint32& lootid)
+    {
+        if (!DynamicInstanceEnable || lootid != 0)
+            return;
+
+        // new lootid
+    }
+
+    void AllCreatureSpellDamageMod(Creature* /*creature*/, float& /*doneTotalMod*/)
+    {
+        if (!DynamicInstanceEnable)
+            return;
+        // temp disabled
+        /*Map* map = creature->GetMap();
 
         if (!map || !map->IsDungeon())
             return;
@@ -279,34 +314,9 @@ class Mod_DynamicInstance_AllCreatureScript : public AllCreatureScript
         uint8 level = creature->GetCreatureTemplate()->maxlevel;
         if (level > 80) level = 80;
 
-        doneTotalMod *= pow(1.05, (1.55 * (DIData[instanceid].level - level)));
+        doneTotalMod *= pow(1.05, (1.55 * (DIData[instanceid].level - level)));*/
     }
 };
-
-//ExtraLoot(0)
-
-/*
-        uint32 DynamicInstanceLevel;
-        float DynamicInstanceSpellBonus;
-        void DynamicInstanceUpdate(uint32 level);
-        uint32 ExtraLoot;
-*/
-
-/*
-void Unit::Kill(Unit* victim, bool durabilityLoss)
-            loot->clear();
-            if (uint32 lootid = creature->GetCreatureInfo()->lootid)
-            {
-                if (creature->ExtraLoot == 0)
-                {
-                    loot->FillLoot(lootid, LootTemplates_Creature, looter, false, false, creature->GetLootMode());
-                }
-                else
-                {
-                    loot->FillLoot(creature->ExtraLoot, LootTemplates_Creature, looter, false, false, creature->GetLootMode());
-                }
-            }
-*/
 
 void AddSC_Mod_DynamicInstance()
 {

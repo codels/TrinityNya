@@ -661,6 +661,9 @@ void ScriptMgr::OnPlayerEnterMap(Map* map, Player* player)
     ASSERT(map);
     ASSERT(player);
 
+    if (map->IsDungeon())
+        FOREACH_SCRIPT(AllInstanceScript)->AllInstanceOnPlayerEnter(map, player);
+
     SCR_MAP_BGN(WorldMapScript, map, itr, end, entry, IsContinent);
         itr->second->OnPlayerEnter(map, player);
     SCR_MAP_END;
@@ -672,9 +675,6 @@ void ScriptMgr::OnPlayerEnterMap(Map* map, Player* player)
     SCR_MAP_BGN(BattlegroundMapScript, map, itr, end, entry, IsBattleground);
         itr->second->OnPlayerEnter((BattlegroundMap*)map, player);
     SCR_MAP_END;
-
-    if (map->IsDungeon())
-        FOREACH_SCRIPT(AllInstanceScript)->AllInstanceOnPlayerEnter(map, player);
 }
 
 void ScriptMgr::OnPlayerLeaveMap(Map* map, Player* player)
@@ -898,6 +898,11 @@ void ScriptMgr::AllCreatureCreate(Creature* creature)
 void ScriptMgr::AllCreatureSpellDamageMod(Creature* creature, float& doneTotalMod)
 {
     FOREACH_SCRIPT(AllCreatureScript)->AllCreatureSpellDamageMod(creature, doneTotalMod);
+}
+
+void ScriptMgr::AllCreatureCreateLoot(Creature* creature, uint32& lootid)
+{
+    FOREACH_SCRIPT(AllCreatureScript)->AllCreatureCreateLoot(creature, lootid);
 }
 
 bool ScriptMgr::OnGossipHello(Player* player, GameObject* go)

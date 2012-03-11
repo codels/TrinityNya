@@ -467,6 +467,8 @@ class AllCreatureScript : public ScriptObject
         virtual void AllCreatureCreate(Creature* /*creature*/) { }
 
         virtual void AllCreatureSpellDamageMod(Creature* /*creature*/, float& /*doneTotalMod*/) { }
+
+        virtual void AllCreatureCreateLoot(Creature* /*creature*/, uint32& /*lootid*/) { }
 };
 
 class GameObjectScript : public ScriptObject, public UpdatableScript<GameObject>
@@ -968,6 +970,7 @@ class ScriptMgr
         void AllCreatureSelectLevel(Creature* creature, bool& needSetStats);
         void AllCreatureCreate(Creature* creature);
         void AllCreatureSpellDamageMod(Creature* creature, float& doneTotalMod);
+        void AllCreatureCreateLoot(Creature* creature, uint32& lootid);
 
     public: /* GameObjectScript */
 
