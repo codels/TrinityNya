@@ -145,7 +145,7 @@ class Mod_BattlegroundHistory_AllBattlegroundScript : public AllBattlegroundScri
                     sWorld->SendWorldText(BGHistoryGuildWinText, GuildWin->GetName().c_str(), damageDonePlayerName.c_str(), healingDonePlayerName.c_str());
             }
             else if (GuildLooseIs && GuildLoose)
-                sWorld->SendWorldText(BGHistoryGuildLosText, GuildLoose->GetName().c_str(), damageDonePlayerName.c_str(), healingDonePlayerName.c_str());
+                sWorld->SendWorldText(BGHistoryGuildLooseText, GuildLoose->GetName().c_str(), damageDonePlayerName.c_str(), healingDonePlayerName.c_str());
         }
     }
 };
