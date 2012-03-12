@@ -103,7 +103,7 @@ void DIRemoveData(uint32 instanceid)
 
 bool DICreatureCalcStats(Creature* creature)
 {
-    if (!DynamicInstanceEnable)
+    if (!DynamicInstanceEnable || !creature->isAlive())
         return false;
 
     if (creature->isTotem() || creature->isTrigger() || creature->GetCreatureType() == CREATURE_TYPE_CRITTER || creature->isSpiritService())
@@ -161,7 +161,7 @@ bool DICreatureCalcStats(Creature* creature)
     uint32 basehp = stats->GenerateHealth(expansion, cinfo->ModHealth);
     uint32 health = uint32(basehp * healthmod);
 
-    float dmgbase = (2.5 * pow(1.05, level * 2) / 2) * (cinfo->baseattacktime / 1000) * damagemod;
+    float dmgbase = (0.5 * pow(1.05, level * 2)) * (cinfo->baseattacktime / 1000) * damagemod;
     float dmgmin = dmgbase * 0.95;
     float dmgmax = dmgbase * 1.05;
 
@@ -170,27 +170,37 @@ bool DICreatureCalcStats(Creature* creature)
     creature->SetHealth(health);
     creature->ResetPlayerDamageReq();
 
-    // mana
-    uint32 mana = uint32(stats->GenerateMana(cinfo) * healthmod);
+    uint32 mana = uint32(stats->GenerateMana(cinfo) * healthmod * cinfo->ModHealth);
 
     creature->SetCreateMana(mana);
-    creature->SetMaxPower(POWER_MANA, mana);                          //MAX Mana
+    creature->SetMaxPower(POWER_MANA, mana);
     creature->SetPower(POWER_MANA, mana);
 
-    // TODO: set UNIT_FIELD_POWER*, for some creature class case (energy, etc)
     creature->SetModifierValue(UNIT_MOD_HEALTH, BASE_VALUE, (float)health);
     creature->SetModifierValue(UNIT_MOD_MANA, BASE_VALUE, (float)mana);
 
     creature->SetBaseWeaponDamage(BASE_ATTACK, MINDAMAGE, dmgmin);
     creature->SetBaseWeaponDamage(BASE_ATTACK, MAXDAMAGE, dmgmax);
-
-    creature->SetFloatValue(UNIT_FIELD_MINRANGEDDAMAGE, dmgmin);
-    creature->SetFloatValue(UNIT_FIELD_MAXRANGEDDAMAGE, dmgmax);
+    creature->SetBaseWeaponDamage(OFF_ATTACK, MINDAMAGE, dmgmin);
+    creature->SetBaseWeaponDamage(OFF_ATTACK, MAXDAMAGE, dmgmax);
+    creature->SetBaseWeaponDamage(RANGED_ATTACK, MINDAMAGE, dmgmin);
+    creature->SetBaseWeaponDamage(RANGED_ATTACK, MAXDAMAGE, dmgmax);
 
     creature->SetModifierValue(UNIT_MOD_ATTACK_POWER, BASE_VALUE, cinfo->attackpower * damagemod);
 
     creature->UpdateAllStats();
     return true;
+}
+
+uint32 DICreatureLoot(Creature* creature)
+{
+    Map* map = creature->GetMap();
+
+    if (!map || !DICreateOrExisted(map))
+        return 0;
+
+    //get loot
+    return 0;
 }
 
 class Mod_DynamicInstance_WorldScript : public WorldScript
@@ -243,20 +253,21 @@ class Mod_DynamicInstance_AllCreatureScript : public AllCreatureScript
         DICreatureCalcStats(creature);
     }
 
-    void AllCreatureCreateLoot(Creature* /*creature*/, uint32& lootid)
+    void AllCreatureCreateLoot(Creature* creature, uint32& lootid)
     {
         if (!DynamicInstanceEnable || lootid != 0)
             return;
 
-        // new lootid
+        if (uint32 newlootid = DICreatureLoot(creature))
+            lootid = newlootid;
     }
 
-    void AllCreatureSpellDamageMod(Creature* /*creature*/, float& /*doneTotalMod*/)
+    void AllCreatureSpellDamageMod(Creature* creature, float& doneTotalMod)
     {
         if (!DynamicInstanceEnable)
             return;
-        // temp disabled, need for spells with const damage or deleted all spells with dynamic damage (dependence on the level)
-        /*Map* map = creature->GetMap();
+
+        Map* map = creature->GetMap();
 
         if (!map || !map->IsDungeon())
             return;
@@ -269,7 +280,7 @@ class Mod_DynamicInstance_AllCreatureScript : public AllCreatureScript
         uint8 level = creature->GetCreatureTemplate()->maxlevel;
         if (level > 80) level = 80;
 
-        doneTotalMod *= pow(1.05, (1.55 * (DIData[instanceid].level - level)));*/
+        doneTotalMod *= pow(1.05, (1.55 * (DIData[instanceid].level - level)));
     }
 };
 

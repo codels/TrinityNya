@@ -10227,7 +10227,8 @@ uint32 Unit::SpellDamageBonus(Unit* victim, SpellInfo const* spellProto, uint32 
     if (GetTypeId() == TYPEID_UNIT && !ToCreature()->isPet())
     {
         DoneTotalMod *= ToCreature()->GetSpellDamageMod(ToCreature()->GetCreatureTemplate()->rank);
-        sScriptMgr->AllCreatureSpellDamageMod(ToCreature(), DoneTotalMod);
+		if (spellProto->SchoolMask != SPELL_SCHOOL_MASK_NORMAL)
+			sScriptMgr->AllCreatureSpellDamageMod(ToCreature(), DoneTotalMod);
     }
 
     AuraEffectList const& mModDamagePercentDone = GetAuraEffectsByType(SPELL_AURA_MOD_DAMAGE_PERCENT_DONE);
@@ -15377,8 +15378,8 @@ void Unit::Kill(Unit* victim, bool durabilityLoss)
             sScriptMgr->AllCreatureCreateLoot(creature, lootid);
             if (lootid)
                 loot->FillLoot(lootid, LootTemplates_Creature, looter, false, false, creature->GetLootMode());
-            else if (lootid = creature->GetCreatureTemplate()->lootid)
-                loot->FillLoot(lootid, LootTemplates_Creature, looter, false, false, creature->GetLootMode());
+            else if (creature->GetCreatureTemplate()->lootid)
+                loot->FillLoot(creature->GetCreatureTemplate()->lootid, LootTemplates_Creature, looter, false, false, creature->GetLootMode());
 
             loot->generateMoneyLoot(creature->GetCreatureTemplate()->mingold, creature->GetCreatureTemplate()->maxgold);
         }
