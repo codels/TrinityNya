@@ -237,7 +237,7 @@ public:
 
         void SpellHitTarget(Unit* /*target*/, const SpellInfo* spell)
         {
-            if (spell->Id == SPELL_RITUAL_STRIKE_EFF_1 && Phase != NORMAL)
+            if (spell->Id == SPELL_RITUAL_STRIKE_EFF_1 && Phase != NORMAL && Phase != SVALADEAD)
             {
                 Phase = NORMAL;
                 SetCombatMovement(true);
