@@ -6,8 +6,9 @@
 #define DI_SQL_GET "SELECT `InstanceId`, `InstanceLevel` FROM `world_instance`"
 #define DI_SQL_SAVE "REPLACE INTO `world_instance` (`InstanceId`, `InstanceLevel`) VALUES ('%u', '%u')"
 #define DI_SQL_DELETE "DELETE FROM `world_instance` WHERE `InstanceId` = '%u'"
+#define DI_SQL_CLEANUP "DELETE `w` FROM `world_instance` `w` LEFT JOIN `instance` `i` ON `w`.`InstanceId` = `i`.`id` WHERE `i`.`id` IS NULL"
 
-bool    DynamicInstanceEnable   = false;
+bool DynamicInstanceEnable = false;
 
 struct DITemplate
 {
@@ -20,47 +21,11 @@ struct DITemplate
 typedef std::map<uint32, DITemplate> DIMap;
 DIMap DIData;
 
-void DISaveData(uint32 instanceid)
-{
-    //debug
-    sLog->outError("DISaveData: instance %u level %u", instanceid, DIData[instanceid].level);
-
-    if (!DIData[instanceid].isValid())
-        return;
-
-    CharacterDatabase.PExecute(DI_SQL_SAVE, instanceid, DIData[instanceid].level);
-}
-
-void DIRemoveData(uint32 instanceid)
-{
-    //debug
-    sLog->outError("DIRemoveData: instance %u", instanceid);
-
-    if (DIData.empty())
-        return;
-
-    if (!DIData[instanceid].isValid())
-        return;
-
-    CharacterDatabase.PExecute(DI_SQL_DELETE, instanceid);
-
-    DIMap::iterator itr;
-
-    for (itr = DIData.begin(); itr != DIData.end();)
-    {
-        if (itr->first == instanceid)
-        {
-            DIData.erase(itr);
-            return;
-        }
-        else
-            ++itr;
-    }
-}
-
 void DILoadDataFromDB()
 {
     DIData.clear();
+
+    CharacterDatabase.PExecute(DI_SQL_CLEANUP);
 
     sLog->outString();
     sLog->outString("Loading DynamicInstance...");
@@ -89,36 +54,50 @@ void DILoadDataFromDB()
     sLog->outString();
 }
 
-bool DIGetLevel(Map* map)
+bool DICreateOrExisted(Map* map)
 {
+    if (!DynamicInstanceEnable || !map->IsDungeon())
+        return false;
+
+    if (DIData[map->GetInstanceId()].isValid())
+        return true;
+
     Map::PlayerList const &players = map->GetPlayers();
 
     if (!players.isEmpty())
         if (Player* player = players.begin()->getSource())
         {
             DIData[map->GetInstanceId()].level = player->getLevel();
-            DISaveData(map->GetInstanceId());
+            CharacterDatabase.PExecute(DI_SQL_SAVE, map->GetInstanceId(), DIData[map->GetInstanceId()].level);
             return true;
         }
     return false;
 }
 
-float _GetHealthMod(int32 Rank)
+void DIRemoveData(uint32 instanceid)
 {
-    switch (Rank)                                           // define rates for each elite rank
+    if (!DynamicInstanceEnable)
+        return;
+
+    if (DIData.empty())
+        return;
+
+    if (!DIData[instanceid].isValid())
+        return;
+
+    CharacterDatabase.PExecute(DI_SQL_DELETE, instanceid);
+
+    DIMap::iterator itr;
+
+    for (itr = DIData.begin(); itr != DIData.end();)
     {
-        case CREATURE_ELITE_NORMAL:
-            return sWorld->getRate(RATE_CREATURE_NORMAL_HP);
-        case CREATURE_ELITE_ELITE:
-            return sWorld->getRate(RATE_CREATURE_ELITE_ELITE_HP);
-        case CREATURE_ELITE_RAREELITE:
-            return sWorld->getRate(RATE_CREATURE_ELITE_RAREELITE_HP);
-        case CREATURE_ELITE_WORLDBOSS:
-            return sWorld->getRate(RATE_CREATURE_ELITE_WORLDBOSS_HP);
-        case CREATURE_ELITE_RARE:
-            return sWorld->getRate(RATE_CREATURE_ELITE_RARE_HP);
-        default:
-            return sWorld->getRate(RATE_CREATURE_ELITE_ELITE_HP);
+        if (itr->first == instanceid)
+        {
+            DIData.erase(itr);
+            return;
+        }
+        else
+            ++itr;
     }
 }
 
@@ -132,13 +111,10 @@ bool DICreatureCalcStats(Creature* creature)
 
     Map* map = creature->GetMap();
 
-    if (!map || !map->IsDungeon())
+    if (!map || !DICreateOrExisted(map))
         return false;
 
     uint32 instanceid = map->GetInstanceId();
-
-    if (!DIData[instanceid].isValid() && !DIGetLevel(map))
-        return false;
 
     const CreatureTemplate* cinfo = creature->GetCreatureTemplate();
 
@@ -153,26 +129,39 @@ bool DICreatureCalcStats(Creature* creature)
     if (level > 59) expansion++;
     if (level > 69) expansion++;
 
-    uint32 rank = creature->isPet()? 0 : cinfo->rank;
+    uint32 rank = creature->isPet() ? 0 : cinfo->rank;
 
     CreatureBaseStats const* stats = sObjectMgr->GetCreatureBaseStats(level, cinfo->unit_class);
 
-    //damage
-    float damagemod = 1.0f;//_GetDamageMod(rank);
+    float damagemod = 1.0f;
+    float healthmod = 1.0f;
 
-    float healthmod = _GetHealthMod(rank);
+    if (rank == CREATURE_ELITE_NORMAL)
+        healthmod *= sWorld->getRate(RATE_CREATURE_NORMAL_HP);
+    else if (rank == CREATURE_ELITE_ELITE)
+        healthmod *= sWorld->getRate(RATE_CREATURE_ELITE_ELITE_HP);
+    else if (rank == CREATURE_ELITE_RAREELITE)
+    {
+        healthmod *= sWorld->getRate(RATE_CREATURE_ELITE_RAREELITE_HP);
+        damagemod *= 1.5;
+    }
+    else if (rank == CREATURE_ELITE_WORLDBOSS)
+        healthmod *= sWorld->getRate(RATE_CREATURE_ELITE_WORLDBOSS_HP);
+    else if (rank == CREATURE_ELITE_RARE)
+        healthmod *= sWorld->getRate(RATE_CREATURE_ELITE_RARE_HP);
+    else
+        healthmod *= sWorld->getRate(RATE_CREATURE_ELITE_ELITE_HP);
 
     if (rank != CREATURE_ELITE_NORMAL)
     {
         damagemod *= 2;
         healthmod *= 3;
     }
-    if (rank == CREATURE_ELITE_RAREELITE) damagemod *= 1.5;
 
     uint32 basehp = stats->GenerateHealth(expansion, cinfo->ModHealth);
     uint32 health = uint32(basehp * healthmod);
 
-    float dmgbase = (2.5 * pow(1.05, level * 2) / 2) * (cinfo->baseattacktime / 1000);
+    float dmgbase = (2.5 * pow(1.05, level * 2) / 2) * (cinfo->baseattacktime / 1000) * damagemod;
     float dmgmin = dmgbase * 0.95;
     float dmgmax = dmgbase * 1.05;
 
@@ -182,7 +171,7 @@ bool DICreatureCalcStats(Creature* creature)
     creature->ResetPlayerDamageReq();
 
     // mana
-    uint32 mana = stats->GenerateMana(cinfo);
+    uint32 mana = uint32(stats->GenerateMana(cinfo) * healthmod);
 
     creature->SetCreateMana(mana);
     creature->SetMaxPower(POWER_MANA, mana);                          //MAX Mana
@@ -192,15 +181,13 @@ bool DICreatureCalcStats(Creature* creature)
     creature->SetModifierValue(UNIT_MOD_HEALTH, BASE_VALUE, (float)health);
     creature->SetModifierValue(UNIT_MOD_MANA, BASE_VALUE, (float)mana);
 
-    creature->SetBaseWeaponDamage(BASE_ATTACK, MINDAMAGE, dmgmin * damagemod);
-    creature->SetBaseWeaponDamage(BASE_ATTACK, MAXDAMAGE, dmgmax * damagemod);
+    creature->SetBaseWeaponDamage(BASE_ATTACK, MINDAMAGE, dmgmin);
+    creature->SetBaseWeaponDamage(BASE_ATTACK, MAXDAMAGE, dmgmax);
 
-    creature->SetFloatValue(UNIT_FIELD_MINRANGEDDAMAGE, dmgmin * damagemod);
-    creature->SetFloatValue(UNIT_FIELD_MAXRANGEDDAMAGE, dmgmax * damagemod);
+    creature->SetFloatValue(UNIT_FIELD_MINRANGEDDAMAGE, dmgmin);
+    creature->SetFloatValue(UNIT_FIELD_MAXRANGEDDAMAGE, dmgmax);
 
     creature->SetModifierValue(UNIT_MOD_ATTACK_POWER, BASE_VALUE, cinfo->attackpower * damagemod);
-
-    //ExtraLoot = 6;
 
     creature->UpdateAllStats();
     return true;
@@ -227,43 +214,14 @@ class Mod_DynamicInstance_AllInstanceScript : public AllInstanceScript
     public:
         Mod_DynamicInstance_AllInstanceScript() : AllInstanceScript("Mod_DynamicInstance_AllInstanceScript") { }
 
-    void AllInstanceAdd(InstanceSave* /*instanceSave*/)
-    {
-        if (!DynamicInstanceEnable)
-            return;
-
-        //DISaveData(instanceSave->GetInstanceId());
-    }
-
     void AllInstanceDeleteFromDB(uint32 instanceid)
     {
-        if (!DynamicInstanceEnable)
-            return;
-
-        sLog->outError("DI: AllInstanceDeleteFromDB instance %u", instanceid);
-
         DIRemoveData(instanceid);
     }
 
     void AllInstanceOnPlayerEnter(Map* map, Player* /*player*/)
     {
-        if (!DynamicInstanceEnable)
-            return;
-
-        uint32 instanceid = map->GetInstanceId();
-
-        sLog->outError("DI: AllInstanceOnPlayerEnter instance %u", instanceid);
-
-        if (DIData[instanceid].isValid())
-            return;
-
-        Map::PlayerList const &players = map->GetPlayers();
-
-        if (!players.isEmpty())
-            if (Player* player = players.begin()->getSource())
-                DIData[instanceid].level = player->getLevel();
-
-        DISaveData(instanceid);
+        DICreateOrExisted(map);
     }
 };
 
@@ -282,9 +240,6 @@ class Mod_DynamicInstance_AllCreatureScript : public AllCreatureScript
 
     void AllCreatureCreate(Creature* creature)
     {
-        if (!DynamicInstanceEnable)
-            return;
-
         DICreatureCalcStats(creature);
     }
 
@@ -300,7 +255,7 @@ class Mod_DynamicInstance_AllCreatureScript : public AllCreatureScript
     {
         if (!DynamicInstanceEnable)
             return;
-        // temp disabled
+        // temp disabled, need for spells with const damage or deleted all spells with dynamic damage (dependence on the level)
         /*Map* map = creature->GetMap();
 
         if (!map || !map->IsDungeon())
