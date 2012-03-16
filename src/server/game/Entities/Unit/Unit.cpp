@@ -4114,6 +4114,45 @@ Aura* Unit::GetAuraOfRankedSpell(uint32 spellId, uint64 casterGUID, uint64 itemC
     return aurApp ? aurApp->GetBase() : NULL;
 }
 
+void Unit::GetDispellableAuraList(Unit* caster, uint32 dispelMask, DispelChargesList& dispelList)
+{
+    // we should not be able to dispel diseases if the target is affected by unholy blight
+    if (dispelMask & (1 << DISPEL_DISEASE) && HasAura(50536))
+        dispelMask &= ~(1 << DISPEL_DISEASE);
+
+    AuraMap const& auras = GetOwnedAuras();
+    for (AuraMap::const_iterator itr = auras.begin(); itr != auras.end(); ++itr)
+    {
+        Aura* aura = itr->second;
+        AuraApplication * aurApp = aura->GetApplicationOfTarget(GetGUID());
+        if (!aurApp)
+            continue;
+
+        // don't try to remove passive auras
+        if (aura->IsPassive())
+            continue;
+
+        if (aura->GetSpellInfo()->GetDispelMask() & dispelMask)
+        {
+            if (aura->GetSpellInfo()->Dispel == DISPEL_MAGIC)
+            {
+                // do not remove positive auras if friendly target
+                //               negative auras if non-friendly target
+                if (aurApp->IsPositive() == IsFriendlyTo(caster))
+                    continue;
+            }
+
+            // The charges / stack amounts don't count towards the total number of auras that can be dispelled.
+            // Ie: A dispel on a target with 5 stacks of Winters Chill and a Polymorph has 1 / (1 + 1) -> 50% chance to dispell
+            // Polymorph instead of 1 / (5 + 1) -> 16%.
+            bool dispel_charges = aura->GetSpellInfo()->AttributesEx7 & SPELL_ATTR7_DISPEL_CHARGES;
+            uint8 charges = dispel_charges ? aura->GetCharges() : aura->GetStackAmount();
+            if (charges > 0)
+                dispelList.push_back(std::make_pair(aura, charges));
+        }
+    }
+}
+
 bool Unit::HasAuraEffect(uint32 spellId, uint8 effIndex, uint64 caster) const
 {
     for (AuraApplicationMap::const_iterator itr = m_appliedAuras.lower_bound(spellId); itr != m_appliedAuras.upper_bound(spellId); ++itr)
@@ -14560,9 +14599,9 @@ Player* Unit::GetSpellModOwner() const
 }
 
 ///----------Pet responses methods-----------------
-void Unit::SendPetCastFail(uint32 spellid, SpellCastResult msg)
+void Unit::SendPetCastFail(uint32 spellid, SpellCastResult result)
 {
-    if (msg == SPELL_CAST_OK)
+    if (result == SPELL_CAST_OK)
         return;
 
     Unit* owner = GetCharmerOrOwner();
@@ -14570,15 +14609,13 @@ void Unit::SendPetCastFail(uint32 spellid, SpellCastResult msg)
         return;
 
     WorldPacket data(SMSG_PET_CAST_FAILED, 1 + 4 + 1);
-    data << uint8(0);                                       // cast count?
+    data << uint8(0);                                       // cast count
     data << uint32(spellid);
-    data << uint8(msg);
-    // uint32 for some reason
-    // uint32 for some reason
+    data << uint8(result);
     owner->ToPlayer()->GetSession()->SendPacket(&data);
 }
 
-void Unit::SendPetActionFeedback (uint8 msg)
+void Unit::SendPetActionFeedback(uint8 msg)
 {
     Unit* owner = GetOwner();
     if (!owner || owner->GetTypeId() != TYPEID_PLAYER)
@@ -14589,7 +14626,7 @@ void Unit::SendPetActionFeedback (uint8 msg)
     owner->ToPlayer()->GetSession()->SendPacket(&data);
 }
 
-void Unit::SendPetTalk (uint32 pettalk)
+void Unit::SendPetTalk(uint32 pettalk)
 {
     Unit* owner = GetOwner();
     if (!owner || owner->GetTypeId() != TYPEID_PLAYER)
@@ -17024,8 +17061,6 @@ void Unit::_ExitVehicle(Position const* exitPosition)
     else
         pos = *exitPosition;
 
-    AddUnitState(UNIT_STATE_MOVE);
-
     if (GetTypeId() == TYPEID_PLAYER)
         ToPlayer()->SetFallInformation(0, GetPositionZ());
     else if (HasUnitMovementFlag(MOVEMENTFLAG_ROOT))
@@ -17439,14 +17474,14 @@ void Unit::SetFacingTo(float ori)
     init.Launch();
 }
 
-void Unit::SetFacingToObject(WorldObject* pObject)
+void Unit::SetFacingToObject(WorldObject* object)
 {
     // never face when already moving
     if (!IsStopped())
         return;
 
     // TODO: figure out under what conditions creature will move towards object instead of facing it where it currently is.
-    SetFacingTo(GetAngle(pObject));
+    SetFacingTo(GetAngle(object));
 }
 
 bool Unit::SetWalk(bool enable)
@@ -17520,6 +17555,39 @@ void Unit::SendMovementWaterWalking()
 void Unit::SendMovementFeatherFall()
 {
     WorldPacket data(MSG_MOVE_FEATHER_FALL, 64);
+    data.append(GetPackGUID());
+    BuildMovementPacket(&data);
+    SendMessageToSet(&data, true);
+}
+    
+void Unit::SendMovementGravityChange()
+{
+    WorldPacket data(MSG_MOVE_GRAVITY_CHNG, 64);
+    data.append(GetPackGUID());
+    BuildMovementPacket(&data);
+    SendMessageToSet(&data, true);
+}
+
+void Unit::SendMovementCanFlyChange()
+{
+    /*!
+        if ( a3->MoveFlags & MOVEMENTFLAG_CAN_FLY )
+        {
+            v4->MoveFlags |= 0x1000000u;
+            result = 1;
+        }
+        else
+        {
+            if ( v4->MoveFlags & MOVEMENTFLAG_FLYING )
+                CMovement::DisableFlying(v4);
+            v4->MoveFlags &= 0xFEFFFFFFu;
+            result = 1;
+        }
+    */
+    if (GetTypeId() == TYPEID_PLAYER)
+        ToPlayer()->SendMovementSetCanFly(CanFly());
+
+    WorldPacket data(MSG_MOVE_UPDATE_CAN_FLY, 64);
     data.append(GetPackGUID());
     BuildMovementPacket(&data);
     SendMessageToSet(&data, true);
