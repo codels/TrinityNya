@@ -14199,6 +14199,10 @@ void Player::PrepareGossipMenu(WorldObject* source, uint32 menuId /*= 0*/, bool 
                 case GOSSIP_OPTION_PETITIONER:
                 case GOSSIP_OPTION_TABARDDESIGNER:
                 case GOSSIP_OPTION_AUCTIONEER:
+                case GOSSIP_OPTION_RENAME:
+                case GOSSIP_OPTION_CUSTOMIZE:
+                case GOSSIP_OPTION_CHANGE_FACTION:
+                case GOSSIP_OPTION_CHANGE_RACE:
                     break;                                  // no checks
                 case GOSSIP_OPTION_OUTDOORPVP:
                     if (!sOutdoorPvPMgr->CanTalkTo(this, creature, itr->second))
@@ -14409,6 +14413,46 @@ void Player::OnGossipSelect(WorldObject* source, uint32 gossipListId, uint32 men
             }
 
             GetSession()->SendBattleGroundList(guid, bgTypeId);
+            break;
+        }
+        case GOSSIP_OPTION_RENAME:
+        {
+            PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_UPD_ADD_AT_LOGIN_FLAG);
+            stmt->setUInt16(0, uint16(AT_LOGIN_RENAME));
+            stmt->setUInt32(1, GetGUIDLow());
+            SetAtLoginFlag(AT_LOGIN_RENAME);
+            CharacterDatabase.Execute(stmt);
+            PlayerTalkClass->SendCloseGossip();
+            break;
+        }
+        case GOSSIP_OPTION_CUSTOMIZE:
+        {
+            PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_UPD_ADD_AT_LOGIN_FLAG);
+            stmt->setUInt16(0, uint16(AT_LOGIN_CUSTOMIZE));
+            stmt->setUInt32(1, GetGUIDLow());
+            SetAtLoginFlag(AT_LOGIN_CUSTOMIZE);
+            CharacterDatabase.Execute(stmt);
+            PlayerTalkClass->SendCloseGossip();
+            break;
+        }
+        case GOSSIP_OPTION_CHANGE_FACTION:
+        {
+            PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_UPD_ADD_AT_LOGIN_FLAG);
+            stmt->setUInt16(0, uint16(AT_LOGIN_CHANGE_FACTION));
+            stmt->setUInt32(1, GetGUIDLow());
+            SetAtLoginFlag(AT_LOGIN_CHANGE_FACTION);
+            CharacterDatabase.Execute(stmt);
+            PlayerTalkClass->SendCloseGossip();
+            break;
+        }
+        case GOSSIP_OPTION_CHANGE_RACE:
+        {
+            PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_UPD_ADD_AT_LOGIN_FLAG);
+            stmt->setUInt16(0, uint16(AT_LOGIN_CHANGE_RACE));
+            stmt->setUInt32(1, GetGUIDLow());
+            SetAtLoginFlag(AT_LOGIN_CHANGE_RACE);
+            CharacterDatabase.Execute(stmt);
+            PlayerTalkClass->SendCloseGossip();
             break;
         }
     }
