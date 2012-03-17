@@ -121,7 +121,6 @@ void AHAddItem(AHItemInfo& info)
     AuctionHouse->AddAuction(auctionEntry);
     auctionEntry->SaveToDB(trans);
     CharacterDatabase.CommitTransaction(trans);
-    ++info.CurrentCount;
 
     return;
 }
@@ -157,10 +156,24 @@ class Mod_AuctionHouseBot_AuctionHouseScript : public AuctionHouseScript
     public:
         Mod_AuctionHouseBot_AuctionHouseScript() : AuctionHouseScript("Mod_AuctionHouseBot_AuctionHouseScript") { }
 
+        // Called when an auction is added to an auction house.
+        void OnAuctionAdd(AuctionHouseObject* /*ah*/, AuctionEntry* entry)
+        {
+            if (!AHEnable || AHItems.empty())
+                return;
+
+            for (uint16 i = 0; i < AHItems.size(); ++i)
+                if (AHItems[i].ItemId == entry->item_template)
+                {
+                    ++AHItems[i].CurrentCount;
+                    return;
+                }
+        }
+
         // Called when an auction is removed from an auction house.
         void OnAuctionRemove(AuctionHouseObject* /*ah*/, AuctionEntry* entry)
         {
-            if (!AHEnable || !AHEntry || !AuctionHouse || AHItems.empty())
+            if (!AHEnable || AHItems.empty())
                 return;
 
             for (uint16 i = 0; i < AHItems.size(); ++i)

@@ -178,16 +178,16 @@ void MailDraft::SendMailTo(SQLTransaction& trans, MailReceiver const& receiver, 
         prepareItems(pReceiver, trans);                            // generate mail template items
 
     uint32 mailId = sObjectMgr->GenerateMailID();
-	bool needDelete = false;
+    bool needDelete = false;
 
-	sScriptMgr->OnSendMail(receiver, sender, needDelete);
+    sScriptMgr->OnSendMail(receiver, sender, needDelete);
 
-	if (needDelete)
-	{
-		if (sender.GetMailMessageType() == MAIL_AUCTION)        // auction mail with items
-			deleteIncludedItems(trans, true);
-		return;
-	}
+    if (needDelete)
+    {
+        if (sender.GetMailMessageType() == MAIL_AUCTION)        // auction mail with items
+            deleteIncludedItems(trans, true);
+        return;
+    }
 
     time_t deliver_time = time(NULL) + deliver_delay;
 
