@@ -666,9 +666,6 @@ void ScriptMgr::OnPlayerEnterMap(Map* map, Player* player)
     ASSERT(map);
     ASSERT(player);
 
-    if (map->IsDungeon())
-        FOREACH_SCRIPT(AllInstanceScript)->AllInstanceOnPlayerEnter(map, player);
-
     SCR_MAP_BGN(WorldMapScript, map, itr, end, entry, IsContinent);
         itr->second->OnPlayerEnter(map, player);
     SCR_MAP_END;
@@ -736,6 +733,11 @@ void ScriptMgr::AllInstanceAdd(InstanceSave* instanceSave)
 void ScriptMgr::AllInstanceDeleteFromDB(uint32 instanceid)
 {
     FOREACH_SCRIPT(AllInstanceScript)->AllInstanceDeleteFromDB(instanceid);
+}
+
+void ScriptMgr::AllInstanceOnPlayerEnter(Map* map, Player* player)
+{
+    FOREACH_SCRIPT(AllInstanceScript)->AllInstanceOnPlayerEnter(map, player);
 }
 
 bool ScriptMgr::OnDummyEffect(Unit* caster, uint32 spellId, SpellEffIndex effIndex, Item* target)
@@ -908,6 +910,11 @@ void ScriptMgr::AllCreatureSpellDamageMod(Creature* creature, float& doneTotalMo
 void ScriptMgr::AllCreatureCreateLoot(Creature* creature, uint32& lootid)
 {
     FOREACH_SCRIPT(AllCreatureScript)->AllCreatureCreateLoot(creature, lootid);
+}
+
+void ScriptMgr::AllCreatureCode(Player* player, Creature* creature, uint32 sender, uint32 action, const char* code)
+{
+    FOREACH_SCRIPT(AllCreatureScript)->AllCreatureCode(player, creature, sender, action, code);
 }
 
 bool ScriptMgr::OnGossipHello(Player* player, GameObject* go)

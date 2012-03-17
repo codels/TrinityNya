@@ -472,6 +472,9 @@ class AllCreatureScript : public ScriptObject
         virtual void AllCreatureSpellDamageMod(Creature* /*creature*/, float& /*doneTotalMod*/) { }
 
         virtual void AllCreatureCreateLoot(Creature* /*creature*/, uint32& /*lootid*/) { }
+
+        // Called when a player selects a gossip with a code in the creature's gossip menu.
+        virtual void AllCreatureCode(Player* /*player*/, Creature* /*creature*/, uint32 /*sender*/, uint32 /*action*/, const char* /*code*/) { }
 };
 
 class GameObjectScript : public ScriptObject, public UpdatableScript<GameObject>
@@ -975,6 +978,7 @@ class ScriptMgr
         void AllCreatureCreate(Creature* creature);
         void AllCreatureSpellDamageMod(Creature* creature, float& doneTotalMod);
         void AllCreatureCreateLoot(Creature* creature, uint32& lootid);
+        void AllCreatureCode(Player* player, Creature* creature, uint32 sender, uint32 action, const char* code);
 
     public: /* GameObjectScript */
 

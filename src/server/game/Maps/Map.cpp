@@ -407,6 +407,8 @@ bool Map::AddPlayerToMap(Player* player)
     player->UpdateObjectVisibility(false);
 
     sScriptMgr->OnPlayerEnterMap(this, player);
+    if (IsDungeon())
+        sScriptMgr->AllInstanceOnPlayerEnter(this, player);
     return true;
 }
 

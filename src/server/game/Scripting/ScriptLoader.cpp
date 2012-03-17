@@ -30,6 +30,7 @@ void AddSC_Mod_DynamicInstance();
 void AddSC_Mod_AccountHistory();
 void AddSC_Mod_BattlegroundHistory();
 void AddSC_Mod_AuctionHouseBot();
+void AddSC_Mod_SpecialCode();
 
 //examples
 void AddSC_example_creature();
@@ -1266,6 +1267,7 @@ void AddCustomScripts()
     AddSC_Mod_AccountHistory();
     AddSC_Mod_BattlegroundHistory();
     AddSC_Mod_AuctionHouseBot();
+    AddSC_Mod_SpecialCode();
 
 #endif
 }
