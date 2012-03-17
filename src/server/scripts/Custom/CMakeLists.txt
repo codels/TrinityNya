@@ -20,6 +20,7 @@ set(scripts_STAT_SRCS
   Custom/mod_DynamicInsctane.cpp
   Custom/mod_AccountHistory.cpp
   Custom/mod_BattlegroundHistory.cpp
+  Custom/mod_AuctionHouseBot.cpp
 )
 
 message("  -> Prepared: Custom")

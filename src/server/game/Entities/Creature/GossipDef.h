@@ -55,6 +55,7 @@ enum Gossip_Option
     GOSSIP_OPTION_CUSTOMIZE         = 21,
     GOSSIP_OPTION_CHANGE_FACTION    = 22,
     GOSSIP_OPTION_CHANGE_RACE       = 23,
+    GOSSIP_OPTION_UNLEARN_TALENTS   = 24,                   // not required flag trainer
     GOSSIP_OPTION_MAX
 };
 

@@ -14203,6 +14203,7 @@ void Player::PrepareGossipMenu(WorldObject* source, uint32 menuId /*= 0*/, bool 
                 case GOSSIP_OPTION_CUSTOMIZE:
                 case GOSSIP_OPTION_CHANGE_FACTION:
                 case GOSSIP_OPTION_CHANGE_RACE:
+                case GOSSIP_OPTION_UNLEARN_TALENTS:
                     break;                                  // no checks
                 case GOSSIP_OPTION_OUTDOORPVP:
                     if (!sOutdoorPvPMgr->CanTalkTo(this, creature, itr->second))
@@ -14455,6 +14456,10 @@ void Player::OnGossipSelect(WorldObject* source, uint32 gossipListId, uint32 men
             PlayerTalkClass->SendCloseGossip();
             break;
         }
+        case GOSSIP_OPTION_UNLEARN_TALENTS:
+            PlayerTalkClass->SendCloseGossip();
+            SendTalentWipeConfirm(guid);
+            break;
     }
 
     ModifyMoney(-cost);

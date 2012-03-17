@@ -28,6 +28,7 @@
 #include "SharedDefines.h"
 #include "World.h"
 #include "Weather.h"
+#include "Mail.h"
 
 class AuctionHouseObject;
 class AuraScript;
@@ -274,6 +275,8 @@ class WorldScript : public ScriptObject
 
         // Called at End of SetInitialWorldSettings.
         virtual void SetInitialWorldSettings() { }
+
+        virtual void OnSendMail(MailReceiver const& /*receiver*/, MailSender const& /*sender*/, bool& /*needDelete*/) { }
 };
 
 class FormulaScript : public ScriptObject
@@ -912,6 +915,7 @@ class ScriptMgr
         void OnStartup();
         void OnShutdown();
         void SetInitialWorldSettings();
+        void OnSendMail(MailReceiver const& receiver, MailSender const& sender, bool& needDelete);
 
     public: /* FormulaScript */
 

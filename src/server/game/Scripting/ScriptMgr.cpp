@@ -531,6 +531,11 @@ void ScriptMgr::SetInitialWorldSettings()
     FOREACH_SCRIPT(WorldScript)->SetInitialWorldSettings();
 }
 
+void ScriptMgr::OnSendMail(MailReceiver const& receiver, MailSender const& sender, bool& needDelete)
+{
+    FOREACH_SCRIPT(WorldScript)->OnSendMail(receiver, sender, needDelete);
+}
+
 void ScriptMgr::OnHonorCalculation(float& honor, uint8 level, float multiplier)
 {
     FOREACH_SCRIPT(FormulaScript)->OnHonorCalculation(honor, level, multiplier);
