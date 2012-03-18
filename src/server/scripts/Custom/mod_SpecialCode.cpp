@@ -1,7 +1,7 @@
 #include "ScriptPCH.h"
 #include "Config.h"
 
-#define SQL_CODE "SELECT `CodeId`, `MailMoney`, `MaxCountForCharacter`, `MaxCountForAccount`, `MaxCountTotal`, `MailSubject`, `MailText` FROM `world_coded` WHERE `CodeStart` >= CURRENT_TIMESTAMP AND `CodeEnd` <= CURRENT_TIMESTAMP AND `CodeData` = '%s' LIMIT 1"
+#define SQL_CODE "SELECT `CodeId`, `MailMoney`, `MaxCountForCharacter`, `MaxCountForAccount`, `MaxCountTotal`, `MailSubject`, `MailText` FROM `world_coded` WHERE `CodeStart` <= CURRENT_TIMESTAMP AND `CodeEnd` >= CURRENT_TIMESTAMP AND `CodeData` = '%s' LIMIT 1"
 #define SQL_CODE_COUNT "SELECT COUNT(*) FROM `world_coded_history` WHERE `CodeId` = '%u'"
 #define SQL_CODE_COUNT_ACCOUNT "SELECT COUNT(*) FROM `world_coded_history` WHERE `CodeId` = '%u' AND `AccountId` = '%u'"
 #define SQL_CODE_COUNT_CHARACTER "SELECT COUNT(*) FROM `world_coded_history` WHERE `CodeId` = '%u' AND `CharacterGuid` = '%u'"
@@ -28,16 +28,25 @@ class Mod_SpecialCode_AllCreatureScript : public AllCreatureScript
 
     void AllCreatureCode(Player* player, Creature* /*creature*/, uint32 /*sender*/, uint32 /*action*/, const char* code)
     {
+        //sLog->outError("AllCreatureCode");
         if (!SCEnable)
+        {
+            player->CLOSE_GOSSIP_MENU();
             return;
+        }
 
         QueryResult result = CharacterDatabase.PQuery(SQL_CODE, code);
         if (!result)
+        {
+            player->CLOSE_GOSSIP_MENU();
             return;
+        }
+
+        //sLog->outError("AllCreatureCode: query one complete");
 
         uint32 codeId = (*result)[0].GetUInt32();
-        std::string subject = fields[5].GetString();
-        std::string text = fields[6].GetString();
+        std::string subject = (*result)[5].GetString();
+        std::string text = (*result)[6].GetString();
         int32 mailMoney = (*result)[1].GetInt32();
         uint8 maxCharacters = (*result)[2].GetUInt8();
         uint8 maxAccount = (*result)[3].GetUInt8();
@@ -46,6 +55,8 @@ class Mod_SpecialCode_AllCreatureScript : public AllCreatureScript
         uint16 currentAccount = 0;
         uint16 currentCharacter = 0;
 
+        //sLog->outError("AllCreatureCode: codeId: %u",codeId);
+
         if (maxTotal > 0)
         {
             result = CharacterDatabase.PQuery(SQL_CODE_COUNT, codeId);
@@ -53,7 +64,10 @@ class Mod_SpecialCode_AllCreatureScript : public AllCreatureScript
                 currentTotal = (*result)[0].GetUInt16();
 
             if (currentTotal >= maxTotal)
+            {
+                player->CLOSE_GOSSIP_MENU();
                 return;
+            }
         }
 
         uint32 accountId = player->GetSession()->GetAccountId();
@@ -65,7 +79,10 @@ class Mod_SpecialCode_AllCreatureScript : public AllCreatureScript
                 currentAccount = (*result)[0].GetUInt16();
 
             if (currentAccount >= maxAccount)
+            {
+                player->CLOSE_GOSSIP_MENU();
                 return;
+            }
         }
 
         uint32 guid = player->GetGUID();
@@ -77,27 +94,40 @@ class Mod_SpecialCode_AllCreatureScript : public AllCreatureScript
                 currentCharacter = (*result)[0].GetUInt16();
 
             if (currentCharacter >= maxCharacters)
+            {
+                player->CLOSE_GOSSIP_MENU();
                 return;
+            }
         }
+
+        //sLog->outError("AllCreatureCode: history %u %u %u", codeId, guid, accountId);
 
         CharacterDatabase.PExecute(SQL_CODE_HISTORY, codeId, guid, accountId);
 
-        QueryResult result = CharacterDatabase.PQuery(SQL_CODE_ITEMS);
+        result = CharacterDatabase.PQuery(SQL_CODE_ITEMS, codeId, player->getClassMask(), player->getRaceMask());
 
         if (!result)
+        {
+            player->CLOSE_GOSSIP_MENU();
             return;
+        }
 
+        //sLog->outError("AllCreatureCode: get items");
+
+        // extract items
+        typedef std::pair<uint32, uint32> ItemPair;
+        typedef std::list< ItemPair > ItemPairs;
         ItemPairs items;
 
         do
         {
             Field* fields = result->Fetch();
 
-            itemId = fields[0].GetUInt32();
-            itemCount = fields[1].GetUInt16();
+            uint32 itemId = fields[0].GetUInt32();
+            uint16 itemCount = fields[1].GetUInt16();
 
             ItemTemplate const* itemProto = sObjectMgr->GetItemTemplate(itemId);
-            if (!item_proto)
+            if (!itemProto)
                 continue;
 
             if (itemCount < 1 || (itemProto->MaxCount > 0 && itemCount > uint32(itemProto->MaxCount)))
@@ -112,11 +142,15 @@ class Mod_SpecialCode_AllCreatureScript : public AllCreatureScript
             items.push_back(ItemPair(itemId, itemCount));
 
             if (items.size() > MAX_MAIL_ITEMS)
+            {
+                player->CLOSE_GOSSIP_MENU();
                 return;
+            }
         }
         while (result->NextRow());
 
-        MailSender sender(MAIL_NORMAL, 0, MAIL_STATIONERY_GM);
+        //sLog->outError("AllCreatureCode: create mail");
+
         MailDraft draft(subject, text);
 
         SQLTransaction trans = CharacterDatabase.BeginTransaction();
@@ -130,8 +164,15 @@ class Mod_SpecialCode_AllCreatureScript : public AllCreatureScript
             }
         }
 
-        draft.SendMailTo(trans, MailReceiver(player, GUID_LOPART(guid)), sender);
+        if (mailMoney > 0)
+            draft.AddMoney(mailMoney);
+        else
+            draft.AddCOD(mailMoney*-1);
+
+        draft.SendMailTo(trans, MailReceiver(player, GUID_LOPART(guid)), MailSender(MAIL_NORMAL, 0, MAIL_STATIONERY_GM));
         CharacterDatabase.CommitTransaction(trans);
+        player->CLOSE_GOSSIP_MENU();
+        //sLog->outError("AllCreatureCode: end.");
     }
 
 };

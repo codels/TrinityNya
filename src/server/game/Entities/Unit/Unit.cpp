@@ -12734,6 +12734,7 @@ void Unit::setDeathState(DeathState s)
         GetMotionMaster()->Clear(false);
         GetMotionMaster()->MoveIdle();
         StopMoving();
+        DisableSpline();
         // without this when removing IncreaseMaxHealth aura player may stuck with 1 hp
         // do not why since in IncreaseMaxHealth currenthealth is checked
         SetHealth(0);
@@ -17134,7 +17135,7 @@ void Unit::BuildMovementPacket(ByteBuffer *data) const
     *data << (uint32)m_movementInfo.fallTime;
 
     // 0x00001000
-    if (GetUnitMovementFlags() & MOVEMENTFLAG_JUMPING)
+    if (GetUnitMovementFlags() & MOVEMENTFLAG_FALLING)
     {
         *data << (float)m_movementInfo.j_zspeed;
         *data << (float)m_movementInfo.j_sinAngle;
