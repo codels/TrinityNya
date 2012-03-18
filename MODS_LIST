@@ -4,6 +4,9 @@ AccountHistory
         - logging account
         - logging realm
 
+AuctionHouseBot
+        - simple version AuctionHouseBot
+
 AutoLearn
         - learning spell when levelup
         - learning spell when skillup
@@ -38,6 +41,9 @@ MultiKill
         - killing spree
         - reward honor/gold/buff/kill credit(for quests)
 
+SpecialCode
+        - Send items to input code (box code)
+
 Kernel
         - Additional of functions scripts
 
@@ -50,6 +56,9 @@ AccountHistory
         - логирование IP-адреса
         - логирование учетной записи
         - логирование номера мира
+
+AuctionHouseBot
+        - Упрощенная версия имеющегося аукцион бота, выкладывает определенный список вещей
 
 AutoLearn
         - обучение заклинаний при получении уровня
@@ -84,6 +93,9 @@ MultiKill
         - первая кровь
         - череда убийств
         - вознаграждения честь/золото/бафф/убийство существа(для заданий)
+
+SpecialCode
+        - Отсылает предметы за ввод кода в игре, можно раздавать рекламные предметы (box code)
 
 Kernel
         - Дополнительные функции для скриптов
