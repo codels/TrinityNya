@@ -14,3 +14,5 @@ CREATE TABLE `world_mail` (
   `cod` int(10) unsigned NOT NULL DEFAULT '0',
   PRIMARY KEY (`log_id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+ALTER TABLE `world_mail`
+MODIFY COLUMN `log_id`  int(11) UNSIGNED NOT NULL AUTO_INCREMENT FIRST ;
