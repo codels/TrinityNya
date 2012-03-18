@@ -29,11 +29,8 @@ class Mod_SpecialCode_AllCreatureScript : public AllCreatureScript
     void AllCreatureCode(Player* player, Creature* /*creature*/, uint32 /*sender*/, uint32 /*action*/, const char* code)
     {
         //sLog->outError("AllCreatureCode");
-        if (!SCEnable)
-        {
-            player->CLOSE_GOSSIP_MENU();
+        if (!SCEnable || !player)
             return;
-        }
 
         QueryResult result = CharacterDatabase.PQuery(SQL_CODE, code);
         if (!result)
@@ -100,67 +97,56 @@ class Mod_SpecialCode_AllCreatureScript : public AllCreatureScript
             }
         }
 
-        //sLog->outError("AllCreatureCode: history %u %u %u", codeId, guid, accountId);
-
         CharacterDatabase.PExecute(SQL_CODE_HISTORY, codeId, guid, accountId);
+
+        MailDraft draft(subject, text);
+        SQLTransaction trans = CharacterDatabase.BeginTransaction();
 
         result = CharacterDatabase.PQuery(SQL_CODE_ITEMS, codeId, player->getClassMask(), player->getRaceMask());
 
-        if (!result)
+        if (result)
         {
-            player->CLOSE_GOSSIP_MENU();
-            return;
-        }
+            typedef std::pair<uint32, uint32> ItemPair;
+            typedef std::list< ItemPair > ItemPairs;
+            ItemPairs items;
 
-        //sLog->outError("AllCreatureCode: get items");
-
-        // extract items
-        typedef std::pair<uint32, uint32> ItemPair;
-        typedef std::list< ItemPair > ItemPairs;
-        ItemPairs items;
-
-        do
-        {
-            Field* fields = result->Fetch();
-
-            uint32 itemId = fields[0].GetUInt32();
-            uint16 itemCount = fields[1].GetUInt16();
-
-            ItemTemplate const* itemProto = sObjectMgr->GetItemTemplate(itemId);
-            if (!itemProto)
-                continue;
-
-            if (itemCount < 1 || (itemProto->MaxCount > 0 && itemCount > uint32(itemProto->MaxCount)))
-                continue;
-
-            while (itemCount > itemProto->GetMaxStackSize())
+            do
             {
-                items.push_back(ItemPair(itemId, itemProto->GetMaxStackSize()));
-                itemCount -= itemProto->GetMaxStackSize();
+                Field* fields = result->Fetch();
+
+                uint32 itemId = fields[0].GetUInt32();
+                uint16 itemCount = fields[1].GetUInt16();
+
+                ItemTemplate const* itemProto = sObjectMgr->GetItemTemplate(itemId);
+                if (!itemProto)
+                    continue;
+
+                if (itemCount < 1 || (itemProto->MaxCount > 0 && itemCount > uint32(itemProto->MaxCount)))
+                    continue;
+
+                while (itemCount > itemProto->GetMaxStackSize())
+                {
+                    items.push_back(ItemPair(itemId, itemProto->GetMaxStackSize()));
+                    itemCount -= itemProto->GetMaxStackSize();
+                }
+
+                items.push_back(ItemPair(itemId, itemCount));
+
+                if (items.size() > MAX_MAIL_ITEMS)
+                {
+                    player->CLOSE_GOSSIP_MENU();
+                    return;
+                }
             }
+            while (result->NextRow());
 
-            items.push_back(ItemPair(itemId, itemCount));
-
-            if (items.size() > MAX_MAIL_ITEMS)
+            for (ItemPairs::const_iterator itr = items.begin(); itr != items.end(); ++itr)
             {
-                player->CLOSE_GOSSIP_MENU();
-                return;
-            }
-        }
-        while (result->NextRow());
-
-        //sLog->outError("AllCreatureCode: create mail");
-
-        MailDraft draft(subject, text);
-
-        SQLTransaction trans = CharacterDatabase.BeginTransaction();
-
-        for (ItemPairs::const_iterator itr = items.begin(); itr != items.end(); ++itr)
-        {
-            if (Item* item = Item::CreateItem(itr->first, itr->second, 0))
-            {
-                item->SaveToDB(trans);                               // save for prevent lost at next mail load, if send fail then item will deleted
-                draft.AddItem(item);
+                if (Item* item = Item::CreateItem(itr->first, itr->second, 0))
+                {
+                    item->SaveToDB(trans);
+                    draft.AddItem(item);
+                }
             }
         }
 
@@ -172,7 +158,6 @@ class Mod_SpecialCode_AllCreatureScript : public AllCreatureScript
         draft.SendMailTo(trans, MailReceiver(player, GUID_LOPART(guid)), MailSender(MAIL_NORMAL, 0, MAIL_STATIONERY_GM));
         CharacterDatabase.CommitTransaction(trans);
         player->CLOSE_GOSSIP_MENU();
-        //sLog->outError("AllCreatureCode: end.");
     }
 
 };

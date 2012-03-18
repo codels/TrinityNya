@@ -40,19 +40,19 @@ void AHLoadFromDB()
     sLog->outString("Loading AuctionBot...");
     uint32 oldMSTime = getMSTime();
 
-    QueryResult resultAu = CharacterDatabase.PQuery("SELECT `i`.`itemEntry`, COUNT(*) FROM `auctionhouse` `a`, `item_instance` `i` WHERE `a`.`itemguid` = `i`.`guid` GROUP BY `i`.`itemEntry`");
-    if (resultAu)
+    QueryResult result = CharacterDatabase.PQuery("SELECT `i`.`itemEntry`, COUNT(*) FROM `auctionhouse` `a`, `item_instance` `i` WHERE `a`.`itemguid` = `i`.`guid` GROUP BY `i`.`itemEntry`");
+    if (result)
     {
         do
         {
-            Field* fields = resultAu->Fetch();
+            Field* fields = result->Fetch();
             AHItemList[fields[0].GetUInt32()] = fields[1].GetUInt32();
         }
-        while (resultAu->NextRow());
+        while (result->NextRow());
     }
 
 
-    QueryResult result = WorldDatabase.PQuery("SELECT `ItemId`, `ItemCount`, `ItemStack`, `StartBind`, `BuyOut` FROM `world_auction`");
+    result = WorldDatabase.PQuery("SELECT `ItemId`, `ItemCount`, `ItemStack`, `StartBind`, `BuyOut` FROM `world_auction`");
 
     if (!result)
         return;

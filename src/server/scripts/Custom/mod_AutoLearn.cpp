@@ -41,7 +41,8 @@ class Mod_AutoLearn_WorldScript : public WorldScript
         OnLevelSpellMask = 0;
         OnSkillSpellMask = 0;
 
-        if (ConfigMgr::GetBoolDefault("AutoLearn.Check.Level", false)) {
+        if (ConfigMgr::GetBoolDefault("AutoLearn.Check.Level", false))
+        {
             if (ConfigMgr::GetBoolDefault("AutoLearn.SpellClass", false)) OnLevelSpellMask += SPELL_MASK_CLASS;
             if (ConfigMgr::GetBoolDefault("AutoLearn.SpellRiding", false)) OnLevelSpellMask += SPELL_MASK_RIDING;
             if (ConfigMgr::GetBoolDefault("AutoLearn.SpellMount", false)) OnLevelSpellMask += SPELL_MASK_MOUNT;

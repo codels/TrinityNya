@@ -5,6 +5,7 @@
 
 struct FriendChatInfo
 {
+    FriendChatInfo() : enable(false) {}
     bool enable;
 };
 
@@ -62,10 +63,7 @@ public:
 class Mod_FriendChat_PlayerScript : public PlayerScript
 {
     public:
-        Mod_FriendChat_PlayerScript()
-            : PlayerScript("Mod_FriendChat_PlayerScript")
-        {
-        }
+        Mod_FriendChat_PlayerScript() : PlayerScript("Mod_FriendChat_PlayerScript") { }
 
     void OnLogin(Player* player)
     {
@@ -80,10 +78,7 @@ class Mod_FriendChat_PlayerScript : public PlayerScript
 
     void OnChat(Player* player, uint32 /*type*/, uint32 /*lang*/, std::string& msg, Player* receiver)
     {
-        if (!FriendChat[receiver->GetGUID()].enable)
-            return;
-
-        if (receiver->GetSocial()->HasFriend(player->GetGUID()))
+        if (!receiver || !FriendChat[receiver->GetGUID()].enable || receiver->GetSocial()->HasFriend(player->GetGUID()))
             return;
 
         msg = "";
