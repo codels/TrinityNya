@@ -8,10 +8,11 @@
 
 struct AHItemInfo
 {
+    AHItemInfo() : ItemId(0), ItemCount(0), CurrentCount(0), ItemStack(0), StartBind(0), BuyOut(0) { }
     uint32  ItemId;
-    uint16  ItemCount;
-    uint16  CurrentCount;
-    uint16  ItemStack;
+    uint32  ItemCount;
+    uint32  CurrentCount;
+    uint32  ItemStack;
     uint32  StartBind;
     uint32  BuyOut;
 };
@@ -29,7 +30,7 @@ Player* AHPlayer = NULL;
 AuctionHouseEntry const* AHEntry = NULL;
 AuctionHouseObject* AuctionHouse = NULL;
 
-std::map<uint32, uint16> AHItemList;
+std::map<uint32, uint32> AHItemList;
 
 void AHLoadFromDB()
 {
@@ -45,7 +46,7 @@ void AHLoadFromDB()
         do
         {
             Field* fields = resultAu->Fetch();
-            AHItemList[fields[0].GetUInt32()] = fields[1].GetUInt16();
+            AHItemList[fields[0].GetUInt32()] = fields[1].GetUInt32();
         }
         while (resultAu->NextRow());
     }
@@ -56,7 +57,7 @@ void AHLoadFromDB()
     if (!result)
         return;
 
-    uint16 count = 0;
+    uint32 count = 0;
 
     do
     {
@@ -65,8 +66,8 @@ void AHLoadFromDB()
         AHItemInfo info;
 
         info.ItemId         = fields[0].GetUInt32();
-        info.ItemCount      = fields[1].GetUInt16();
-        info.ItemStack      = fields[2].GetUInt16();
+        info.ItemCount      = fields[1].GetUInt32();
+        info.ItemStack      = fields[2].GetUInt32();
         info.StartBind      = fields[3].GetUInt32();
         info.BuyOut         = fields[4].GetUInt32();
         info.CurrentCount   = AHItemList[info.ItemId];
@@ -84,6 +85,12 @@ void AHLoadFromDB()
             info.ItemStack = itemTemplate->GetMaxStackSize();
         }
 
+        if (info.ItemStack == 0)
+        {
+            sLog->outError("MOD: AHBot item stack 0 for item %u", info.ItemId);
+            continue;
+        }
+
         AHItems.push_back(info);
         ++count;
     }
@@ -95,6 +102,7 @@ void AHLoadFromDB()
 
 void AHAddItem(AHItemInfo& info)
 {
+    //sLog->outError("MOD: AHAddItem() item %u count %u stack %u bind %u buy %u", info.ItemId, info.ItemCount, info.ItemStack, info.StartBind, info.BuyOut);
     Item* item = Item::CreateItem(info.ItemId, 1, AHPlayer);
 
     if (!item)
@@ -141,22 +149,18 @@ void AuctionHouseCheck()
     if (!AHEnable || !AHEntry || !AuctionHouse || !AHPlayer || AHItems.empty())
         return;
 
+    AuctionHouseTimer.Reset();
     AHItemCountCheck = 0;
 
-    for (uint16 i = 0; i < AHItems.size(); ++i)
+    for (uint32 i = 0; i < AHItems.size(); ++i)
         for (uint32 j = AHItems[i].CurrentCount; j < AHItems[i].ItemCount; j++)
         {
             AHAddItem(AHItems[i]);
             ++AHItemCountCheck;
 
             if (AHItemCountCheck >= AHItemsPerCycle)
-            {
-                j = AHItems[i].ItemCount;
-                i = AHItems.size();
-            }
+                return;
         }
-
-    AuctionHouseTimer.Reset();
 }
 
 class Mod_AuctionHouseBot_AuctionHouseScript : public AuctionHouseScript
@@ -170,7 +174,7 @@ class Mod_AuctionHouseBot_AuctionHouseScript : public AuctionHouseScript
             if (!AHEnable || AHItems.empty())
                 return;
 
-            for (uint16 i = 0; i < AHItems.size(); ++i)
+            for (uint32 i = 0; i < AHItems.size(); ++i)
                 if (AHItems[i].ItemId == entry->item_template)
                 {
                     ++AHItems[i].CurrentCount;
@@ -184,7 +188,7 @@ class Mod_AuctionHouseBot_AuctionHouseScript : public AuctionHouseScript
             if (!AHEnable || AHItems.empty())
                 return;
 
-            for (uint16 i = 0; i < AHItems.size(); ++i)
+            for (uint32 i = 0; i < AHItems.size(); ++i)
                 if (AHItems[i].ItemId == entry->item_template)
                 {
                     if (AHItems[i].CurrentCount > 0)
