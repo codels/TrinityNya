@@ -8,9 +8,6 @@
 #define SPELL_MASK_PROFESSION   16
 #define SPELL_MASK_DUAL_SPEC    32
 
-uint8  OnLevelSpellMask    = 0;
-uint8  OnSkillSpellMask    = 0;
-
 struct LearnSpellForClassInfo
 {
     uint32  SpellId;
@@ -23,6 +20,9 @@ struct LearnSpellForClassInfo
     uint16  RequiredSkillValue;
 };
 
+bool AutoLearnEnable = false;
+uint8 OnLevelSpellMask = 0;
+uint8 OnSkillSpellMask = 0;
 std::vector<LearnSpellForClassInfo> LearnSpellForClass;
 
 class Mod_AutoLearn_WorldScript : public WorldScript
@@ -30,21 +30,23 @@ class Mod_AutoLearn_WorldScript : public WorldScript
     public:
         Mod_AutoLearn_WorldScript() : WorldScript("Mod_AutoLearn_WorldScript") { }
 
+    // Called after the world configuration is (re)loaded.
     void OnConfigLoad(bool /*reload*/)
     {
+        AutoLearnEnable = ConfigMgr::GetBoolDefault("AutoLearn.Enable", false);
+        if (!AutoLearnEnable)
+            return;
+
         uint8 loadSpellMask = OnLevelSpellMask | OnSkillSpellMask;
         OnLevelSpellMask = 0;
         OnSkillSpellMask = 0;
 
-        if (!ConfigMgr::GetBoolDefault("AutoLearn.Enable", true))
-            return;
-
-        if (ConfigMgr::GetBoolDefault("AutoLearn.Check.Level", true)) {
-            if (ConfigMgr::GetBoolDefault("AutoLearn.SpellClass", true)) OnLevelSpellMask += SPELL_MASK_CLASS;
-            if (ConfigMgr::GetBoolDefault("AutoLearn.SpellRiding", true)) OnLevelSpellMask += SPELL_MASK_RIDING;
-            if (ConfigMgr::GetBoolDefault("AutoLearn.SpellMount", true)) OnLevelSpellMask += SPELL_MASK_MOUNT;
-            if (ConfigMgr::GetBoolDefault("AutoLearn.SpellWeapon", true)) OnLevelSpellMask += SPELL_MASK_WEAPON;
-            if (ConfigMgr::GetBoolDefault("AutoLearn.DualSpec", true)) OnLevelSpellMask += SPELL_MASK_DUAL_SPEC;
+        if (ConfigMgr::GetBoolDefault("AutoLearn.Check.Level", false)) {
+            if (ConfigMgr::GetBoolDefault("AutoLearn.SpellClass", false)) OnLevelSpellMask += SPELL_MASK_CLASS;
+            if (ConfigMgr::GetBoolDefault("AutoLearn.SpellRiding", false)) OnLevelSpellMask += SPELL_MASK_RIDING;
+            if (ConfigMgr::GetBoolDefault("AutoLearn.SpellMount", false)) OnLevelSpellMask += SPELL_MASK_MOUNT;
+            if (ConfigMgr::GetBoolDefault("AutoLearn.SpellWeapon", false)) OnLevelSpellMask += SPELL_MASK_WEAPON;
+            if (ConfigMgr::GetBoolDefault("AutoLearn.DualSpec", false)) OnLevelSpellMask += SPELL_MASK_DUAL_SPEC;
         }
 
         if (ConfigMgr::GetBoolDefault("AutoLearn.SpellProfession", false))
@@ -54,14 +56,13 @@ class Mod_AutoLearn_WorldScript : public WorldScript
             LoadDataFromDataBase();
     }
 
-    void Clear()
-    {
-        LearnSpellForClass.clear();
-    }
-
     void LoadDataFromDataBase()
     {
-        Clear();
+        LearnSpellForClass.clear();
+        uint8 spellMask = OnLevelSpellMask | OnSkillSpellMask;
+
+        if (spellMask == 0)
+            return;
 
         sLog->outString();
         sLog->outString("Loading AutoLearn...");
@@ -73,7 +74,6 @@ class Mod_AutoLearn_WorldScript : public WorldScript
             return;
 
         uint16 count = 0;
-        uint8 spellMask = OnLevelSpellMask | OnSkillSpellMask;
 
         do
         {
@@ -131,18 +131,23 @@ class Mod_AutoLearn_WorldScript : public WorldScript
 class Mod_AutoLearn_PlayerScript : public PlayerScript
 {
     public:
-        Mod_AutoLearn_PlayerScript()
-            : PlayerScript("Mod_AutoLearn_PlayerScript")
-        {
-        }
+        Mod_AutoLearn_PlayerScript() : PlayerScript("Mod_AutoLearn_PlayerScript") { }
 
+    // Called when a player's level changes (right before the level is applied)
     void OnLevelChanged(Player* Player, uint8 /*oldLevel*/)
     {
+        if (!AutoLearnEnable)
+            return;
+
         AutoLearnSpell(OnLevelSpellMask, Player);
     }
 
+    // Called when a player skill update
     void OnPlayerSkillUpdate(Player* Player, uint16 SkillId, uint16 /*SkillValue*/, uint16 SkillNewValue)
     {
+        if (!AutoLearnEnable)
+            return;
+
         AutoLearnSpell(OnSkillSpellMask, Player, SkillId, SkillNewValue);
     }
 
@@ -189,6 +194,6 @@ class Mod_AutoLearn_PlayerScript : public PlayerScript
 
 void AddSC_Mod_AutoLearn()
 {
-    new Mod_AutoLearn_PlayerScript;
-    new Mod_AutoLearn_WorldScript;
+    new Mod_AutoLearn_PlayerScript();
+    new Mod_AutoLearn_WorldScript();
 }

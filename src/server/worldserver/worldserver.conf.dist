@@ -3032,6 +3032,23 @@ AuctionHouseBot.AccountId = 0
 
 #######################################################################
 
+#on/off autolearn
+AutoLearn.Enable = 0
+#check all spell when up level
+AutoLearn.Check.Level = 0
+#check class spell
+AutoLearn.SpellClass = 0
+#check riding spell
+AutoLearn.SpellRiding = 0
+#check mount spell
+AutoLearn.SpellMount = 0
+#check weapon spell
+AutoLearn.SpellWeapon = 0
+#check dual spec
+AutoLearn.DualSpec = 0
+
+#######################################################################
+
 MultiKill.Enable = 1
 MultiKill.BattleGroundOnly = 1
 MultiKill.Log = 1
