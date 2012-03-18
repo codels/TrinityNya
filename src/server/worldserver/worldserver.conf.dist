@@ -3018,6 +3018,20 @@ OutdoorPvP.Wintergrasp.Antifarm.Def = 1
 #logging create/delete/login/logout characters
 AccountHistory.Enable = 0
 
+#######################################################################
+
+#on/off auctionhousebot
+AuctionHouseBot.Enable = 0
+#check interval(in minutes)
+AuctionHouseBot.Interval = 5
+#check max item
+AuctionHouseBot.ItemsPerCycle = 100
+#character
+AuctionHouseBot.PlayerGuid = 0
+AuctionHouseBot.AccountId = 0
+
+#######################################################################
+
 MultiKill.Enable = 1
 MultiKill.BattleGroundOnly = 1
 MultiKill.Log = 1

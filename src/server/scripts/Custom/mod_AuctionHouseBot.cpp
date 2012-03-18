@@ -20,7 +20,7 @@ bool AHEnable = false;
 int AHInterval = 5;
 uint32 AHPlayerGuid = 0;
 uint32 AHAccountId = 0;
-uint32 AHItemMaxForCheck = 100;
+uint32 AHItemsPerCycle = 100;
 uint32 AHItemCountCheck = 0;
 IntervalTimer AuctionHouseTimer;
 std::vector<AHItemInfo> AHItems;
@@ -82,8 +82,6 @@ void AHLoadFromDB()
 
 void AHAddItem(AHItemInfo& info)
 {
-    //sLog->outError("MOD: AHAddItem() item: %u", info.ItemId);
-
     Item* item = Item::CreateItem(info.ItemId, 1, AHPlayer);
 
     if (!item)
@@ -127,12 +125,9 @@ void AHAddItem(AHItemInfo& info)
 
 void AuctionHouseCheck()
 {
-    //sLog->outError("AuctionHouseCheck %u", AHEnable ? 1 : 0);
-
     if (!AHEnable || !AHEntry || !AuctionHouse || AHItems.empty())
         return;
 
-    //sLog->outError("AuctionHouseCheck start...");
     AHItemCountCheck = 0;
 
     for (uint16 i = 0; i < AHItems.size(); ++i)
@@ -141,7 +136,7 @@ void AuctionHouseCheck()
             AHAddItem(AHItems[i]);
             ++AHItemCountCheck;
 
-            if (AHItemCountCheck >= AHItemMaxForCheck)
+            if (AHItemCountCheck >= AHItemsPerCycle)
             {
                 j = AHItems[i].ItemCount;
                 i = AHItems.size();
@@ -191,16 +186,17 @@ class Mod_AuctionHouseBot_WorldScript : public WorldScript
     public:
         Mod_AuctionHouseBot_WorldScript() : WorldScript("Mod_AuctionHouseBot_WorldScript") { }
 
+    // Called after the world configuration is (re)loaded.
     void OnConfigLoad(bool reload)
     {
-        AHEnable            = ConfigMgr::GetBoolDefault("AuctionHouseBot.Enable", false);
-
+        AHEnable        = ConfigMgr::GetBoolDefault("AuctionHouseBot.Enable", false);
         if (!AHEnable)
             return;
 
         AHInterval      = ConfigMgr::GetIntDefault("AuctionHouseBot.Interval", 5);
         AHPlayerGuid    = ConfigMgr::GetIntDefault("AuctionHouseBot.PlayerGuid", 0);
         AHAccountId     = ConfigMgr::GetIntDefault("AuctionHouseBot.AccountId", 0);
+        AHItemsPerCycle = ConfigMgr::GetIntDefault("AuctionHouseBot.ItemsPerCycle", 100);
 
         AuctionHouseTimer.SetInterval(AHInterval * MINUTE * IN_MILLISECONDS);
         AuctionHouseTimer.Reset();
@@ -283,6 +279,6 @@ class Mod_AuctionHouseBot_WorldScript : public WorldScript
 
 void AddSC_Mod_AuctionHouseBot()
 {
-    new Mod_AuctionHouseBot_WorldScript;
-    new Mod_AuctionHouseBot_AuctionHouseScript;
+    new Mod_AuctionHouseBot_WorldScript();
+    new Mod_AuctionHouseBot_AuctionHouseScript();
 }
