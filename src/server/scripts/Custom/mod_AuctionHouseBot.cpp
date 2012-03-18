@@ -71,6 +71,19 @@ void AHLoadFromDB()
         info.BuyOut         = fields[4].GetUInt32();
         info.CurrentCount   = AHItemList[info.ItemId];
 
+        ItemTemplate const* itemTemplate = sObjectMgr->GetItemTemplate(info.ItemId);
+        if (!itemTemplate)
+        {
+            sLog->outError("MOD: AHBot item proto not found for item %u", info.ItemId);
+            continue;
+        }
+
+        if (info.ItemStack > itemTemplate->GetMaxStackSize())
+        {
+            sLog->outError("MOD: AHBot item stack %u > max stack %u for item %u", info.ItemStack, itemTemplate->GetMaxStackSize(), info.ItemId);
+            info.ItemStack = itemTemplate->GetMaxStackSize();
+        }
+
         AHItems.push_back(info);
         ++count;
     }
@@ -125,7 +138,7 @@ void AHAddItem(AHItemInfo& info)
 
 void AuctionHouseCheck()
 {
-    if (!AHEnable || !AHEntry || !AuctionHouse || AHItems.empty())
+    if (!AHEnable || !AHEntry || !AuctionHouse || !AHPlayer || AHItems.empty())
         return;
 
     AHItemCountCheck = 0;

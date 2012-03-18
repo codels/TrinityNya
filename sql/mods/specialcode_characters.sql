@@ -32,3 +32,8 @@ CREATE TABLE `world_coded_items` (
   `ItemRaceMask` int(10) unsigned NOT NULL DEFAULT '0',
   PRIMARY KEY (`CodeId`,`ItemId`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+
+ALTER TABLE `world_coded`
+ADD COLUMN `Comment`  varchar(255) NOT NULL AFTER `MaxCountTotal`;
+ALTER TABLE `world_coded_items`
+ADD COLUMN `Comment`  varchar(255) NOT NULL AFTER `ItemRaceMask`;
