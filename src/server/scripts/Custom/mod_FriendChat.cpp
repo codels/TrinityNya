@@ -1,4 +1,5 @@
 #include "SocialMgr.h"
+#include "Config.h"
 
 #define LANG_FC_ON      15000
 #define LANG_FC_OFF     15001
