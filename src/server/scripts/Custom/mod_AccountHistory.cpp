@@ -12,7 +12,7 @@ enum AccountHistoryType
     ACCOUNT_HISTORY_CREATE  = 4
 };
 
-bool accountHistoryEnable = true;
+bool accountHistoryEnable = false;
 
 void WriteToHistory(Player* player, uint8 historyType)
 {
@@ -30,7 +30,7 @@ class Mod_AccountHistory_WorldScript : public WorldScript
 
     void OnConfigLoad(bool /*reload*/)
     {
-        accountHistoryEnable = ConfigMgr::GetBoolDefault("AccountHistory.Enable", true);
+        accountHistoryEnable = ConfigMgr::GetBoolDefault("AccountHistory.Enable", false);
     }
 
 };
