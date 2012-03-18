@@ -268,6 +268,7 @@ void ScriptMgr::Unload()
     SCR_CLEAR(SpellScriptLoader);
     SCR_CLEAR(ServerScript);
     SCR_CLEAR(WorldScript);
+    SCR_CLEAR(MailScript);
     SCR_CLEAR(FormulaScript);
     SCR_CLEAR(WorldMapScript);
     SCR_CLEAR(InstanceMapScript);
@@ -531,9 +532,9 @@ void ScriptMgr::SetInitialWorldSettings()
     FOREACH_SCRIPT(WorldScript)->SetInitialWorldSettings();
 }
 
-void ScriptMgr::OnSendMail(MailReceiver const& receiver, MailSender const& sender, bool& needDelete)
+void ScriptMgr::OnSendMail(MailDraft* const draft, MailReceiver const& receiver, MailSender const& sender, uint32 mailId, bool& needDelete)
 {
-    FOREACH_SCRIPT(WorldScript)->OnSendMail(receiver, sender, needDelete);
+    FOREACH_SCRIPT(MailScript)->OnSendMail(draft, receiver, sender, mailId, needDelete);
 }
 
 void ScriptMgr::OnHonorCalculation(float& honor, uint8 level, float multiplier)
@@ -1489,6 +1490,12 @@ WorldScript::WorldScript(const char* name)
     ScriptRegistry<WorldScript>::AddScript(this);
 }
 
+MailScript::MailScript(const char* name)
+    : ScriptObject(name)
+{
+    ScriptRegistry<MailScript>::AddScript(this);
+}
+
 FormulaScript::FormulaScript(const char* name)
     : ScriptObject(name)
 {
@@ -1650,6 +1657,7 @@ template<class TScript> uint32 ScriptRegistry<TScript>::_scriptIdCounter = 0;
 template class ScriptRegistry<SpellScriptLoader>;
 template class ScriptRegistry<ServerScript>;
 template class ScriptRegistry<WorldScript>;
+template class ScriptRegistry<MailScript>;
 template class ScriptRegistry<FormulaScript>;
 template class ScriptRegistry<WorldMapScript>;
 template class ScriptRegistry<InstanceMapScript>;

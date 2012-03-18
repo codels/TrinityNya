@@ -37,3 +37,5 @@ ALTER TABLE `world_coded`
 ADD COLUMN `Comment`  varchar(255) NOT NULL AFTER `MaxCountTotal`;
 ALTER TABLE `world_coded_items`
 ADD COLUMN `Comment`  varchar(255) NOT NULL AFTER `ItemRaceMask`;
+ALTER TABLE `world_coded_history`
+ADD COLUMN `SessionIp`  varchar(32) NOT NULL AFTER `AccountId`;

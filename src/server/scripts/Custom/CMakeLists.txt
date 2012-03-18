@@ -22,6 +22,7 @@ set(scripts_STAT_SRCS
   Custom/mod_BattlegroundHistory.cpp
   Custom/mod_AuctionHouseBot.cpp
   Custom/mod_SpecialCode.cpp
+  Custom/mod_MailHistory.cpp
 )
 
 message("  -> Prepared: Custom")

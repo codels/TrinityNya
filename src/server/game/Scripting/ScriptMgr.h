@@ -275,8 +275,17 @@ class WorldScript : public ScriptObject
 
         // Called at End of SetInitialWorldSettings.
         virtual void SetInitialWorldSettings() { }
+};
 
-        virtual void OnSendMail(MailReceiver const& /*receiver*/, MailSender const& /*sender*/, bool& /*needDelete*/) { }
+class MailScript : public ScriptObject
+{
+    protected:
+
+        MailScript(const char* name);
+
+    public:
+               
+        virtual void OnSendMail(MailDraft* const /*draft*/, MailReceiver const& /*receiver*/, MailSender const& /*sender*/, uint32 /*mailId*/, bool& /*needDelete*/) { }
 };
 
 class FormulaScript : public ScriptObject
@@ -918,7 +927,10 @@ class ScriptMgr
         void OnStartup();
         void OnShutdown();
         void SetInitialWorldSettings();
-        void OnSendMail(MailReceiver const& receiver, MailSender const& sender, bool& needDelete);
+
+    public: /* MailScript*/
+
+        void OnSendMail(MailDraft* const draft, MailReceiver const& receiver, MailSender const& sender, uint32 mailId, bool& needDelete);
 
     public: /* FormulaScript */
 

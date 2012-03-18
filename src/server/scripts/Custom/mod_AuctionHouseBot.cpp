@@ -286,8 +286,14 @@ class Mod_AuctionHouseBot_WorldScript : public WorldScript
         if (AuctionHouseTimer.Passed())
             AuctionHouseCheck();
     }
+};
 
-    void OnSendMail(MailReceiver const& receiver, MailSender const& /*sender*/, bool& needDelete)
+class Mod_AuctionHouseBot_MailScript : public MailScript
+{
+    public:
+        Mod_AuctionHouseBot_MailScript() : MailScript("Mod_AuctionHouseBot_MailScript") { }
+
+    void OnSendMail(MailDraft* const /*draft*/, MailReceiver const& receiver, MailSender const& /*sender*/, uint32 /*mailId*/, bool& needDelete)
     {
         if (!needDelete && receiver.GetPlayerGUIDLow() == AHPlayerGuid)
             needDelete = true;
@@ -298,4 +304,5 @@ void AddSC_Mod_AuctionHouseBot()
 {
     new Mod_AuctionHouseBot_WorldScript();
     new Mod_AuctionHouseBot_AuctionHouseScript();
+    new Mod_AuctionHouseBot_MailScript();
 }

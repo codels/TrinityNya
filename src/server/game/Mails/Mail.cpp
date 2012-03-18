@@ -180,11 +180,11 @@ void MailDraft::SendMailTo(SQLTransaction& trans, MailReceiver const& receiver, 
     uint32 mailId = sObjectMgr->GenerateMailID();
     bool needDelete = false;
 
-    sScriptMgr->OnSendMail(receiver, sender, needDelete);
+    sScriptMgr->OnSendMail(this, receiver, sender, mailId, needDelete);
 
     if (needDelete)
     {
-        if (sender.GetMailMessageType() == MAIL_AUCTION)        // auction mail with items
+        if (!m_items.empty())
             deleteIncludedItems(trans, true);
         return;
     }
