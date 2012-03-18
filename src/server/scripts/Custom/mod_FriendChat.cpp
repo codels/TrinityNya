@@ -9,8 +9,21 @@ struct FriendChatInfo
     bool enable;
 };
 
+bool friendChatEnable = false;
 typedef std::map<uint32, FriendChatInfo> FriendChatMap;
 FriendChatMap FriendChat;
+
+class Mod_FriendChat_WorldScript : public WorldScript
+{
+    public:
+        Mod_FriendChat_WorldScript() : WorldScript("Mod_FriendChat_WorldScript") { }
+
+    // Called after the world configuration is (re)loaded.
+    void OnConfigLoad(bool /*reload*/)
+    {
+        friendChatEnable = ConfigMgr::GetBoolDefault("FriendChat", false);
+    }
+};
 
 class Mod_FriendChat_CommandScript : public CommandScript
 {
@@ -29,33 +42,32 @@ public:
 
     static bool HandleFriendChatCommand(ChatHandler* handler, char const* args)
     {
-        if (!*args)
+        if (!friendChatEnable || !*args)
             return false;
 
         std::string param = (char*)args;
 
-        uint32 guid = handler->GetSession()->GetPlayer()->GetGUID();
-
         if (param == "on")
         {
-            FriendChat[guid].enable = true;
+            FriendChat[handler->GetSession()->GetPlayer()->GetGUID()].enable = true;
             handler->SendSysMessage(LANG_FC_ON);
             return true;
         }
-
-        if (param == "off")
+        else if (param == "off")
         {
-            FriendChat[guid].enable = false;
+            FriendChat[handler->GetSession()->GetPlayer()->GetGUID()].enable = false;
             handler->SendSysMessage(LANG_FC_OFF);
             return true;
         }
-
-        if (FriendChat[guid].enable)
-            handler->SendSysMessage(LANG_FC_ON);
         else
-            handler->SendSysMessage(LANG_FC_OFF);
+        {
+            if (FriendChat[handler->GetSession()->GetPlayer()->GetGUID()].enable)
+                handler->SendSysMessage(LANG_FC_ON);
+            else
+                handler->SendSysMessage(LANG_FC_OFF);
 
-        return true;
+            return true;
+        }
     }
 };
 
@@ -65,27 +77,33 @@ class Mod_FriendChat_PlayerScript : public PlayerScript
     public:
         Mod_FriendChat_PlayerScript() : PlayerScript("Mod_FriendChat_PlayerScript") { }
 
+    // Called when a player logs in.
     void OnLogin(Player* player)
     {
-        uint32 guid = player->GetGUID();
+        if (!friendChatEnable)
+            return;
 
-        QueryResult rslt = CharacterDatabase.PQuery("SELECT `guid` FROM `character_friend_chat` WHERE `guid` = '%u'", guid);
-        if (rslt)
-            FriendChat[guid].enable = true;
+        if (QueryResult result = CharacterDatabase.PQuery("SELECT `guid` FROM `character_friend_chat` WHERE `guid` = '%u'", player->GetGUID()))
+            FriendChat[player->GetGUID()].enable = true;
         else
-            FriendChat[guid].enable = false;
+            FriendChat[player->GetGUID()].enable = false;
     }
 
+    // The following methods are called when a player sends a chat message.
     void OnChat(Player* player, uint32 /*type*/, uint32 /*lang*/, std::string& msg, Player* receiver)
     {
-        if (!receiver || !FriendChat[receiver->GetGUID()].enable || receiver->GetSocial()->HasFriend(player->GetGUID()))
+        if (!friendChatEnable || !receiver || !FriendChat[receiver->GetGUID()].enable || receiver->GetSocial()->HasFriend(player->GetGUID()))
             return;
 
         msg = "";
     }
 
+    // Called when a player logs out.
     void OnLogout(Player* player)
     {
+        if (!friendChatEnable)
+            return;
+
         uint32 guid = player->GetGUID();
 
         if (FriendChat[guid].enable)
@@ -113,6 +131,7 @@ class Mod_FriendChat_PlayerScript : public PlayerScript
 
 void AddSC_Mod_FriendChat()
 {
+    new Mod_FriendChat_WorldScript();
     new Mod_FriendChat_CommandScript();
     new Mod_FriendChat_PlayerScript();
 }

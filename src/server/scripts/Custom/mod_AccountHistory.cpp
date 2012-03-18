@@ -32,7 +32,6 @@ class Mod_AccountHistory_WorldScript : public WorldScript
     {
         accountHistoryEnable = ConfigMgr::GetBoolDefault("AccountHistory.Enable", false);
     }
-
 };
 
 class Mod_AccountHistory_PlayerScript : public PlayerScript

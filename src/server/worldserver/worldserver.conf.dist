@@ -3049,6 +3049,11 @@ AutoLearn.DualSpec = 0
 
 #######################################################################
 
+#on/off friendchat
+FriendChat = 0
+
+#######################################################################
+
 MultiKill.Enable = 1
 MultiKill.BattleGroundOnly = 1
 MultiKill.Log = 1
