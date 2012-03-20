@@ -6,7 +6,7 @@
 
 #define SQL_HISTORY "INSERT INTO world_battleground (MapId, BattleTypeId, BattleIsArena, BattleIsRated, BattleTime, WinnerGuildId, WinnerCount, WinnerData, LooserGuildId, LooserCount, LooserData, WinnerTeam, BattleBracket, BattleLevelMin, BattleLevelMax, WinnerArenaTeamId, LooserArenaTeamId) VALUES ('%u', '%u', '%u', '%u', '%u', '%u', '%u', '%s', '%u', '%u', '%s', '%u', '%u', '%u', '%u', '%u', '%u')"
 
-bool BGHistoryEnable = true;
+bool BGHistoryEnable = false;
 int32 BGHistoryGuildWinText = 11100;
 int32 BGHistoryGuildLooseText = 11101;
 int32 BGHistoryGuildWinLooseText = 11102;
@@ -18,9 +18,8 @@ class Mod_BattlegroundHistory_WorldScript : public WorldScript
 
     void OnConfigLoad(bool /*reload*/)
     {
-        BGHistoryEnable = ConfigMgr::GetBoolDefault("BattlegroundHistory.Enable", true);
+        BGHistoryEnable = ConfigMgr::GetBoolDefault("BattlegroundHistory.Enable", false);
     }
-
 };
 
 class Mod_BattlegroundHistory_AllBattlegroundScript : public AllBattlegroundScript
@@ -150,9 +149,8 @@ class Mod_BattlegroundHistory_AllBattlegroundScript : public AllBattlegroundScri
     }
 };
 
-
 void AddSC_Mod_BattlegroundHistory()
 {
-    new Mod_BattlegroundHistory_WorldScript;
-    new Mod_BattlegroundHistory_AllBattlegroundScript;
+    new Mod_BattlegroundHistory_WorldScript();
+    new Mod_BattlegroundHistory_AllBattlegroundScript();
 }

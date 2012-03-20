@@ -3064,6 +3064,11 @@ MailHistory.Item = 0
 
 #######################################################################
 
+#on/off battleground history
+BattlegroundHistory.Enable = 0
+
+#######################################################################
+
 MultiKill.Enable = 1
 MultiKill.BattleGroundOnly = 1
 MultiKill.Log = 1
