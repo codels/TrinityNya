@@ -22,9 +22,9 @@ class Mod_MailHistory_MailScript : public MailScript
     public:
         Mod_MailHistory_MailScript() : MailScript("Mod_MailHistory_MailScript") { }
 
-    void OnSendMail(MailDraft* const draft, MailReceiver const& receiver, MailSender const& sender, uint32 mailId, bool& /*needDelete*/)
+    void OnSendMail(MailDraft* const draft, MailReceiver const& receiver, MailSender const& sender, uint32 mailId, bool& needDelete)
     {
-        if (!mailHistoryEnable)
+        if (!mailHistoryEnable || needDelete)
             return;
 
         CharacterDatabase.PExecute(SQL_HISTORY,
