@@ -3054,6 +3054,16 @@ FriendChat = 0
 
 #######################################################################
 
+#on/off mailhistory
+MailHistory.Enable = 0
+MailHistory.Normal = 0
+MailHistory.Auction = 0
+MailHistory.Creature = 0
+MailHistory.Gameobject = 0
+MailHistory.Item = 0
+
+#######################################################################
+
 MultiKill.Enable = 1
 MultiKill.BattleGroundOnly = 1
 MultiKill.Log = 1
