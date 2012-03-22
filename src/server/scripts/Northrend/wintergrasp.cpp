@@ -37,9 +37,7 @@ bool OnGossipHello(Player* pPlayer, Creature* pCreature)
     if (pCreature->isQuestGiver())
         pPlayer->PrepareQuestMenu(pCreature->GetGUID());
 
-    ZoneScript* zoneScript = sOutdoorPvPMgr->GetZoneScript(pCreature->GetZoneId());
-
-    if(pPlayer->isGameMaster() || (zoneScript && zoneScript->GetData(pCreature->GetDBTableGUIDLow())))
+    if(pPlayer->isGameMaster() || (pCreature->GetZoneScript() && pCreature->GetZoneScript()->GetData(pCreature->GetDBTableGUIDLow())))
     {
         if (pPlayer->HasAura(SPELL_CORPORAL))
             pPlayer->ADD_GOSSIP_ITEM(GOSSIP_ICON_CHAT, GOSSIP_HELLO_DEMO1, GOSSIP_SENDER_MAIN,   GOSSIP_ACTION_INFO_DEF);

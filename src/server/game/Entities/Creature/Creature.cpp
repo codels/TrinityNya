@@ -759,6 +759,9 @@ bool Creature::Create(uint32 guidlow, Map* map, uint32 phaseMask, uint32 Entry, 
         return false;
     }
 
+    // need call before CreateFromProto
+    Relocate(x, y, z, ang);
+
     //oX = x;     oY = y;    dX = x;    dY = y;    m_moveTime = 0;    m_startMove = 0;
     if (!CreateFromProto(guidlow, Entry, vehId, team, data))
         return false;
@@ -766,8 +769,6 @@ bool Creature::Create(uint32 guidlow, Map* map, uint32 phaseMask, uint32 Entry, 
     //! Need to be called after CreateFromProto
     if (HasUnitMovementFlag(MOVEMENTFLAG_HOVER))
         z += GetFloatValue(UNIT_FIELD_HOVERHEIGHT);
-
-    Relocate(x, y, z, ang);
 
     if (!IsPositionValid())
     {
