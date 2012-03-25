@@ -32,6 +32,7 @@ void AddSC_Mod_BattlegroundHistory();
 void AddSC_Mod_AuctionHouseBot();
 void AddSC_Mod_SpecialCode();
 void AddSC_Mod_MailHistory();
+void AddSC_NPC_ArenaWatcher(); // by @FrozenSouL
 
 //examples
 void AddSC_example_creature();
@@ -1270,6 +1271,7 @@ void AddCustomScripts()
     AddSC_Mod_AuctionHouseBot();
     AddSC_Mod_SpecialCode();
     AddSC_Mod_MailHistory();
+    AddSC_NPC_ArenaWatcher();
 
 #endif
 }

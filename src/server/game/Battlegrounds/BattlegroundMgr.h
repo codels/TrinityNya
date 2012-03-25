@@ -130,6 +130,7 @@ class BattlegroundMgr
         static HolidayIds BGTypeToWeekendHolidayId(BattlegroundTypeId bgTypeId);
         static BattlegroundTypeId WeekendHolidayIdToBGType(HolidayIds holiday);
         static bool IsBGWeekend(BattlegroundTypeId bgTypeId);
+        BattlegroundSet GetAllBattlegroundsWithTypeId(BattlegroundTypeId bgTypeId) { return m_Battlegrounds[bgTypeId]; }
     private:
         BattleMastersMap    mBattleMastersMap;
 

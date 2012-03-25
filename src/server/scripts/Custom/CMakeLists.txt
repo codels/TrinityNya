@@ -23,6 +23,7 @@ set(scripts_STAT_SRCS
   Custom/mod_AuctionHouseBot.cpp
   Custom/mod_SpecialCode.cpp
   Custom/mod_MailHistory.cpp
+  Custom/npc_ArenaWatcher.cpp
 )
 
 message("  -> Prepared: Custom")
