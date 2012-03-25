@@ -36,14 +36,14 @@ class npc_arena_watcher : public CreatureScript
         std::stringstream gossip2;
         std::stringstream gossip3;
         std::stringstream gossip5;
-        gossip2 << "Ñìîòðåòü ìàò÷ 2v2 . (" << arenasQty[0] << " Â õîäå èãðà)";
-        gossip3 << "Ñìîòðåòü ìàò÷ 3v3 . (" << arenasQty[1] << " Â õîäå èãðà)";
-        gossip5 << "Ñìîòðåòü ìàò÷ 5v5 . (" << arenasQty[2] << " Â õîäå èãðà)";
+        gossip2 << "Ð¡Ð¼Ð¾Ñ‚Ñ€ÐµÑ‚ÑŒ Ð¼Ð°Ñ‚Ñ‡ 2v2 . (" << arenasQty[0] << " Ð’ Ñ…Ð¾Ð´Ðµ Ð¸Ð³Ñ€Ð°)";
+        gossip3 << "Ð¡Ð¼Ð¾Ñ‚Ñ€ÐµÑ‚ÑŒ Ð¼Ð°Ñ‚Ñ‡ 3v3 . (" << arenasQty[1] << " Ð’ Ñ…Ð¾Ð´Ðµ Ð¸Ð³Ñ€Ð°)";
+        gossip5 << "Ð¡Ð¼Ð¾Ñ‚Ñ€ÐµÑ‚ÑŒ Ð¼Ð°Ñ‚Ñ‡ 5v5 . (" << arenasQty[2] << " Ð’ Ñ…Ð¾Ð´Ðµ Ð¸Ð³Ñ€Ð°)";
 
         player->ADD_GOSSIP_ITEM(GOSSIP_ICON_CHAT, gossip2.str(), GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 2);
         player->ADD_GOSSIP_ITEM(GOSSIP_ICON_CHAT, gossip3.str(), GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 3);
         player->ADD_GOSSIP_ITEM(GOSSIP_ICON_CHAT, gossip5.str(), GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 5);
-        player->ADD_GOSSIP_ITEM_EXTENDED(GOSSIP_ICON_CHAT, "Ñìîòðåòü èãðîêà.", GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 4, "", 0, true);
+        player->ADD_GOSSIP_ITEM_EXTENDED(GOSSIP_ICON_CHAT, "Ð¡Ð¼Ð¾Ñ‚Ñ€ÐµÑ‚ÑŒ Ð¸Ð³Ñ€Ð¾ÐºÐ°.", GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 4, "", 0, true);
         
         player->PlayerTalkClass->SendGossipMenu(player->GetGossipTextId(creature), creature->GetGUID());
         return true;
@@ -79,7 +79,7 @@ class npc_arena_watcher : public CreatureScript
             if (!bracketMatchs)
             {
                 std::stringstream errMsg;
-                errMsg << "Èçâèíèòå " << player->GetName() << ", ïîêà íåòó ìàò÷åâ.";
+                errMsg << "Ð˜Ð·Ð²Ð¸Ð½Ð¸Ñ‚Ðµ " << player->GetName() << ", Ð¿Ð¾ÐºÐ° Ð½ÐµÑ‚Ñƒ Ð¼Ð°Ñ‚Ñ‡ÐµÐ².";
                 creature->MonsterWhisper(errMsg.str().c_str(), player->GetGUID());
                 player->PlayerTalkClass->ClearMenus();
                 player->CLOSE_GOSSIP_MENU();
@@ -119,7 +119,7 @@ class npc_arena_watcher : public CreatureScript
                 if (arenaChosen->GetStatus() != STATUS_NONE && arenaChosen->GetStatus() != STATUS_IN_PROGRESS)
                 {
                     std::stringstream errMsg;
-                    errMsg << "Èçâèíèòå " << player->GetName() << ", àðåíà óæå çàâåðøåí";
+                    errMsg << "Ð˜Ð·Ð²Ð¸Ð½Ð¸Ñ‚Ðµ " << player->GetName() << ", Ð°Ñ€ÐµÐ½Ð° ÑƒÐ¶Ðµ Ð·Ð°Ð²ÐµÑ€ÑˆÐµÐ½";
                     creature->MonsterWhisper(errMsg.str().c_str(), player->GetGUID());
                     player->PlayerTalkClass->ClearMenus();
                     player->CLOSE_GOSSIP_MENU();
@@ -159,19 +159,19 @@ class npc_arena_watcher : public CreatureScript
                     {
                         if (!target->IsInWorld())
                         {
-                            creature->MonsterWhisper("Èçâèíèòå, ÿ íå ìîãó ïîçâîëèòü âàì òåëåïîðòèðîâàòüñÿ â òîì, ÷òî èãðîê", player->GetGUID());
+                            creature->MonsterWhisper("Ð˜Ð·Ð²Ð¸Ð½Ð¸Ñ‚Ðµ, Ñ Ð½Ðµ Ð¼Ð¾Ð³Ñƒ Ð¿Ð¾Ð·Ð²Ð¾Ð»Ð¸Ñ‚ÑŒ Ð²Ð°Ð¼ Ñ‚ÐµÐ»ÐµÐ¿Ð¾Ñ€Ñ‚Ð¸Ñ€Ð¾Ð²Ð°Ñ‚ÑŒÑÑ Ð² Ñ‚Ð¾Ð¼, Ñ‡Ñ‚Ð¾ Ð¸Ð³Ñ€Ð¾Ðº", player->GetGUID());
                             return true;
                         }
 
                         if (!target->InArena())
                         {
-                            creature->MonsterWhisper("Èçâèíèòå, âû ñòîèòå íà ðåãå àðåíå!", player->GetGUID());
+                            creature->MonsterWhisper("Ð˜Ð·Ð²Ð¸Ð½Ð¸Ñ‚Ðµ, Ð²Ñ‹ ÑÑ‚Ð¾Ð¸Ñ‚Ðµ Ð½Ð° Ñ€ÐµÐ³Ðµ Ð°Ñ€ÐµÐ½Ðµ!", player->GetGUID());
                             return true;
                         }
 
                         if (target->isGameMaster())
                         {
-                            creature->MonsterWhisper("Áëà áëà áëà !", player->GetGUID());
+                            creature->MonsterWhisper("Ð‘Ð»Ð° Ð±Ð»Ð° Ð±Ð»Ð° !", player->GetGUID());
                             return true;
                         }
 
