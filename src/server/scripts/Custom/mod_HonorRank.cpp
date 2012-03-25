@@ -28,10 +28,10 @@ ttlForPvP ttl[] =
     {50000, 14, 28} // 13
 };
 
-bool HonorRankEnable        = true;
-bool HonorRankCheckKill     = true;
-bool HonorRankCheckLogin    = true;
-bool HonorRankSetNew        = true;
+bool HonorRankEnable        = false;
+bool HonorRankCheckKill     = false;
+bool HonorRankCheckLogin    = false;
+bool HonorRankSetNew        = false;
 
 class Mod_HonorRank_WorldScript : public WorldScript
 {
@@ -43,14 +43,14 @@ class Mod_HonorRank_WorldScript : public WorldScript
 
     void OnConfigLoad(bool /*reload*/)
     {
-        HonorRankEnable         = ConfigMgr::GetBoolDefault("HonorRank.Enable", true);
+        HonorRankEnable         = ConfigMgr::GetBoolDefault("HonorRank.Enable", false);
 
         if (!HonorRankEnable)
             return;
 
-        HonorRankCheckKill      = ConfigMgr::GetBoolDefault("HonorRank.Check.Kill", true);
-        HonorRankCheckLogin     = ConfigMgr::GetBoolDefault("HonorRank.Check.Login", true);
-        HonorRankSetNew         = ConfigMgr::GetBoolDefault("HonorRank.SetNew", true);
+        HonorRankCheckKill      = ConfigMgr::GetBoolDefault("HonorRank.Check.Kill", false);
+        HonorRankCheckLogin     = ConfigMgr::GetBoolDefault("HonorRank.Check.Login", false);
+        HonorRankSetNew         = ConfigMgr::GetBoolDefault("HonorRank.SetNew", false);
     }
 };
 

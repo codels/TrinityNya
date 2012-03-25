@@ -8,8 +8,8 @@
 #define DATA_SEPARATOR ":"
 #define PEOPLE_SEPARATOR " "
 
-bool    KillBossEnable      = true;
-bool    KillBossLog         = true;
+bool    KillBossEnable      = false;
+bool    KillBossLog         = false;
 int32  KillBossNormalText   = 11006;
 int32  KillBossHeroicText   = 11007;
 
@@ -20,12 +20,12 @@ class Mod_KillBoss_WorldScript : public WorldScript
 
     void OnConfigLoad(bool /*reload*/)
     {
-        KillBossEnable      = ConfigMgr::GetBoolDefault("KillBoss.Enable", true);
+        KillBossEnable      = ConfigMgr::GetBoolDefault("KillBoss.Enable", false);
 
         if (!KillBossEnable)
             return;
 
-        KillBossLog         = ConfigMgr::GetBoolDefault("KillBoss.Log", true);
+        KillBossLog         = ConfigMgr::GetBoolDefault("KillBoss.Log", false);
         KillBossNormalText  = ConfigMgr::GetIntDefault("KillBoss.NormalTextId", 11006);
         KillBossHeroicText  = ConfigMgr::GetIntDefault("KillBoss.HeroicTextId", 11007);
     }

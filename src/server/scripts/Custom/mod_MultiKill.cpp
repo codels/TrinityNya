@@ -8,10 +8,10 @@
 #define KILL_TYPE_FIRST 2
 
 
-bool    MultiKillEnable                 = true;
+bool    MultiKillEnable                 = false;
 bool    MultiKillLoaded                 = false;
 bool    MultiKillBattleGround           = true;
-bool    MultiKillLog                    = true;
+bool    MultiKillLog                    = false;
 int     MultiKillTimeBetween            = 15;
 uint32  MultiKillMin                    = 2;
 uint32  MultiKillMax                    = 9;
@@ -121,7 +121,7 @@ class Mod_MultiKill_WorldScript : public WorldScript
 
     void OnConfigLoad(bool reload)
     {
-        MultiKillEnable = ConfigMgr::GetBoolDefault("MultiKill.Enable", true);
+        MultiKillEnable = ConfigMgr::GetBoolDefault("MultiKill.Enable", false);
 
         if (!reload) MultiKillPlayer.clear();
 
@@ -129,7 +129,7 @@ class Mod_MultiKill_WorldScript : public WorldScript
             return;
 
         MultiKillBattleGround   = ConfigMgr::GetBoolDefault("MultiKill.BattleGroundOnly", true);
-        MultiKillLog            = ConfigMgr::GetBoolDefault("MultiKill.Log", true);
+        MultiKillLog            = ConfigMgr::GetBoolDefault("MultiKill.Log", false);
         MultiKillTimeBetween    = ConfigMgr::GetIntDefault("MultiKill.Time.Between", 15);
 
         if (!MultiKillLoaded || !reload)

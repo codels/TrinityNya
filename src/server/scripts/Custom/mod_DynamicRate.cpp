@@ -1,12 +1,12 @@
 #include "ScriptPCH.h"
 #include "Config.h"
 
-bool    DynamicRateEnable               = true;
+bool    DynamicRateEnable               = false;
 float   DynamicRateMin                  = 0.0f;
 float   DynamicRateDefault              = 1.0f;
 float   DynamicRateMax                  = 100.0f;
-bool    DynamicRateAccount              = true;
-bool    DynamicRateCharacter            = true;
+bool    DynamicRateAccount              = false;
+bool    DynamicRateCharacter            = false;
 int     DynamicRateCooldown             = 120;
 
 struct DynamicRateInfo
@@ -29,16 +29,16 @@ class Mod_DynamicRate_WorldScript : public WorldScript
 
     void OnConfigLoad(bool /*reload*/)
     {
-        DynamicRateEnable = ConfigMgr::GetBoolDefault("DynamicRate.Enable", true);
+        DynamicRateEnable = ConfigMgr::GetBoolDefault("DynamicRate.Enable", false);
 
         if (!DynamicRateEnable)
             return;
 
-        DynamicRateMin          = ConfigMgr::GetFloatDefault("DynamicRate.Mix", 0.0f);
+        DynamicRateMin          = ConfigMgr::GetFloatDefault("DynamicRate.Min", 0.0f);
         DynamicRateDefault      = ConfigMgr::GetFloatDefault("DynamicRate.Default", 1.0f);
         DynamicRateMax          = ConfigMgr::GetFloatDefault("DynamicRate.Max", 100.0f);
-        DynamicRateAccount      = ConfigMgr::GetBoolDefault("DynamicRate.Account", true);
-        DynamicRateCharacter    = ConfigMgr::GetBoolDefault("DynamicRate.Character", true);
+        DynamicRateAccount      = ConfigMgr::GetBoolDefault("DynamicRate.Account", false);
+        DynamicRateCharacter    = ConfigMgr::GetBoolDefault("DynamicRate.Character", false);
         DynamicRateCooldown     = ConfigMgr::GetIntDefault("DynamicRate.Cooldown", 120);
     }
 };

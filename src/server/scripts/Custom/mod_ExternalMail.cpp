@@ -113,5 +113,5 @@ class Mod_ExternalMail_WorldScript : public WorldScript
 
 void AddSC_Mod_ExternalMail()
 {
-    new Mod_ExternalMail_WorldScript;
+    new Mod_ExternalMail_WorldScript();
 }
