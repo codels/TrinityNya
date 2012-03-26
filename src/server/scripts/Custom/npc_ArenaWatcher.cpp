@@ -4,6 +4,7 @@
 ## UPDATE `creature_template` SET `npcflag` = 1, `ScriptName` = 'npc_arena_watcher' WHERE `entry` = XXXX;
 ######*/
 
+#include "CreatureTextMgr.h"
 #include "Player.h"
 #include "BattlegroundMgr.h"
 #include "Battleground.h"
@@ -15,11 +16,28 @@ enum WatcherData
     GOSSIP_OFFSET = GOSSIP_ACTION_INFO_DEF + 10,
 };
 
+enum WatcherTexts
+{
+    SAY_NOT_FOUND_BRACKET       = 0,
+    SAY_ARENA_NOT_IN_PROGRESS   = 1,
+    SAY_TARGET_NOT_IN_WORLD     = 2,
+    SAY_TARGET_NOT_IN_ARENA     = 3,
+    SAY_TARGET_IS_GM            = 4,
+};
+
+enum WatcherStrings
+{
+    STRING_ARENA_2v2            = 11200,
+    STRING_ARENA_3v3            = 11201,
+    STRING_ARENA_5v5            = 11202,
+    STRING_FOLLOW               = 11203,
+};
+
 class npc_arena_watcher : public CreatureScript
 {
     public:
         npc_arena_watcher() : CreatureScript("npc_arena_watcher") { }
-    
+
     bool OnGossipHello(Player* player, Creature* creature)
     {
         BattlegroundSet arenasSet = sBattlegroundMgr->GetAllBattlegroundsWithTypeId(BATTLEGROUND_AA);
@@ -33,18 +51,16 @@ class npc_arena_watcher : public CreatureScript
                     case ARENA_TYPE_5v5:  arenasQty[2]++; break;
                 }
 
-        std::stringstream gossip2;
-        std::stringstream gossip3;
-        std::stringstream gossip5;
-        gossip2 << "Смотреть матч 2v2 . (" << arenasQty[0] << " В ходе игра)";
-        gossip3 << "Смотреть матч 3v3 . (" << arenasQty[1] << " В ходе игра)";
-        gossip5 << "Смотреть матч 5v5 . (" << arenasQty[2] << " В ходе игра)";
+        std::string gossip2 = fmtstring(sObjectMgr->GetTrinityStringForDBCLocale(STRING_ARENA_2v2), arenasQty[0]);
+        std::string gossip3 = fmtstring(sObjectMgr->GetTrinityStringForDBCLocale(STRING_ARENA_3v3), arenasQty[1]);
+        std::string gossip5 = fmtstring(sObjectMgr->GetTrinityStringForDBCLocale(STRING_ARENA_5v5), arenasQty[2]);
+        std::string strFollow = sObjectMgr->GetTrinityStringForDBCLocale(STRING_FOLLOW);
 
-        player->ADD_GOSSIP_ITEM(GOSSIP_ICON_CHAT, gossip2.str(), GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 2);
-        player->ADD_GOSSIP_ITEM(GOSSIP_ICON_CHAT, gossip3.str(), GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 3);
-        player->ADD_GOSSIP_ITEM(GOSSIP_ICON_CHAT, gossip5.str(), GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 5);
-        player->ADD_GOSSIP_ITEM_EXTENDED(GOSSIP_ICON_CHAT, "Смотреть игрока.", GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 4, "", 0, true);
-        
+        player->ADD_GOSSIP_ITEM(GOSSIP_ICON_CHAT, gossip2.c_str(), GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + ARENA_TYPE_2v2);
+        player->ADD_GOSSIP_ITEM(GOSSIP_ICON_CHAT, gossip3.c_str(), GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + ARENA_TYPE_3v3);
+        player->ADD_GOSSIP_ITEM(GOSSIP_ICON_CHAT, gossip5.c_str(), GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + ARENA_TYPE_5v5);
+        player->ADD_GOSSIP_ITEM_EXTENDED(GOSSIP_ICON_CHAT, strFollow.c_str(), GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 4, "", 0, true);
+
         player->PlayerTalkClass->SendGossipMenu(player->GetGossipTextId(creature), creature->GetGUID());
         return true;
     }
@@ -78,9 +94,7 @@ class npc_arena_watcher : public CreatureScript
 
             if (!bracketMatchs)
             {
-                std::stringstream errMsg;
-                errMsg << "Извините " << player->GetName() << ", пока нету матчев.";
-                creature->MonsterWhisper(errMsg.str().c_str(), player->GetGUID());
+                sCreatureTextMgr->SendChat(creature, SAY_NOT_FOUND_BRACKET, player->GetGUID());
                 player->PlayerTalkClass->ClearMenus();
                 player->CLOSE_GOSSIP_MENU();
             }
@@ -118,9 +132,7 @@ class npc_arena_watcher : public CreatureScript
 
                 if (arenaChosen->GetStatus() != STATUS_NONE && arenaChosen->GetStatus() != STATUS_IN_PROGRESS)
                 {
-                    std::stringstream errMsg;
-                    errMsg << "Извините " << player->GetName() << ", арена уже завершен";
-                    creature->MonsterWhisper(errMsg.str().c_str(), player->GetGUID());
+                    sCreatureTextMgr->SendChat(creature, SAY_ARENA_NOT_IN_PROGRESS, player->GetGUID());
                     player->PlayerTalkClass->ClearMenus();
                     player->CLOSE_GOSSIP_MENU();
                     return false;
@@ -153,36 +165,37 @@ class npc_arena_watcher : public CreatureScript
             switch (uiAction)
             {
                 case GOSSIP_ACTION_INFO_DEF + 4:
-
+                {
                     const char* plrName = code;
                     if (Player* target = sObjectAccessor->FindPlayerByName(plrName))
                     {
                         if (!target->IsInWorld())
                         {
-                            creature->MonsterWhisper("Извините, я не могу позволить вам телепортироваться в том, что игрок", player->GetGUID());
+                            sCreatureTextMgr->SendChat(creature, SAY_TARGET_NOT_IN_WORLD, player->GetGUID());
                             return true;
                         }
-
-                        if (!target->InArena())
+                        else if (!target->InArena())
                         {
-                            creature->MonsterWhisper("Извините, вы стоите на реге арене!", player->GetGUID());
+                            sCreatureTextMgr->SendChat(creature, SAY_TARGET_NOT_IN_ARENA, player->GetGUID());
                             return true;
                         }
-
-                        if (target->isGameMaster())
+                        else if (target->isGameMaster())
                         {
-                            creature->MonsterWhisper("Бла бла бла !", player->GetGUID());
+                            sCreatureTextMgr->SendChat(creature, SAY_TARGET_IS_GM, player->GetGUID());
                             return true;
                         }
-
-                        player->SetBattlegroundId(target->GetBattleground()->GetInstanceID(), target->GetBattleground()->GetTypeID());
-                        player->SetBattlegroundEntryPoint();
-                        float x, y, z;
-                        target->GetContactPoint(player, x, y, z);
-                        player->TeleportTo(target->GetMapId(), x, y, z, player->GetAngle(target));
-                        player->SetGMVisible(false);
+                        else
+                        {
+                            player->SetBattlegroundId(target->GetBattleground()->GetInstanceID(), target->GetBattleground()->GetTypeID());
+                            player->SetBattlegroundEntryPoint();
+                            float x, y, z;
+                            target->GetContactPoint(player, x, y, z);
+                            player->TeleportTo(target->GetMapId(), x, y, z, player->GetAngle(target));
+                            player->SetGMVisible(false);
+                        }
                     }
                     return true;
+                }
             }
         }
 
