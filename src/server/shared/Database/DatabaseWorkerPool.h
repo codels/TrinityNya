@@ -53,7 +53,7 @@ class DatabaseWorkerPool
     public:
         /* Activity state */
         DatabaseWorkerPool() :
-        m_queue(new ACE_Activation_Queue(new ACE_Message_Queue<ACE_MT_SYNCH>))
+        m_queue(new ACE_Activation_Queue())
         {
             memset(m_connectionCount, 0, sizeof(m_connectionCount));
             m_connections.resize(IDX_SIZE);
@@ -124,6 +124,8 @@ class DatabaseWorkerPool
                 //    if (t->LockIfReady()) -- For some reason deadlocks us
                 t->Close();
             }
+
+            delete m_queue;
 
             sLog->outSQLDriver("All connections on databasepool %s closed.", m_connectionInfo.database.c_str());
         }
@@ -268,6 +270,9 @@ class DatabaseWorkerPool
             T* t = GetFreeConnection();
             PreparedResultSet* ret = t->Query(stmt);
             t->Unlock();
+
+            //! Delete proxy-class. Not needed anymore
+            delete stmt;
 
             if (!ret || !ret->GetRowCount())
                 return PreparedQueryResult(NULL);
