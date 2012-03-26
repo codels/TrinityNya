@@ -3054,16 +3054,6 @@ FriendChat = 0
 
 #######################################################################
 
-#on/off mailhistory
-MailHistory.Enable = 0
-MailHistory.Normal = 0
-MailHistory.Auction = 0
-MailHistory.Creature = 0
-MailHistory.Gameobject = 0
-MailHistory.Item = 0
-
-#######################################################################
-
 #on/off battleground history
 BattlegroundHistory.Enable = 0
 
