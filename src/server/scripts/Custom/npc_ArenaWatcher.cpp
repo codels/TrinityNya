@@ -12,8 +12,6 @@
 #include "ArenaTeam.h"
 #include "Config.h"
 
-#define SPELL_GRAVITY 44227
-
 enum WatcherData
 {
     GOSSIP_OFFSET = GOSSIP_ACTION_INFO_DEF + 10,
@@ -134,15 +132,6 @@ class npc_ArenaWatcher_PlayerScript : public PlayerScript
             return;
 
         ArenaWatcherEnd(player);
-        sLog->outError("OnPlayerRemoveFromBattleground Player: %u", player->GetGUIDLow());
-    }
-
-    void OnLogin(Player* /*player*/)
-    {
-        if (!ArenaWatcherEnable)
-            return;
-
-        //ArenaWatcherEnd(player, true);
     }
 
     void OnLogout(Player* player)
