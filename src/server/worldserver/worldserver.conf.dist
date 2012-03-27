@@ -3149,4 +3149,9 @@ SpecialCode.Enable = 0
 ArenaWatcher.Enable = 0
 #gossip menu only for game master
 ArenaWatcher.OnlyGM = 0
-
+#show gossip menu with 0 games
+ArenaWatcher.ShowNoGames = 0
+#can watch only battle is rated
+ArenaWatcher.OnlyRated = 0
+#can teleport to players
+ArenaWatcher.ToPlayers = 0
