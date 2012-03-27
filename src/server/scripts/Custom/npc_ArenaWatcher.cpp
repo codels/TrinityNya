@@ -40,26 +40,22 @@ class npc_arena_watcher : public CreatureScript
 
     bool OnGossipHello(Player* player, Creature* creature)
     {
-        BattlegroundSet arenasSet = sBattlegroundMgr->GetAllBattlegroundsWithTypeId(BATTLEGROUND_AA);
-        uint32 arenasQty[3] = {0, 0, 0};
-        for (BattlegroundSet::const_iterator itr = arenasSet.begin(); itr != arenasSet.end(); ++itr)
+        BattlegroundSet arenas = sBattlegroundMgr->GetAllBattlegroundsWithTypeId(BATTLEGROUND_AA);
+        uint32 arenasCount[MAX_ARENA_SLOT] = {0, 0, 0};
+        for (BattlegroundSet::const_iterator itr = arenas.begin(); itr != arenas.end(); ++itr)
             if (Battleground* bg = itr->second)
-                switch (bg->GetArenaType())
-                {
-                    case ARENA_TYPE_2v2:  arenasQty[0]++; break;
-                    case ARENA_TYPE_3v3:  arenasQty[1]++; break;
-                    case ARENA_TYPE_5v5:  arenasQty[2]++; break;
-                }
+				++arenasCount[ArenaTeam::GetSlotByType(bg->GetArenaType())];
 
-        std::string gossip2 = fmtstring(sObjectMgr->GetTrinityStringForDBCLocale(STRING_ARENA_2v2), arenasQty[0]);
-        std::string gossip3 = fmtstring(sObjectMgr->GetTrinityStringForDBCLocale(STRING_ARENA_3v3), arenasQty[1]);
-        std::string gossip5 = fmtstring(sObjectMgr->GetTrinityStringForDBCLocale(STRING_ARENA_5v5), arenasQty[2]);
-        std::string strFollow = sObjectMgr->GetTrinityStringForDBCLocale(STRING_FOLLOW);
+		std::string gossipText;
+		
+        for (uint8 i = 0; i < MAX_ARENA_SLOT; ++i)
+		{
+            gossipText = fmtstring(sObjectMgr->GetTrinityStringForDBCLocale(STRING_ARENA_2v2 + i), arenasCount[i]);
+            player->ADD_GOSSIP_ITEM(GOSSIP_ICON_CHAT, gossipText.c_str(), GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + ArenaTeam::GetTypeBySlot(i));
+        }
 
-        player->ADD_GOSSIP_ITEM(GOSSIP_ICON_CHAT, gossip2.c_str(), GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + ARENA_TYPE_2v2);
-        player->ADD_GOSSIP_ITEM(GOSSIP_ICON_CHAT, gossip3.c_str(), GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + ARENA_TYPE_3v3);
-        player->ADD_GOSSIP_ITEM(GOSSIP_ICON_CHAT, gossip5.c_str(), GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + ARENA_TYPE_5v5);
-        player->ADD_GOSSIP_ITEM_EXTENDED(GOSSIP_ICON_CHAT, strFollow.c_str(), GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 4, "", 0, true);
+        gossipText = sObjectMgr->GetTrinityStringForDBCLocale(STRING_FOLLOW);
+        player->ADD_GOSSIP_ITEM_EXTENDED(GOSSIP_ICON_CHAT, gossipText.c_str(), GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 4, "", 0, true);
 
         player->PlayerTalkClass->SendGossipMenu(player->GetGossipTextId(creature), creature->GetGUID());
         return true;
@@ -69,28 +65,18 @@ class npc_arena_watcher : public CreatureScript
     {
         player->PlayerTalkClass->ClearMenus();
 
-        uint8 mode = ARENA_TYPE_2v2;
-        if (action == (GOSSIP_ACTION_INFO_DEF + 3))
-            mode = ARENA_TYPE_3v3;
-        if (action == (GOSSIP_ACTION_INFO_DEF + 5))
-            mode = ARENA_TYPE_5v5;
-
         if (action <= GOSSIP_OFFSET)
         {
-            BattlegroundSet arenasSet = sBattlegroundMgr->GetAllBattlegroundsWithTypeId(BATTLEGROUND_AA);
+            BattlegroundSet arenas = sBattlegroundMgr->GetAllBattlegroundsWithTypeId(BATTLEGROUND_AA);
 
             bool bracketMatchs = false;
-            for (BattlegroundSet::const_iterator itr = arenasSet.begin(); itr != arenasSet.end(); ++itr)
-            {
+            for (BattlegroundSet::const_iterator itr = arenas.begin(); itr != arenas.end(); ++itr)
                 if (Battleground* bg = itr->second)
-                {
-                    if (bg->GetArenaType() == mode)
+                    if (bg->GetArenaType() == action - GOSSIP_ACTION_INFO_DEF)
                     {
                         bracketMatchs = true;
                         break;
                     }
-                }
-            }
 
             if (!bracketMatchs)
             {
@@ -100,7 +86,7 @@ class npc_arena_watcher : public CreatureScript
             }
             else
             {
-                for (BattlegroundSet::const_iterator itr = arenasSet.begin(); itr != arenasSet.end(); ++itr)
+                for (BattlegroundSet::const_iterator itr = arenas.begin(); itr != arenas.end(); ++itr)
                 {
                     if (Battleground* bg = itr->second)
                     {
