@@ -552,6 +552,8 @@ inline void Battleground::_ProcessLeave(uint32 diff)
             RemovePlayerAtLeave(itr->first, true, true);// remove player from BG
             // do not change any battleground's private variables
         }
+        //TrinityNya: more correctly?
+        GetBgMap()->RemoveAllPlayers();
     }
 }
 
@@ -1222,6 +1224,11 @@ void Battleground::EventPlayerLoggedIn(Player* player)
             break;
         }
     }
+
+    //TrinityNya: Fixed count players
+    if (!IsPlayerInBattleground(guid))
+        return;
+
     m_Players[guid].OfflineRemoveTime = 0;
     PlayerAddedToBGCheckIfBGIsRunning(player);
     // if battleground is starting, then add preparation aura
@@ -1232,6 +1239,11 @@ void Battleground::EventPlayerLoggedIn(Player* player)
 void Battleground::EventPlayerLoggedOut(Player* player)
 {
     uint64 guid = player->GetGUID();
+    
+    //TrinityNya: Fixed count players
+    if (!IsPlayerInBattleground(guid))
+        return;
+
     // player is correct pointer, it is checked in WorldSession::LogoutPlayer()
     m_OfflineQueue.push_back(player->GetGUID());
     m_Players[guid].OfflineRemoveTime = sWorld->GetGameTime() + MAX_OFFLINE_TIME;
