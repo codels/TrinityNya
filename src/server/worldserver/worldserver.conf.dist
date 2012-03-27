@@ -3142,3 +3142,11 @@ MultiKill.Time.Between = 15
 
 #on/off special code
 SpecialCode.Enable = 0
+
+#######################################################################
+
+#on/off arena watcher
+ArenaWatcher.Enable = 0
+#gossip menu only for game master
+ArenaWatcher.OnlyGM = 0
+

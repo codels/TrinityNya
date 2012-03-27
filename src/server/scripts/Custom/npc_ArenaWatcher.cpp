@@ -10,6 +10,7 @@
 #include "Battleground.h"
 #include "ArenaTeamMgr.h"
 #include "ArenaTeam.h"
+#include "Config.h"
 
 enum WatcherData
 {
@@ -33,6 +34,21 @@ enum WatcherStrings
     STRING_FOLLOW               = 11203,
 };
 
+bool ArenaWatcherEnable = false;
+bool ArenaWatcherOnlyGM = false;
+
+class npc_ArenaWatcher_WorldScript : public WorldScript
+{
+    public:
+        npc_ArenaWatcher_WorldScript() : WorldScript("npc_ArenaWatcher_WorldScript") { }
+
+    void OnConfigLoad(bool /*reload*/)
+    {
+        ArenaWatcherEnable = ConfigMgr::GetBoolDefault("ArenaWatcher.Enable", false);
+        ArenaWatcherOnlyGM = ConfigMgr::GetBoolDefault("ArenaWatcher.OnlyGM", false);
+    }
+};
+
 class npc_arena_watcher : public CreatureScript
 {
     public:
@@ -40,23 +56,26 @@ class npc_arena_watcher : public CreatureScript
 
     bool OnGossipHello(Player* player, Creature* creature)
     {
-        BattlegroundSet arenas = sBattlegroundMgr->GetAllBattlegroundsWithTypeId(BATTLEGROUND_AA);
-        uint32 arenasCount[MAX_ARENA_SLOT] = {0, 0, 0};
-        for (BattlegroundSet::const_iterator itr = arenas.begin(); itr != arenas.end(); ++itr)
-            if (Battleground* bg = itr->second)
-				++arenasCount[ArenaTeam::GetSlotByType(bg->GetArenaType())];
+        if (ArenaWatcherEnable && (!ArenaWatcherOnlyGM || player->isGameMaster()))
+        {
+            BattlegroundSet arenas = sBattlegroundMgr->GetAllBattlegroundsWithTypeId(BATTLEGROUND_AA);
+            uint32 arenasCount[MAX_ARENA_SLOT] = {0, 0, 0};
+            for (BattlegroundSet::const_iterator itr = arenas.begin(); itr != arenas.end(); ++itr)
+                if (Battleground* bg = itr->second)
+                    ++arenasCount[ArenaTeam::GetSlotByType(bg->GetArenaType())];
 
-		std::string gossipText;
-		
-        for (uint8 i = 0; i < MAX_ARENA_SLOT; ++i)
-		{
-            gossipText = fmtstring(sObjectMgr->GetTrinityStringForDBCLocale(STRING_ARENA_2v2 + i), arenasCount[i]);
-            player->ADD_GOSSIP_ITEM(GOSSIP_ICON_CHAT, gossipText.c_str(), GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + ArenaTeam::GetTypeBySlot(i));
+            std::string gossipText;
+            
+            for (uint8 i = 0; i < MAX_ARENA_SLOT; ++i)
+            {
+                gossipText = fmtstring(sObjectMgr->GetTrinityStringForDBCLocale(STRING_ARENA_2v2 + i), arenasCount[i]);
+                player->ADD_GOSSIP_ITEM(GOSSIP_ICON_CHAT, gossipText.c_str(), GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + ArenaTeam::GetTypeBySlot(i));
+            }
+
+            gossipText = sObjectMgr->GetTrinityStringForDBCLocale(STRING_FOLLOW);
+            player->ADD_GOSSIP_ITEM_EXTENDED(GOSSIP_ICON_CHAT, gossipText.c_str(), GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 4, "", 0, true);
         }
-
-        gossipText = sObjectMgr->GetTrinityStringForDBCLocale(STRING_FOLLOW);
-        player->ADD_GOSSIP_ITEM_EXTENDED(GOSSIP_ICON_CHAT, gossipText.c_str(), GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 4, "", 0, true);
-
+        
         player->PlayerTalkClass->SendGossipMenu(player->GetGossipTextId(creature), creature->GetGUID());
         return true;
     }
@@ -65,6 +84,9 @@ class npc_arena_watcher : public CreatureScript
     {
         player->PlayerTalkClass->ClearMenus();
 
+        if (!ArenaWatcherEnable && (!ArenaWatcherOnlyGM || player->isGameMaster()))
+            return true;
+        
         if (action <= GOSSIP_OFFSET)
         {
             BattlegroundSet arenas = sBattlegroundMgr->GetAllBattlegroundsWithTypeId(BATTLEGROUND_AA);
@@ -146,6 +168,10 @@ class npc_arena_watcher : public CreatureScript
     {
         player->PlayerTalkClass->ClearMenus();
         player->CLOSE_GOSSIP_MENU();
+
+        if (!ArenaWatcherEnable && (!ArenaWatcherOnlyGM || player->isGameMaster()))
+            return true;
+            
         if (uiSender == GOSSIP_SENDER_MAIN)
         {
             switch (uiAction)
@@ -191,5 +217,6 @@ class npc_arena_watcher : public CreatureScript
 
 void AddSC_NPC_ArenaWatcher()
 {
+    new npc_ArenaWatcher_WorldScript();
     new npc_arena_watcher();
 }
