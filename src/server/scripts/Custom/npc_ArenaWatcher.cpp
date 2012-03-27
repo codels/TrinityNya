@@ -37,15 +37,107 @@ enum WatcherStrings
 bool ArenaWatcherEnable = false;
 bool ArenaWatcherOnlyGM = false;
 
+std::vector<uint32> ArenaWatcherList;
+
+//Player::BuildPlayerRepop
+void ArenaWatcherStart(Player* player)
+{
+    // Ghost
+    if (player->getRace() == RACE_NIGHTELF)
+        player->CastSpell(player, 20584, true);
+    player->CastSpell(player, 8326, true);
+    
+    player->SetHealth(1);
+    
+    player->SetMovement(MOVE_WATER_WALK);
+    if (!player->GetSession()->isLogingOut())
+        player->SetMovement(MOVE_UNROOT);
+
+    // set and clear other
+    player->SetByteValue(UNIT_FIELD_BYTES_1, 3, UNIT_BYTE1_FLAG_ALWAYS_STAND);
+    
+    ArenaWatcherList.push_back(player->GetGUID());
+}
+
+//Player::ResurrectPlayer
+void ArenaWatcherEnd(Player* player, bool clear = false)
+{
+    if (!ArenaWatcherList.empty())
+    {
+        std::vector<uint32>::iterator iter = ArenaWatcherList.begin();
+        while(iter != ArenaWatcherList.end())
+        {
+            if (player->GetGUID() == *iter)
+            {
+                iter = ArenaWatcherList.erase(iter);
+                clear = true;
+            }
+            else
+                ++iter;
+        }
+    }
+        
+    if (!clear)
+        return;
+    
+    player->SetByteValue(UNIT_FIELD_BYTES_1, 3, 0x00);
+    if (player->getRace() == RACE_NIGHTELF)
+        player->RemoveAurasDueToSpell(20584);
+    player->RemoveAurasDueToSpell(8326);
+    
+    player->SetMovement(MOVE_LAND_WALK);
+    player->SetMovement(MOVE_UNROOT);
+    
+    player->SetHealth(player->GetMaxHealth());
+    player->SetPower(POWER_MANA, player->GetMaxPower(POWER_MANA));
+    player->SetPower(POWER_RAGE, 0);
+    player->SetPower(POWER_ENERGY, player->GetMaxPower(POWER_ENERGY));
+    //player->UpdateObjectVisibility();
+}
+
+
 class npc_ArenaWatcher_WorldScript : public WorldScript
 {
     public:
         npc_ArenaWatcher_WorldScript() : WorldScript("npc_ArenaWatcher_WorldScript") { }
 
-    void OnConfigLoad(bool /*reload*/)
+    void OnConfigLoad(bool reload)
     {
         ArenaWatcherEnable = ConfigMgr::GetBoolDefault("ArenaWatcher.Enable", false);
         ArenaWatcherOnlyGM = ConfigMgr::GetBoolDefault("ArenaWatcher.OnlyGM", false);
+        
+        if (!reload)
+            ArenaWatcherList.clear();
+    }
+};
+
+class npc_ArenaWatcher_PlayerScript : public PlayerScript
+{
+    public:
+        npc_ArenaWatcher_PlayerScript() : PlayerScript("npc_ArenaWatcher_PlayerScript") { }
+
+    void OnPlayerRemoveFromBattleground(Player* player, Battleground* /*bg*/)
+    {
+        if (!ArenaWatcherEnable)
+            return;
+            
+        ArenaWatcherEnd(player);
+    }
+
+    void OnLogin(Player* /*player*/)
+    {
+        if (!ArenaWatcherEnable)
+            return;
+
+        //ArenaWatcherEnd(player, true);
+    }
+
+    void OnLogout(Player* player)
+    {
+        if (!ArenaWatcherEnable)
+            return;
+
+        ArenaWatcherEnd(player);
     }
 };
 
@@ -157,8 +249,9 @@ class npc_arena_watcher : public CreatureScript
                     case 562: x = 6238.930176f; y = 262.963470f;  z = 0.889519f;  break;
                     case 559: x = 4055.504395f; y = 2919.660645f; z = 13.611241f; break;
                 }
-                player->SetGMVisible(false);
+                //player->SetGMVisible(false);
                 player->TeleportTo(arenaChosen->GetMapId(), x, y, z, player->GetOrientation());
+                ArenaWatcherStart(player);
             }
         }
         return true;
@@ -203,7 +296,8 @@ class npc_arena_watcher : public CreatureScript
                             float x, y, z;
                             target->GetContactPoint(player, x, y, z);
                             player->TeleportTo(target->GetMapId(), x, y, z, player->GetAngle(target));
-                            player->SetGMVisible(false);
+                            //player->SetGMVisible(false);
+                            ArenaWatcherStart(player);
                         }
                     }
                     return true;
@@ -218,5 +312,6 @@ class npc_arena_watcher : public CreatureScript
 void AddSC_NPC_ArenaWatcher()
 {
     new npc_ArenaWatcher_WorldScript();
+    new npc_ArenaWatcher_PlayerScript();
     new npc_arena_watcher();
 }

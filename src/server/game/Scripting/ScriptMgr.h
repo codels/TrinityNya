@@ -795,7 +795,11 @@ class PlayerScript : public ScriptObject
 
         // Called when a player joined the battle
         virtual void OnPlayerJoinedBattleground(Player* /*player*/, Battleground* /*bg*/) { }
+        
+        // Called when a player remove from battle
+        virtual void OnPlayerRemoveFromBattleground(Player* /*player*/, Battleground* /*bg*/) { }
 
+        // Called when player ...
         virtual void OnPlayerFirstKillBattleground(Player* /*player*/, Battleground* /*bg*/) { }
 
         // Called when a player switches to a new zone
@@ -1096,6 +1100,7 @@ class ScriptMgr
         void OnPlayerSkillUpdate(Player* player, uint16 SkillId, uint16 SkillValue, uint16 SkillNewValue);
         void OnPlayerSave(Player* player);
         void OnPlayerJoinedBattleground(Player* player, Battleground* bg);
+        void OnPlayerRemoveFromBattleground(Player* player, Battleground* bg);
         void OnPlayerFirstKillBattleground(Player* player, Battleground* bg);
         void OnPlayerUpdateZone(Player* player, uint32 newZone, uint32 newArea);
 

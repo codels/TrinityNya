@@ -1374,6 +1374,11 @@ void ScriptMgr::OnPlayerJoinedBattleground(Player* player, Battleground* bg)
     FOREACH_SCRIPT(PlayerScript)->OnPlayerJoinedBattleground(player, bg);
 }
 
+void ScriptMgr::OnPlayerRemoveFromBattleground(Player* player, Battleground* bg)
+{
+    FOREACH_SCRIPT(PlayerScript)->OnPlayerRemoveFromBattleground(player, bg);
+}
+
 void ScriptMgr::OnPlayerFirstKillBattleground(Player* player, Battleground* bg)
 {
     FOREACH_SCRIPT(PlayerScript)->OnPlayerFirstKillBattleground(player, bg);
