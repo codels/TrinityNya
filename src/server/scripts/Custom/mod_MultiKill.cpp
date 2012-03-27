@@ -210,6 +210,9 @@ class Mod_MultiKill_PlayerScript : public PlayerScript
 
     void ResetCounter(uint32 guid)
     {
+        if (!MultiKillEnable)
+            return;
+
         MultiKillPlayer[guid].count = 0;
         MultiKillPlayer[guid].total = 0;
         MultiKillPlayer[guid].last = time(NULL);
@@ -274,6 +277,9 @@ class Mod_MultiKill_PlayerScript : public PlayerScript
 
     void OnLogout(Player* player)
     {
+        if (!MultiKillEnable)
+            return;
+
         uint32 guid = player->GetGUID();
 
         if (MultiKillPlayer.empty())
@@ -311,7 +317,7 @@ public:
 
     static bool HandleMultiKillChatCommand(ChatHandler* /*handler*/, char const* args)
     {
-        if (!*args)
+        if (!MultiKillEnable || !*args)
             return false;
 
         std::string param = (char*)args;
@@ -328,7 +334,7 @@ public:
 
 void AddSC_Mod_Multikill()
 {
-    new Mod_MultiKill_PlayerScript;
-    new Mod_MultiKill_WorldScript;
-    new Mod_MultiKill_CommandScript;
+    new Mod_MultiKill_PlayerScript();
+    new Mod_MultiKill_WorldScript();
+    new Mod_MultiKill_CommandScript();
 }
