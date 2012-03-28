@@ -105,6 +105,6 @@ class Mod_HonorRank_PlayerScript : public PlayerScript
 
 void AddSC_Mod_HonorRank()
 {
-    new Mod_HonorRank_PlayerScript;
-    new Mod_HonorRank_WorldScript;
+    new Mod_HonorRank_PlayerScript();
+    new Mod_HonorRank_WorldScript();
 }

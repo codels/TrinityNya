@@ -13,8 +13,8 @@ bool    MultiKillLoaded                 = false;
 bool    MultiKillBattleGround           = true;
 bool    MultiKillLog                    = false;
 int     MultiKillTimeBetween            = 15;
-uint32  MultiKillMin                    = 2;
-uint32  MultiKillMax                    = 9;
+uint32  MultiKillMin                    = 0;
+uint32  MultiKillMax                    = 0;
 
 struct MultiKillTemplate
 {

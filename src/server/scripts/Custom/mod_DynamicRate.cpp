@@ -208,7 +208,7 @@ class Mod_DynamicRate_PlayerScript : public PlayerScript
 
 void AddSC_Mod_DynamicRate()
 {
-    new Mod_DynamicRate_WorldScript;
-    new Mod_DynamicRate_CommandScript;
-    new Mod_DynamicRate_PlayerScript;
+    new Mod_DynamicRate_WorldScript();
+    new Mod_DynamicRate_CommandScript();
+    new Mod_DynamicRate_PlayerScript();
 }

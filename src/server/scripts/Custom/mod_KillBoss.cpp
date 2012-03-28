@@ -148,6 +148,6 @@ class Mod_KillBoss_AllCreatureScript : public AllCreatureScript
 
 void AddSC_Mod_KillBoss()
 {
-    new Mod_KillBoss_AllCreatureScript;
-    new Mod_KillBoss_WorldScript;
+    new Mod_KillBoss_AllCreatureScript();
+    new Mod_KillBoss_WorldScript();
 }
