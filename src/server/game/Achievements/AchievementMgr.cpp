@@ -1261,7 +1261,7 @@ void AchievementMgr::UpdateAchievementCriteria(AchievementCriteriaTypes type, ui
                     SetCriteriaProgress(achievementCriteria, 1);
                 break;
             }
-			//TrinityNya
+            //TrinityNya
             case ACHIEVEMENT_CRITERIA_TYPE_OWN_RANK:
                 if (!miscValue1 || miscValue1 < 1 || miscValue1 > 29)
                     continue;
