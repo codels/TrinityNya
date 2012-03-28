@@ -1,4 +1,8 @@
-//TRINITY NYA DEV
+/*
+** Данный скрипт находится на стадии разработки, использовать на свой страх и риск.
+** Все замечания и пожелания на https://github.com/codels/TrinityNya
+*/
+
 #include "ScriptPCH.h"
 #include "Config.h"
 #include <math.h>
@@ -12,7 +16,8 @@ bool DynamicInstanceEnable = false;
 
 struct DITemplate
 {
-    DITemplate() : level(0) {}
+    DITemplate() : level(0) {} // по умолчанию уровень подземелья 0, что значит не используются
+                               // динамические подземелья
     uint8 level;
 
     bool isValid() const { return level != 0; }
@@ -101,6 +106,22 @@ void DIRemoveData(uint32 instanceid)
     }
 }
 
+/*
+** Функция изменения существа под уровень подземелья
+**
+** Изменяет все основные характеристики, игнорирует:
+**   - Тотемы
+**   - Триггеры
+**   - Мирных животных
+**
+** Максимальный уровень существа 80, в итоге нужна формула
+** для создания всех характеристик существ, без каких либо таблиц
+**
+** Проблемы:
+**   - Некоторые заклинания работают от уровня создателя, а некоторые нет
+**     могут возникать не приятные ошибки, которые исправляются
+**     заменой заклинания, либо поиском определения таких заклинаний
+*/
 bool DICreatureCalcStats(Creature* creature)
 {
     if (!DynamicInstanceEnable || !creature->isAlive())
@@ -121,10 +142,11 @@ bool DICreatureCalcStats(Creature* creature)
     uint8 level = DIData[instanceid].level;
 
     uint8 clevel = cinfo->maxlevel;
-    if (clevel > 80) clevel = 80;
+    if (clevel > 80) clevel = 80; // можно отказаться
 
     creature->SetLevel(level);
 
+    // определение дополнения
     uint8 expansion = 0;
     if (level > 59) expansion++;
     if (level > 69) expansion++;
@@ -161,6 +183,7 @@ bool DICreatureCalcStats(Creature* creature)
     uint32 basehp = stats->GenerateHealth(expansion, cinfo->ModHealth);
     uint32 health = uint32(basehp * healthmod);
 
+    // формула взята с головы =)
     float dmgbase = (0.5 * pow(1.05, level * 2)) * (cinfo->baseattacktime / 1000) * damagemod;
     float dmgmin = dmgbase * 0.95;
     float dmgmax = dmgbase * 1.05;
@@ -192,6 +215,19 @@ bool DICreatureCalcStats(Creature* creature)
     return true;
 }
 
+/*
+** Функция создания добычи
+**
+** Варианты:
+**  1. Создание шаблонов под каждый тип существа + возможность
+**     указать шаблон для определенного существа для диапазонов
+**     уровней. (минимальное вмешательство в ядро)
+**  2. Создать аналог системы добычи как в дополнении 5+ (Mists of Pandaria),
+**     Случайным образом определять игроков которые получат плюшку
+**     и случайным образом с огромной таблицы предметов выбирать по критериям,
+**     можно добавтиь дополнительные требования чтобы боссы с оружием
+**     имели большую вероятность отдать аналог оружия, но это доп. расчеты.
+*/
 uint32 DICreatureLoot(Creature* creature)
 {
     Map* map = creature->GetMap();
@@ -199,7 +235,7 @@ uint32 DICreatureLoot(Creature* creature)
     if (!map || !DICreateOrExisted(map))
         return 0;
 
-    //get loot
+    // Вернуть новый номер шаблона добычи, 0 - использовать стандартную добычу
     return 0;
 }
 
@@ -286,7 +322,7 @@ class Mod_DynamicInstance_AllCreatureScript : public AllCreatureScript
 
 void AddSC_Mod_DynamicInstance()
 {
-    new Mod_DynamicInstance_WorldScript;
-    new Mod_DynamicInstance_AllInstanceScript;
-    new Mod_DynamicInstance_AllCreatureScript;
+    new Mod_DynamicInstance_WorldScript();
+    new Mod_DynamicInstance_AllInstanceScript();
+    new Mod_DynamicInstance_AllCreatureScript();
 }
