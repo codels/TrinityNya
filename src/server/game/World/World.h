@@ -762,8 +762,6 @@ class World
 
         void LoadAutobroadcasts();
 
-        void LoadIp2nation();
-
         void UpdateAreaDependentAuras();
 
         void ProcessStartEvent();

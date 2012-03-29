@@ -49,6 +49,7 @@ void LoadRandomEnchantmentsTable()
 
     RandomItemEnch.clear();                                 // for reload case
 
+    //                                                 0      1      2
     QueryResult result = WorldDatabase.Query("SELECT entry, ench, chance FROM item_enchantment_template");
 
     if (result)
@@ -101,7 +102,8 @@ uint32 GetItemEnchantMod(int32 entry)
     {
         fCount += ench_iter->chance;
 
-        if (fCount > dRoll) return ench_iter->ench;
+        if (fCount > dRoll)
+            return ench_iter->ench;
     }
 
     //we could get here only if sum of all enchantment chances is lower than 100%
@@ -112,7 +114,8 @@ uint32 GetItemEnchantMod(int32 entry)
     {
         fCount += ench_iter->chance;
 
-        if (fCount > dRoll) return ench_iter->ench;
+        if (fCount > dRoll)
+            return ench_iter->ench;
     }
 
     return 0;

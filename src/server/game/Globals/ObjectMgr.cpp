@@ -1171,6 +1171,7 @@ void ObjectMgr::LoadLinkedRespawn()
     uint32 oldMSTime = getMSTime();
 
     _linkedRespawnStore.clear();
+    //                                                 0        1          2
     QueryResult result = WorldDatabase.Query("SELECT guid, linkedGuid, linkType FROM linked_respawn ORDER BY guid ASC");
 
     if (!result)
@@ -2730,7 +2731,8 @@ void ObjectMgr::LoadItemSetNames()
             if (setEntry->itemId[i])
                 itemSetItems.insert(setEntry->itemId[i]);
     }
-
+    
+    //                                                  0        1            2
     QueryResult result = WorldDatabase.Query("SELECT `entry`, `name`, `InventoryType` FROM `item_set_names`");
 
     if (!result)
@@ -2757,7 +2759,7 @@ void ObjectMgr::LoadItemSetNames()
         ItemSetNameEntry &data = _itemSetNameStore[entry];
         data.name = fields[1].GetString();
 
-        uint32 invType = fields[2].GetUInt32();
+        uint32 invType = fields[2].GetUInt8();
         if (invType >= MAX_INVTYPE)
         {
             sLog->outErrorDb("Item set name (Entry: %u) has wrong InventoryType value (%u)", entry, invType);
@@ -2802,6 +2804,7 @@ void ObjectMgr::LoadVehicleTemplateAccessories()
 
     uint32 count = 0;
 
+    //                                                  0             1              2          3           4             5
     QueryResult result = WorldDatabase.Query("SELECT `entry`, `accessory_entry`, `seat_id`, `minion`, `summontype`, `summontimer` FROM `vehicle_template_accessory`");
 
     if (!result)
@@ -2817,7 +2820,7 @@ void ObjectMgr::LoadVehicleTemplateAccessories()
 
         uint32 uiEntry      = fields[0].GetUInt32();
         uint32 uiAccessory  = fields[1].GetUInt32();
-        int8   uiSeat       = int8(fields[2].GetInt16());
+        int8   uiSeat       = int8(fields[2].GetInt8());
         bool   bMinion      = fields[3].GetBool();
         uint8  uiSummonType = fields[4].GetUInt8();
         uint32 uiSummonTimer= fields[5].GetUInt32();
@@ -2858,6 +2861,7 @@ void ObjectMgr::LoadVehicleAccessories()
 
     uint32 count = 0;
 
+    //                                                  0             1             2          3           4             5
     QueryResult result = WorldDatabase.Query("SELECT `guid`, `accessory_entry`, `seat_id`, `minion`, `summontype`, `summontimer` FROM `vehicle_accessory`");
 
     if (!result)
@@ -2899,7 +2903,7 @@ void ObjectMgr::LoadPetLevelInfo()
     uint32 oldMSTime = getMSTime();
 
     //                                                 0               1      2   3     4    5    6    7     8    9
-    QueryResult result  = WorldDatabase.Query("SELECT creature_entry, level, hp, mana, str, agi, sta, inte, spi, armor FROM pet_levelstats");
+    QueryResult result = WorldDatabase.Query("SELECT creature_entry, level, hp, mana, str, agi, sta, inte, spi, armor FROM pet_levelstats");
 
     if (!result)
     {
@@ -2921,7 +2925,7 @@ void ObjectMgr::LoadPetLevelInfo()
             continue;
         }
 
-        uint32 current_level = fields[1].GetUInt32();
+        uint32 current_level = fields[1].GetUInt8();
         if (current_level > sWorld->getIntConfig(CONFIG_MAX_PLAYER_LEVEL))
         {
             if (current_level > STRONG_MAX_LEVEL)        // hardcoded level maximum
@@ -2949,7 +2953,7 @@ void ObjectMgr::LoadPetLevelInfo()
 
         pLevelInfo->health = fields[2].GetUInt16();
         pLevelInfo->mana   = fields[3].GetUInt16();
-        pLevelInfo->armor  = fields[9].GetUInt16();
+        pLevelInfo->armor  = fields[9].GetUInt32();
 
         for (int i = 0; i < MAX_STATS; i++)
         {
@@ -3045,7 +3049,7 @@ void ObjectMgr::LoadPlayerInfo()
     // Load playercreate
     {
         uint32 oldMSTime = getMSTime();
-        //                                                0     1      2    3     4           5           6
+        //                                                0     1      2    3        4          5           6
         QueryResult result = WorldDatabase.Query("SELECT race, class, map, zone, position_x, position_y, position_z, orientation FROM playercreateinfo");
 
         if (!result)
@@ -3062,10 +3066,10 @@ void ObjectMgr::LoadPlayerInfo()
             {
                 Field* fields = result->Fetch();
 
-                uint32 current_race  = fields[0].GetUInt32();
-                uint32 current_class = fields[1].GetUInt32();
-                uint32 mapId         = fields[2].GetUInt32();
-                uint32 areaId        = fields[3].GetUInt32();
+                uint32 current_race  = fields[0].GetUInt8();
+                uint32 current_class = fields[1].GetUInt8();
+                uint32 mapId         = fields[2].GetUInt16();
+                uint32 areaId        = fields[3].GetUInt32(); // zone
                 float  positionX     = fields[4].GetFloat();
                 float  positionY     = fields[5].GetFloat();
                 float  positionZ     = fields[6].GetFloat();
@@ -3150,14 +3154,14 @@ void ObjectMgr::LoadPlayerInfo()
             {
                 Field* fields = result->Fetch();
 
-                uint32 current_race = fields[0].GetUInt32();
+                uint32 current_race = fields[0].GetUInt8();
                 if (current_race >= MAX_RACES)
                 {
                     sLog->outErrorDb("Wrong race %u in `playercreateinfo_item` table, ignoring.", current_race);
                     continue;
                 }
 
-                uint32 current_class = fields[1].GetUInt32();
+                uint32 current_class = fields[1].GetUInt8();
                 if (current_class >= MAX_CLASSES)
                 {
                     sLog->outErrorDb("Wrong class %u in `playercreateinfo_item` table, ignoring.", current_class);
@@ -3172,7 +3176,7 @@ void ObjectMgr::LoadPlayerInfo()
                     continue;
                 }
 
-                int32 amount   = fields[3].GetInt32();
+                int32 amount   = fields[3].GetInt8();
 
                 if (!amount)
                 {
@@ -3207,11 +3211,8 @@ void ObjectMgr::LoadPlayerInfo()
     {
         uint32 oldMSTime = getMSTime();
 
-        QueryResult result = QueryResult(NULL);
-        if (sWorld->getBoolConfig(CONFIG_START_ALL_SPELLS))
-            result = WorldDatabase.Query("SELECT race, class, Spell, Active FROM playercreateinfo_spell_custom");
-        else
-            result = WorldDatabase.Query("SELECT race, class, Spell FROM playercreateinfo_spell");
+        std::string tableName = sWorld->getBoolConfig(CONFIG_START_ALL_SPELLS) ? "playercreateinfo_spell_custom" : "playercreateinfo_spell";
+        QueryResult result = WorldDatabase.PQuery("SELECT race, class, Spell FROM %s", tableName.c_str());
 
         if (!result)
         {
@@ -3226,14 +3227,14 @@ void ObjectMgr::LoadPlayerInfo()
             {
                 Field* fields = result->Fetch();
 
-                uint32 current_race = fields[0].GetUInt32();
+                uint32 current_race = fields[0].GetUInt8();
                 if (current_race >= MAX_RACES)
                 {
                     sLog->outErrorDb("Wrong race %u in `playercreateinfo_spell` table, ignoring.", current_race);
                     continue;
                 }
 
-                uint32 current_class = fields[1].GetUInt32();
+                uint32 current_class = fields[1].GetUInt8();
                 if (current_class >= MAX_CLASSES)
                 {
                     sLog->outErrorDb("Wrong class %u in `playercreateinfo_spell` table, ignoring.", current_class);
@@ -3283,14 +3284,14 @@ void ObjectMgr::LoadPlayerInfo()
             {
                 Field* fields = result->Fetch();
 
-                uint32 current_race = fields[0].GetUInt32();
+                uint32 current_race = fields[0].GetUInt8();
                 if (current_race >= MAX_RACES)
                 {
                     sLog->outErrorDb("Wrong race %u in `playercreateinfo_action` table, ignoring.", current_race);
                     continue;
                 }
 
-                uint32 current_class = fields[1].GetUInt32();
+                uint32 current_class = fields[1].GetUInt8();
                 if (current_class >= MAX_CLASSES)
                 {
                     sLog->outErrorDb("Wrong class %u in `playercreateinfo_action` table, ignoring.", current_class);
@@ -3298,7 +3299,7 @@ void ObjectMgr::LoadPlayerInfo()
                 }
 
                 PlayerInfo* pInfo = &_playerInfo[current_race][current_class];
-                pInfo->action.push_back(PlayerCreateInfoAction(fields[2].GetUInt8(), fields[3].GetUInt32(), fields[4].GetUInt8()));
+                pInfo->action.push_back(PlayerCreateInfoAction(fields[2].GetUInt16(), fields[3].GetUInt32(), fields[4].GetUInt16()));
 
                 ++count;
             }
@@ -3330,7 +3331,7 @@ void ObjectMgr::LoadPlayerInfo()
         {
             Field* fields = result->Fetch();
 
-            uint32 current_class = fields[0].GetUInt32();
+            uint32 current_class = fields[0].GetUInt8();
             if (current_class >= MAX_CLASSES)
             {
                 sLog->outErrorDb("Wrong class %u in `player_classlevelstats` table, ignoring.", current_class);
@@ -3411,21 +3412,21 @@ void ObjectMgr::LoadPlayerInfo()
         {
             Field* fields = result->Fetch();
 
-            uint32 current_race = fields[0].GetUInt32();
+            uint32 current_race = fields[0].GetUInt8();
             if (current_race >= MAX_RACES)
             {
                 sLog->outErrorDb("Wrong race %u in `player_levelstats` table, ignoring.", current_race);
                 continue;
             }
 
-            uint32 current_class = fields[1].GetUInt32();
+            uint32 current_class = fields[1].GetUInt8();
             if (current_class >= MAX_CLASSES)
             {
                 sLog->outErrorDb("Wrong class %u in `player_levelstats` table, ignoring.", current_class);
                 continue;
             }
 
-            uint32 current_level = fields[2].GetUInt32();
+            uint32 current_level = fields[2].GetUInt8();
             if (current_level > sWorld->getIntConfig(CONFIG_MAX_PLAYER_LEVEL))
             {
                 if (current_level > STRONG_MAX_LEVEL)        // hardcoded level maximum
@@ -3529,7 +3530,7 @@ void ObjectMgr::LoadPlayerInfo()
         {
             Field* fields = result->Fetch();
 
-            uint32 current_level = fields[0].GetUInt32();
+            uint32 current_level = fields[0].GetUInt8();
             uint32 current_xp    = fields[1].GetUInt32();
 
             if (current_level >= sWorld->getIntConfig(CONFIG_MAX_PLAYER_LEVEL))
@@ -4419,9 +4420,8 @@ void ObjectMgr::LoadScripts(ScriptsType type)
     scripts->clear();                                       // need for reload support
 
     bool isSpellScriptTable = (type == SCRIPTS_SPELL);
-    char buff[125];
-    sprintf(buff, "SELECT id, delay, command, datalong, datalong2, dataint, x, y, z, o%s FROM %s", isSpellScriptTable ? ", effIndex" : "", tableName.c_str());
-    QueryResult result = WorldDatabase.Query(buff);
+    //                                                 0    1       2         3         4          5    6  7  8  9
+    QueryResult result = WorldDatabase.PQuery("SELECT id, delay, command, datalong, datalong2, dataint, x, y, z, o%s FROM %s", isSpellScriptTable ? ", effIndex" : "", tableName.c_str());
 
     if (!result)
     {
@@ -4976,6 +4976,7 @@ void ObjectMgr::LoadPageTexts()
 {
     uint32 oldMSTime = getMSTime();
 
+    //                                                 0      1       2
     QueryResult result = WorldDatabase.Query("SELECT entry, text, next_page FROM page_text");
 
     if (!result)
@@ -4993,7 +4994,7 @@ void ObjectMgr::LoadPageTexts()
         PageText& pageText =  _pageTextStore[fields[0].GetUInt32()];
 
         pageText.Text     = fields[1].GetString();
-        pageText.NextPage = fields[2].GetInt16();
+        pageText.NextPage = fields[2].GetUInt32();
 
         ++count;
     }
@@ -5054,6 +5055,7 @@ void ObjectMgr::LoadInstanceTemplate()
 {
     uint32 oldMSTime = getMSTime();
 
+    //                                                0     1       2        4
     QueryResult result = WorldDatabase.Query("SELECT map, parent, script, allowMount FROM instance_template");
 
     if (!result)
@@ -5105,6 +5107,7 @@ void ObjectMgr::LoadInstanceEncounters()
 {
     uint32 oldMSTime = getMSTime();
 
+    //                                                 0         1            2                3
     QueryResult result = WorldDatabase.Query("SELECT entry, creditType, creditEntry, lastEncounterDungeon FROM instance_encounters");
     if (!result)
     {
@@ -5121,7 +5124,7 @@ void ObjectMgr::LoadInstanceEncounters()
         uint32 entry = fields[0].GetUInt32();
         uint8 creditType = fields[1].GetUInt8();
         uint32 creditEntry = fields[2].GetUInt32();
-        uint32 lastEncounterDungeon = fields[3].GetUInt32();
+        uint32 lastEncounterDungeon = fields[3].GetUInt16();
         DungeonEncounterEntry const* dungeonEncounter = sDungeonEncounterStore.LookupEntry(entry);
         if (!dungeonEncounter)
         {
@@ -5227,13 +5230,13 @@ void ObjectMgr::LoadGossipText()
             gText.Options[i].Text_0           = fields[cic++].GetString();
             gText.Options[i].Text_1           = fields[cic++].GetString();
 
-            gText.Options[i].Language         = fields[cic++].GetUInt32();
+            gText.Options[i].Language         = fields[cic++].GetUInt8();
             gText.Options[i].Probability      = fields[cic++].GetFloat();
 
             for (uint8 j=0; j < MAX_GOSSIP_TEXT_EMOTES; ++j)
             {
-                gText.Options[i].Emotes[j]._Delay  = fields[cic++].GetUInt32();
-                gText.Options[i].Emotes[j]._Emote  = fields[cic++].GetUInt32();
+                gText.Options[i].Emotes[j]._Delay  = fields[cic++].GetUInt16();
+                gText.Options[i].Emotes[j]._Emote  = fields[cic++].GetUInt16();
             }
         }
     } while (result->NextRow());
@@ -6638,7 +6641,7 @@ uint32 ObjectMgr::GetXPForLevel(uint8 level)
 void ObjectMgr::LoadPetNames()
 {
     uint32 oldMSTime = getMSTime();
-
+    //                                                0     1      2
     QueryResult result = WorldDatabase.Query("SELECT word, entry, half FROM pet_name_generation");
 
     if (!result)
@@ -6752,7 +6755,7 @@ void ObjectMgr::LoadReputationRewardRate()
 
     _repRewardRateStore.clear();                             // for reload case
 
-    uint32 count = 0;
+    uint32 count = 0; //                                0          1            2             3
     QueryResult result = WorldDatabase.Query("SELECT faction, quest_rate, creature_rate, spell_rate FROM reputation_reward_rate");
 
     if (!result)
@@ -6889,7 +6892,7 @@ void ObjectMgr::LoadReputationSpilloverTemplate()
 
     _repSpilloverTemplateStore.clear();                      // for reload case
 
-    uint32 count = 0;
+    uint32 count = 0; //                                0         1        2       3        4       5       6         7        8      9        10       11     12
     QueryResult result = WorldDatabase.Query("SELECT faction, faction1, rate_1, rank_1, faction2, rate_2, rank_2, faction3, rate_3, rank_3, faction4, rate_4, rank_4 FROM reputation_spillover_template");
 
     if (!result)
@@ -6903,22 +6906,22 @@ void ObjectMgr::LoadReputationSpilloverTemplate()
     {
         Field* fields = result->Fetch();
 
-        uint32 factionId                = fields[0].GetUInt32();
+        uint32 factionId                = fields[0].GetUInt16();
 
         RepSpilloverTemplate repTemplate;
 
-        repTemplate.faction[0]          = fields[1].GetUInt32();
+        repTemplate.faction[0]          = fields[1].GetUInt16();
         repTemplate.faction_rate[0]     = fields[2].GetFloat();
-        repTemplate.faction_rank[0]     = fields[3].GetUInt32();
-        repTemplate.faction[1]          = fields[4].GetUInt32();
+        repTemplate.faction_rank[0]     = fields[3].GetUInt8();
+        repTemplate.faction[1]          = fields[4].GetUInt16();
         repTemplate.faction_rate[1]     = fields[5].GetFloat();
-        repTemplate.faction_rank[1]     = fields[6].GetUInt32();
-        repTemplate.faction[2]          = fields[7].GetUInt32();
+        repTemplate.faction_rank[1]     = fields[6].GetUInt8();
+        repTemplate.faction[2]          = fields[7].GetUInt16();
         repTemplate.faction_rate[2]     = fields[8].GetFloat();
-        repTemplate.faction_rank[2]     = fields[9].GetUInt32();
-        repTemplate.faction[3]          = fields[10].GetUInt32();
+        repTemplate.faction_rank[2]     = fields[9].GetUInt8();
+        repTemplate.faction[3]          = fields[10].GetUInt16();
         repTemplate.faction_rate[3]     = fields[11].GetFloat();
-        repTemplate.faction_rank[3]     = fields[12].GetUInt32();
+        repTemplate.faction_rank[3]     = fields[12].GetUInt8();
 
         FactionEntry const* factionEntry = sFactionStore.LookupEntry(factionId);
 
@@ -7003,7 +7006,7 @@ void ObjectMgr::LoadPointsOfInterest()
 
     uint32 count = 0;
 
-    //                                                0      1  2  3      4     5     6
+    //                                                  0   1  2   3      4     5       6
     QueryResult result = WorldDatabase.Query("SELECT entry, x, y, icon, flags, data, icon_name FROM points_of_interest");
 
     if (!result)
@@ -7151,7 +7154,7 @@ void ObjectMgr::LoadNPCSpellClickSpells()
             continue;
         }
 
-        uint8 userType = fields[3].GetUInt8();
+        uint8 userType = fields[3].GetUInt16();
         if (userType >= SPELL_CLICK_USER_MAX)
             sLog->outErrorDb("Table npc_spellclick_spells references unknown user type %u. Skipping entry.", uint32(userType));
 
@@ -7805,7 +7808,7 @@ void ObjectMgr::LoadFishingBaseSkillLevel()
     {
         Field* fields = result->Fetch();
         uint32 entry  = fields[0].GetUInt32();
-        int32 skill   = fields[1].GetInt32();
+        int32 skill   = fields[1].GetInt16();
 
         AreaTableEntry const* fArea = GetAreaEntryByAreaID(entry);
         if (!fArea)
@@ -8039,6 +8042,7 @@ void ObjectMgr::LoadMailLevelRewards()
 
     _mailLevelRewardStore.clear();                           // for reload case
 
+    //                                                 0        1             2            3
     QueryResult result = WorldDatabase.Query("SELECT level, raceMask, mailTemplateId, senderEntry FROM mail_level_reward");
 
     if (!result)
@@ -8200,9 +8204,9 @@ void ObjectMgr::LoadTrainerSpell()
         uint32 entry         = fields[0].GetUInt32();
         uint32 spell         = fields[1].GetUInt32();
         uint32 spellCost     = fields[2].GetUInt32();
-        uint32 reqSkill      = fields[3].GetUInt32();
-        uint32 reqSkillValue = fields[4].GetUInt32();
-        uint32 reqLevel      = fields[5].GetUInt32();
+        uint32 reqSkill      = fields[3].GetUInt16();
+        uint32 reqSkillValue = fields[4].GetUInt16();
+        uint32 reqLevel      = fields[5].GetUInt8();
 
         AddSpellToTrainer(entry, spell, spellCost, reqSkill, reqSkillValue, reqLevel);
 
@@ -8236,7 +8240,7 @@ int ObjectMgr::LoadReferenceVendor(int32 vendor, int32 item, std::set<uint32> *s
             count += LoadReferenceVendor(vendor, -item_id, skip_vendors);
         else
         {
-            int32  maxcount     = fields[1].GetUInt8(); // tinyint(3) unsigned
+            int32  maxcount     = fields[1].GetUInt8();
             uint32 incrtime     = fields[2].GetUInt32();
             uint32 ExtendedCost = fields[3].GetUInt32();
 
@@ -8286,7 +8290,7 @@ void ObjectMgr::LoadVendors()
             count += LoadReferenceVendor(entry, -item_id, &skip_vendors);
         else
         {
-            int32  maxcount     = fields[2].GetInt32();
+            uint32 maxcount     = fields[2].GetUInt8();
             uint32 incrtime     = fields[3].GetUInt32();
             uint32 ExtendedCost = fields[4].GetUInt32();
 
@@ -8594,10 +8598,13 @@ uint32 ObjectMgr::GetScriptId(const char *name)
 {
     // use binary search to find the script name in the sorted vector
     // assume "" is the first element
-    if (!name) return 0;
-    ScriptNameContainer::const_iterator itr =
-        std::lower_bound(_scriptNamesStore.begin(), _scriptNamesStore.end(), name);
-    if (itr == _scriptNamesStore.end() || *itr != name) return 0;
+    if (!name)
+        return 0;
+
+    ScriptNameContainer::const_iterator itr = std::lower_bound(_scriptNamesStore.begin(), _scriptNamesStore.end(), name);
+    if (itr == _scriptNamesStore.end() || *itr != name)
+        return 0;
+
     return uint32(itr - _scriptNamesStore.begin());
 }
 
@@ -8606,6 +8613,7 @@ void ObjectMgr::CheckScripts(ScriptsType type, std::set<int32>& ids)
     ScriptMapMap* scripts = GetScriptsMapByType(type);
     if (!scripts)
         return;
+
     for (ScriptMapMap::const_iterator itrMM = scripts->begin(); itrMM != scripts->end(); ++itrMM)
     {
         for (ScriptMap::const_iterator itrM = itrMM->second.begin(); itrM != itrMM->second.end(); ++itrM)

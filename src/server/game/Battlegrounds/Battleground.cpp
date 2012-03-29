@@ -21,7 +21,6 @@
 #include "ArenaTeamMgr.h"
 #include "World.h"
 #include "WorldPacket.h"
-
 #include "ArenaTeam.h"
 #include "Battleground.h"
 #include "BattlegroundMgr.h"
@@ -261,9 +260,7 @@ void Battleground::Update(uint32 diff)
     {
         case STATUS_WAIT_JOIN:
             if (GetPlayersSize())
-            {
                 _ProcessJoin(diff);
-            }
             break;
         case STATUS_IN_PROGRESS:
             _ProcessOfflineQueue();

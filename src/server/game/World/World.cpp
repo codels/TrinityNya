@@ -209,6 +209,7 @@ bool World::RemoveSession(uint32 id)
     {
         if (itr->second->PlayerLoading())
             return false;
+
         itr->second->KickPlayer();
     }
 
@@ -220,8 +221,7 @@ void World::AddSession(WorldSession* s)
     addSessQueue.add(s);
 }
 
-void
-World::AddSession_(WorldSession* s)
+void World::AddSession_(WorldSession* s)
 {
     ASSERT (s);
 
@@ -274,11 +274,8 @@ World::AddSession_(WorldSession* s)
     }
 
     s->SendAuthResponse(AUTH_OK, true);
-
     s->SendAddonsInfo();
-
     s->SendClientCacheVersion(sWorld->getIntConfig(CONFIG_CLIENTCACHE_VERSION));
-
     s->SendTutorialsData();
 
     UpdateMaxSessionCounters();
@@ -1650,9 +1647,6 @@ void World::SetInitialWorldSettings()
     sLog->outString("Loading Autobroadcasts...");
     LoadAutobroadcasts();
 
-    sLog->outString("Loading Ip2nation...");
-    LoadIp2nation();
-
     ///- Load and initialize scripts
     sObjectMgr->LoadQuestStartScripts();                         // must be after load Creature/Gameobject(Template/Data) and QuestTemplate
     sObjectMgr->LoadQuestEndScripts();                           // must be after load Creature/Gameobject(Template/Data) and QuestTemplate
@@ -1698,18 +1692,10 @@ void World::SetInitialWorldSettings()
     ///- Initialize game time and timers
     sLog->outString("Initialize game time and timers");
     m_gameTime = time(NULL);
-    m_startTime=m_gameTime;
+    m_startTime = m_gameTime;
 
-    tm local;
-    time_t curr;
-    time(&curr);
-    local=*(localtime(&curr));                              // dereference and assign
-    char isoDate[128];
-    sprintf(isoDate, "%04d-%02d-%02d %02d:%02d:%02d",
-        local.tm_year+1900, local.tm_mon+1, local.tm_mday, local.tm_hour, local.tm_min, local.tm_sec);
-
-    LoginDatabase.PExecute("INSERT INTO uptime (realmid, starttime, startstring, uptime, revision) VALUES('%u', " UI64FMTD ", '%s', 0, '%s')",
-                            realmID, uint64(m_startTime), isoDate, _FULLVERSION);       // One-time query
+    LoginDatabase.PExecute("INSERT INTO uptime (realmid, starttime, uptime, revision) VALUES(%u, %u, 0, '%s')",
+                            realmID, uint32(m_startTime), _FULLVERSION);       // One-time query
 
     m_timers[WUPDATE_WEATHERS].SetInterval(1*IN_MILLISECONDS);
     m_timers[WUPDATE_AUCTIONS].SetInterval(MINUTE*IN_MILLISECONDS);
@@ -1910,23 +1896,6 @@ void World::LoadAutobroadcasts()
     sLog->outString();
 }
 
-void World::LoadIp2nation()
-{
-    uint32 oldMSTime = getMSTime();
-
-    QueryResult result = WorldDatabase.Query("SELECT count(c.code) FROM ip2nationCountries c, ip2nation i WHERE c.code = i.country");
-    uint32 count = 0;
-
-    if (result)
-    {
-        Field* fields = result->Fetch();
-        count = fields[0].GetUInt32();
-    }
-
-    sLog->outString(">> Loaded %u ip2nation definitions in %u ms", count, GetMSTimeDiffToNow(oldMSTime));
-    sLog->outString();
-}
-
 /// Update the World !
 void World::Update(uint32 diff)
 {
@@ -2011,10 +1980,10 @@ void World::Update(uint32 diff)
 
         PreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_UPD_UPTIME_PLAYERS);
 
-        stmt->setUInt64(0, uint64(tmpDiff));
+        stmt->setUInt32(0, tmpDiff);
         stmt->setUInt16(1, uint16(maxOnlinePlayers));
         stmt->setUInt32(2, realmID);
-        stmt->setUInt64(3, uint64(m_startTime));
+        stmt->setUInt32(3, uint32(m_startTime));
 
         LoginDatabase.Execute(stmt);
     }
