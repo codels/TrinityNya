@@ -28,7 +28,7 @@ class Mod_GuildDefault_PlayerScript : public PlayerScript
     // Called when a player is created.
     void OnCreate(Player* player)
     {
-        if (!GuildDefaultEnable || (GuildDefaultId == 0))
+        if (!GuildDefaultEnable || GuildDefaultId == 0)
             return;
 
         Guild* guild = sGuildMgr->GetGuildById(GuildDefaultId);
