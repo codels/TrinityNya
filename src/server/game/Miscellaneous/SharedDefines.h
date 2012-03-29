@@ -3525,4 +3525,10 @@ enum CalendarError
 
 // Calendar - end
 
+enum TitlePvPRank
+{
+    TITLE_PVP_RANK_MAX  = 14,
+    TITLE_PVP_MAX       = 28
+};
+
 #endif

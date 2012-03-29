@@ -1261,11 +1261,10 @@ void AchievementMgr::UpdateAchievementCriteria(AchievementCriteriaTypes type, ui
                     SetCriteriaProgress(achievementCriteria, 1);
                 break;
             }
-            //TrinityNya
             case ACHIEVEMENT_CRITERIA_TYPE_OWN_RANK:
-                if (!miscValue1 || miscValue1 < 1 || miscValue1 > 29)
+                if (!miscValue1 || miscValue1 > TITLE_PVP_RANK_MAX)
                     continue;
-                SetCriteriaProgress(achievementCriteria, miscValue1 > 14 ? miscValue1 - 14 : miscValue1);
+                SetCriteriaProgress(achievementCriteria, miscValue1);
                 break;
             case ACHIEVEMENT_CRITERIA_TYPE_BUY_BANK_SLOT:
                 SetCriteriaProgress(achievementCriteria, GetPlayer()->GetBankBagSlotCount());
@@ -1715,7 +1714,7 @@ bool AchievementMgr::IsCompletedCriteria(AchievementCriteriaEntry const* achieve
         case ACHIEVEMENT_CRITERIA_TYPE_EXPLORE_AREA:
             return progress->counter >= 1;
         case ACHIEVEMENT_CRITERIA_TYPE_OWN_RANK:
-            return progress->counter >= achievementCriteria->own_rank.rank;
+            return progress->counter == achievementCriteria->own_rank.rank;
         case ACHIEVEMENT_CRITERIA_TYPE_BUY_BANK_SLOT:
             return progress->counter >= achievementCriteria->buy_bank_slot.numberOfSlots;
         case ACHIEVEMENT_CRITERIA_TYPE_GAIN_REPUTATION:
