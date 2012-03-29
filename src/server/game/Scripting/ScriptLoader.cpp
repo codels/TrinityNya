@@ -34,8 +34,8 @@ void AddSC_Mod_SpecialCode();
 void AddSC_Mod_MailHistory();
 // Other author:
 void AddSC_Mod_ExternalMail(); // searching author...
-void AddSC_NPC_ArenaWatcher(); // by @FrozenSouL (version by Codels)
-void AddSC_Mod_GuildDefault(); // author avalonfr?
+void AddSC_NPC_ArenaWatcher(); // by FrozenSouL (version by Codels)
+void AddSC_Mod_GuildDefault(); // by s@m
 
 //examples
 void AddSC_example_creature();
