@@ -3011,14 +3011,54 @@ OutdoorPvP.Wintergrasp.Antifarm.Enable = 1
 OutdoorPvP.Wintergrasp.Antifarm.Atk = 1
 OutdoorPvP.Wintergrasp.Antifarm.Def = 1
 
-#######################################################################
-#   MODS Config, need description :(
-#######################################################################
+###################################################################################################
+# MODIFICATION (THIS IS NOT BLIZZLIKE)
+###################################################################################################
 
-#logging create/delete/login/logout characters
+###################################################################################################
+# ACCOUNT HISTORY
+#
+#    AccountHistory.Enable
+#        Description: Logging history (create / delete / login / logout) characters to database
+#        Default:     0 = Disable
+#                     1 = Enable
+
 AccountHistory.Enable = 0
 
-#######################################################################
+#
+#     AccountHistory.Login
+#        Description: Enables logging login characters
+#        Default:     0 - (Disabled)
+#                     1 - (Enabled)
+
+AccountHistory.Login = 0
+
+#
+#     AccountHistory.Logout
+#        Description: Enables logging logout characters
+#        Default:     0 - (Disabled)
+#                     1 - (Enabled)
+
+AccountHistory.Logout = 0
+
+#
+#     AccountHistory.Create
+#        Description: Enables logging create characters
+#        Default:     0 - (Disabled)
+#                     1 - (Enabled)
+
+AccountHistory.Create = 0
+
+#
+#     AccountHistory.Delete
+#        Description: Enables logging delete characters
+#        Default:     0 - (Disabled)
+#                     1 - (Enabled)
+
+AccountHistory.Delete = 0
+
+#
+###################################################################################################
 
 #on/off auctionhousebot
 AuctionHouseBot.Enable = 0
@@ -3046,11 +3086,6 @@ AutoLearn.SpellMount = 0
 AutoLearn.SpellWeapon = 0
 #check dual spec
 AutoLearn.DualSpec = 0
-
-#######################################################################
-
-#on/off friendchat
-FriendChat = 0
 
 #######################################################################
 
@@ -3155,3 +3190,12 @@ ArenaWatcher.ShowNoGames = 0
 ArenaWatcher.OnlyRated = 0
 #can teleport to players
 ArenaWatcher.ToPlayers = 0
+
+#######################################################################
+
+#on/off guild default
+GuildDefault.Enable = 0
+#guild id
+GuildDefault.ID = 0
+#guild rank
+GuildDefault.Rank = 0

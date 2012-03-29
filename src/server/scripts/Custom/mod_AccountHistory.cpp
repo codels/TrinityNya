@@ -12,13 +12,14 @@ enum AccountHistoryType
     ACCOUNT_HISTORY_CREATE  = 4
 };
 
-bool accountHistoryEnable = false;
+bool AccountHistoryEnable = false;
+bool AccountHistoryLogin = false;
+bool AccountHistoryLogout = false;
+bool AccountHistoryCreate = false;
+bool AccountHistoryDelete = false;
 
 void WriteToHistory(Player* player, uint8 historyType)
 {
-    if (!accountHistoryEnable)
-        return;
-
     WorldSession* session = player->GetSession();
     LoginDatabase.PExecute(SQL_HISTORY, session->GetAccountId(), realmID, session->GetRemoteAddress().c_str(), historyType, player->GetGUIDLow(), player->GetName());
 }
@@ -30,7 +31,11 @@ class Mod_AccountHistory_WorldScript : public WorldScript
 
     void OnConfigLoad(bool /*reload*/)
     {
-        accountHistoryEnable = ConfigMgr::GetBoolDefault("AccountHistory.Enable", false);
+        AccountHistoryEnable    = ConfigMgr::GetBoolDefault("AccountHistory.Enable", false);
+        AccountHistoryLogin     = ConfigMgr::GetBoolDefault("AccountHistory.Login", false);
+        AccountHistoryLogout    = ConfigMgr::GetBoolDefault("AccountHistory.Logout", false);
+        AccountHistoryCreate    = ConfigMgr::GetBoolDefault("AccountHistory.Create", false);
+        AccountHistoryDelete    = ConfigMgr::GetBoolDefault("AccountHistory.Delete", false);
     }
 };
 
@@ -42,25 +47,34 @@ class Mod_AccountHistory_PlayerScript : public PlayerScript
     // Called when a player is created.
     void OnCreate(Player* player)
     {
+        if (!AccountHistoryEnable || !AccountHistoryCreate)
+            return;
+
         WriteToHistory(player, ACCOUNT_HISTORY_CREATE);
     }
 
     // Called when a player logs in.
     void OnLogin(Player* player)
     {
+        if (!AccountHistoryEnable || !AccountHistoryLogin)
+            return;
+
         WriteToHistory(player, ACCOUNT_HISTORY_LOGIN);
     }
 
     // Called when a player logs out.
     void OnLogout(Player* player)
     {
+        if (!AccountHistoryEnable || !AccountHistoryLogout)
+            return;
+
         WriteToHistory(player, ACCOUNT_HISTORY_LOGOUT);
     }
 
     // Called when a player is deleted.
     void OnDelete(uint64 guid, const char* name, WorldSession* session)
     {
-        if (!accountHistoryEnable)
+        if (!AccountHistoryEnable || !AccountHistoryDelete)
             return;
 
         LoginDatabase.PExecute(SQL_HISTORY, session->GetAccountId(), realmID, session->GetRemoteAddress().c_str(), ACCOUNT_HISTORY_DELETE, GUID_LOPART(guid), name);
