@@ -18,21 +18,24 @@
 #include "ScriptLoader.h"
 #include "AnticheatMgr.h"
 
-//mod
+// Custom mods: (may be removed tag _Mod ?)
+// Author: Codels
 void AddSC_Mod_HonorRank();
 void AddSC_Mod_Multikill();
 void AddSC_Mod_AutoLearn();
 void AddSC_Mod_FriendChat();
 void AddSC_Mod_DynamicRate();
 void AddSC_Mod_KillBoss();
-void AddSC_Mod_ExternalMail();
 void AddSC_Mod_DynamicInstance();
 void AddSC_Mod_AccountHistory();
 void AddSC_Mod_BattlegroundHistory();
 void AddSC_Mod_AuctionHouseBot();
 void AddSC_Mod_SpecialCode();
 void AddSC_Mod_MailHistory();
-void AddSC_NPC_ArenaWatcher(); // by @FrozenSouL
+// Other author:
+void AddSC_Mod_ExternalMail(); // searching author...
+void AddSC_NPC_ArenaWatcher(); // by @FrozenSouL (version by Codels)
+void AddSC_Mod_GuildDefault(); // author avalonfr?
 
 //examples
 void AddSC_example_creature();
@@ -1272,6 +1275,7 @@ void AddCustomScripts()
     AddSC_Mod_SpecialCode();
     AddSC_Mod_MailHistory();
     AddSC_NPC_ArenaWatcher();
+    AddSC_Mod_GuildDefault();
 
 #endif
 }

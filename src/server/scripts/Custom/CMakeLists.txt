@@ -24,6 +24,7 @@ set(scripts_STAT_SRCS
   Custom/mod_SpecialCode.cpp
   Custom/mod_MailHistory.cpp
   Custom/npc_ArenaWatcher.cpp
+  Custom/mod_GuildDefault.cpp
 )
 
 message("  -> Prepared: Custom")
