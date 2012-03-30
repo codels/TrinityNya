@@ -4,41 +4,45 @@
 #include "Guild.h"
 #include "GuildMgr.h"
 
-#define SQL_KILLBOSS_LOG "INSERT INTO `world_killboss` (`GuildId`, `CreatureEntry`, `KillerCount`, `KillData`, `MapSpawnMode`, `MapId`, `MapRaid`, `CreatureName`, `MapName`) VALUES ('%u', '%u', '%u', '%s', '%u', '%u', '%u', '%s', '%s')"
+#define SQL_BOSS_HISTORY_LOG "INSERT INTO `boss_history` (`GuildId`, `CreatureEntry`, `KillerCount`, `KillData`, `MapSpawnMode`, `MapId`, `MapRaid`, `CreatureName`, `MapName`, `MapMaxPlayers`) VALUES ('%u', '%u', '%u', '%s', '%u', '%u', '%u', '%s', '%s', '%u')"
 #define DATA_SEPARATOR ":"
 #define PEOPLE_SEPARATOR " "
 
-bool    KillBossEnable      = false;
-bool    KillBossLog         = false;
-int32  KillBossNormalText   = 11006;
-int32  KillBossHeroicText   = 11007;
+bool    BossHistoryEnable       = false;
+bool    BossHistoryInstance     = false;
+bool    BossHistoryLog          = false;
+bool    BossHistoryAnnounce     = false;
+int32   BossHistoryNormalText   = 11006;
+int32   BossHistoryHeroicText   = 11007;
 
-class Mod_KillBoss_WorldScript : public WorldScript
+class mod_BossHistory_WorldScript : public WorldScript
 {
     public:
-        Mod_KillBoss_WorldScript() : WorldScript("Mod_KillBoss_WorldScript") { }
+        mod_BossHistory_WorldScript() : WorldScript("mod_BossHistory_WorldScript") { }
 
     void OnConfigLoad(bool /*reload*/)
     {
-        KillBossEnable      = ConfigMgr::GetBoolDefault("KillBoss.Enable", false);
+        BossHistoryEnable      = ConfigMgr::GetBoolDefault("BossHistory.Enable", false);
 
-        if (!KillBossEnable)
+        if (!BossHistoryEnable)
             return;
 
-        KillBossLog         = ConfigMgr::GetBoolDefault("KillBoss.Log", false);
-        KillBossNormalText  = ConfigMgr::GetIntDefault("KillBoss.NormalTextId", 11006);
-        KillBossHeroicText  = ConfigMgr::GetIntDefault("KillBoss.HeroicTextId", 11007);
+        BossHistoryInstance    = ConfigMgr::GetBoolDefault("BossHistory.InstanceOnly", false);
+        BossHistoryAnnounce    = ConfigMgr::GetBoolDefault("BossHistory.Announce", false);
+        BossHistoryLog         = ConfigMgr::GetBoolDefault("BossHistory.Log", false);
+        BossHistoryNormalText  = ConfigMgr::GetIntDefault("BossHistory.NormalTextId", 11006);
+        BossHistoryHeroicText  = ConfigMgr::GetIntDefault("BossHistory.HeroicTextId", 11007);
     }
 };
 
-class Mod_KillBoss_AllCreatureScript : public AllCreatureScript
+class mod_BossHistory_AllCreatureScript : public AllCreatureScript
 {
     public:
-        Mod_KillBoss_AllCreatureScript() : AllCreatureScript("Mod_KillBoss_AllCreatureScript") { }
+        mod_BossHistory_AllCreatureScript() : AllCreatureScript("mod_BossHistory_AllCreatureScript") { }
 
     void AllCreatureJustDied(Creature* creature)
     {
-        if (!KillBossEnable)
+        if (!BossHistoryEnable)
             return;
 
         if (creature->GetCreatureTemplate()->rank != CREATURE_ELITE_WORLDBOSS)
@@ -54,6 +58,10 @@ class Mod_KillBoss_AllCreatureScript : public AllCreatureScript
 
         uint32 Entry = creature->GetEntry();
         InstanceMap* instance = map->ToInstanceMap();
+        
+        if (BossHistoryInstance && (!map->Instanceable() || !instance))
+            return;
+        
         std::string bossName(creature->GetNameForLocaleIdx(sObjectMgr->GetDBCLocaleIndex()));
         std::string mapName(creature->GetMap()->GetMapName());
         
@@ -74,7 +82,7 @@ class Mod_KillBoss_AllCreatureScript : public AllCreatureScript
 
                 KillerCount++;
                 uint32 playerGuildId = Temp->GetGuildId();
-                if (KillBossLog)
+                if (BossHistoryLog)
                 {
                     std::ostringstream PeopleData;
                     PeopleData << Temp->GetGUIDLow() << DATA_SEPARATOR;
@@ -101,7 +109,7 @@ class Mod_KillBoss_AllCreatureScript : public AllCreatureScript
             GuildId = recipient->GetGuildId();
             IsGuildKill = GuildId != 0;
 
-            if (KillBossLog)
+            if (BossHistoryLog)
             {
                 std::ostringstream PeopleData;
                 PeopleData << recipient->GetGUIDLow() << DATA_SEPARATOR;
@@ -119,35 +127,36 @@ class Mod_KillBoss_AllCreatureScript : public AllCreatureScript
 
         if (!IsGuildKill)
             GuildId = 0;
+            
+        uint32 mapMaxPlayers = instance ? instance->GetMaxPlayers() : 40;
 
-        if (IsGuildKill)
+        if (BossHistoryAnnounce && IsGuildKill)
         {
-            int32 TextId = KillBossNormalText;
-            uint32 mapMaxPlayers = instance ? instance->GetMaxPlayers() : 40;
+            int32 TextId = BossHistoryNormalText;
             std::string guildName(sGuildMgr->GetGuildById(GuildId)->GetName());
 
             if (map->IsRaid())
             {
                 if (spawnMode == RAID_DIFFICULTY_25MAN_HEROIC || spawnMode == RAID_DIFFICULTY_10MAN_HEROIC)
-                    TextId = KillBossHeroicText;
+                    TextId = BossHistoryHeroicText;
             }
             else if (spawnMode == DUNGEON_DIFFICULTY_HEROIC)
-                    TextId = KillBossHeroicText;
+                    TextId = BossHistoryHeroicText;
 
             sWorld->SendWorldText(TextId, mapName.c_str(), bossName.c_str(), mapMaxPlayers, guildName.c_str(), KillerCount);
         }
 
-        if (!KillBossLog) return;
+        if (!BossHistoryLog) return;
 
         CharacterDatabase.EscapeString(TeamKill);
         CharacterDatabase.EscapeString(bossName);
         CharacterDatabase.EscapeString(mapName);
-        CharacterDatabase.PExecute(SQL_KILLBOSS_LOG, GuildId, Entry, KillerCount, TeamKill.c_str(), spawnMode, map->GetId(), uint8(map->IsRaid()), bossName.c_str(), mapName.c_str());
+        CharacterDatabase.PExecute(SQL_BOSS_HISTORY_LOG, GuildId, Entry, KillerCount, TeamKill.c_str(), spawnMode, map->GetId(), uint8(map->IsRaid()), bossName.c_str(), mapName.c_str(), mapMaxPlayers);
     }
 };
 
-void AddSC_Mod_KillBoss()
+void AddSC_Mod_BossHistory()
 {
-    new Mod_KillBoss_AllCreatureScript();
-    new Mod_KillBoss_WorldScript();
+    new mod_BossHistory_AllCreatureScript();
+    new mod_BossHistory_WorldScript();
 }

@@ -18,24 +18,23 @@
 #include "ScriptLoader.h"
 #include "AnticheatMgr.h"
 
-// Custom mods: (may be removed tag _Mod ?)
-// Author: Codels
-void AddSC_Mod_HonorRank();
-void AddSC_Mod_Multikill();
-void AddSC_Mod_AutoLearn();
-void AddSC_Mod_FriendChat();
-void AddSC_Mod_DynamicRate();
-void AddSC_Mod_KillBoss();
-void AddSC_Mod_DynamicInstance();
-void AddSC_Mod_AccountHistory();
-void AddSC_Mod_BattlegroundHistory();
-void AddSC_Mod_AuctionHouseBot();
-void AddSC_Mod_SpecialCode();
-void AddSC_Mod_MailHistory();
-// Other author:
+// Custom mods: START
+void AddSC_Mod_ArenaWatcher(); // by FrozenSouL (version by Codels)
+void AddSC_Mod_AuctionHouseBot(); // by Codels
+void AddSC_Mod_AutoLearn(); // by Codels
+void AddSC_Mod_BattlegroundHistory(); // by Codels
+void AddSC_Mod_BossHistory(); // by Codels
+void AddSC_Mod_CharacterHistory(); // by Codels
+void AddSC_Mod_DynamicInstance(); // by Codels
+void AddSC_Mod_DynamicRate(); // by Codels
 void AddSC_Mod_ExternalMail(); // searching author...
-void AddSC_NPC_ArenaWatcher(); // by FrozenSouL (version by Codels)
+void AddSC_Mod_FriendChat(); // by Codels
 void AddSC_Mod_GuildDefault(); // by s@m
+void AddSC_Mod_HonorRank(); // by Codels
+void AddSC_Mod_MailHistory(); // by Codels
+void AddSC_Mod_Multikill(); // by Codels
+void AddSC_Mod_SpecialCode(); // by Codels
+// Custom mods: END
 
 //examples
 void AddSC_example_creature();
@@ -1261,21 +1260,21 @@ void AddCustomScripts()
 {
 #ifdef SCRIPTS
     /* This is where custom scripts should be added. */
-    AddSC_Mod_HonorRank();
-    AddSC_Mod_Multikill();
-    AddSC_Mod_AutoLearn();
-    AddSC_Mod_FriendChat();
-    AddSC_Mod_DynamicRate();
-    AddSC_Mod_KillBoss();
-    AddSC_Mod_ExternalMail();
-    AddSC_Mod_DynamicInstance();
-    AddSC_Mod_AccountHistory();
-    AddSC_Mod_BattlegroundHistory();
+    AddSC_Mod_ArenaWatcher();
     AddSC_Mod_AuctionHouseBot();
-    AddSC_Mod_SpecialCode();
-    AddSC_Mod_MailHistory();
-    AddSC_NPC_ArenaWatcher();
+    AddSC_Mod_AutoLearn();
+    AddSC_Mod_BattlegroundHistory();
+    AddSC_Mod_BossHistory();
+    AddSC_Mod_CharacterHistory();
+    AddSC_Mod_DynamicInstance();
+    AddSC_Mod_DynamicRate();
+    AddSC_Mod_ExternalMail();
+    AddSC_Mod_FriendChat();
     AddSC_Mod_GuildDefault();
+    AddSC_Mod_HonorRank();
+    AddSC_Mod_MailHistory();
+    AddSC_Mod_Multikill();
+    AddSC_Mod_SpecialCode();
 
 #endif
 }

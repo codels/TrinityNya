@@ -1,7 +1,5 @@
 /*######
-## Arena Watcher by @FrozenSouL
-## for creature:
-## UPDATE `creature_template` SET `npcflag` = 1, `ScriptName` = 'npc_arena_watcher' WHERE `entry` = XXXX;
+## Arena Watcher by FrozenSouL
 ######*/
 
 #include "CreatureTextMgr.h"
@@ -103,10 +101,10 @@ void ArenaWatcherEnd(Player* player, bool clear = false)
     player->SetSpeed(MOVE_FLIGHT, 1.0f, true);
 }
 
-class npc_ArenaWatcher_WorldScript : public WorldScript
+class mod_ArenaWatcher_WorldScript : public WorldScript
 {
     public:
-        npc_ArenaWatcher_WorldScript() : WorldScript("npc_ArenaWatcher_WorldScript") { }
+        mod_ArenaWatcher_WorldScript() : WorldScript("mod_ArenaWatcher_WorldScript") { }
 
     void OnConfigLoad(bool reload)
     {
@@ -121,10 +119,10 @@ class npc_ArenaWatcher_WorldScript : public WorldScript
     }
 };
 
-class npc_ArenaWatcher_PlayerScript : public PlayerScript
+class mod_ArenaWatcher_PlayerScript : public PlayerScript
 {
     public:
-        npc_ArenaWatcher_PlayerScript() : PlayerScript("npc_ArenaWatcher_PlayerScript") { }
+        mod_ArenaWatcher_PlayerScript() : PlayerScript("mod_ArenaWatcher_PlayerScript") { }
 
     void OnPlayerRemoveFromBattleground(Player* player, Battleground* /*bg*/)
     {
@@ -182,24 +180,28 @@ class npc_arena_watcher : public CreatureScript
                     ++arenasCount[ArenaTeam::GetSlotByType(bg->GetArenaType())];
                 }
             }
-
-            std::string gossipText;
             
             for (uint8 i = 0; i < MAX_ARENA_SLOT; ++i)
             {
                 // skip arena type with 0 games
                 if (!ArenaWatcherShowNoGames && arenasCount[i] == 0)
                     continue;
-
-                gossipText = fmtstring(sObjectMgr->GetTrinityStringForDBCLocale(STRING_ARENA_2v2 + i), arenasCount[i]);
-                player->ADD_GOSSIP_ITEM(GOSSIP_ICON_CHAT, gossipText.c_str(), GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + ArenaTeam::GetTypeBySlot(i));
+                    
+                char gossipTextFormat[100];
+                snprintf(gossipTextFormat, 100, sObjectMgr->GetTrinityStringForDBCLocale(STRING_ARENA_2v2 + i), arenasCount[i]);
+                player->ADD_GOSSIP_ITEM(GOSSIP_ICON_CHAT, gossipTextFormat, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + ArenaTeam::GetTypeBySlot(i));
             }
 
             if (ArenaWatcherToPlayers)
-            {
-                gossipText = sObjectMgr->GetTrinityStringForDBCLocale(STRING_FOLLOW);
-                player->ADD_GOSSIP_ITEM_EXTENDED(GOSSIP_ICON_CHAT, gossipText.c_str(), GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 4, "", 0, true);
-            }
+                player->ADD_GOSSIP_ITEM_EXTENDED(
+                    GOSSIP_ICON_CHAT,
+                    sObjectMgr->GetTrinityStringForDBCLocale(STRING_FOLLOW),
+                    GOSSIP_SENDER_MAIN,
+                    GOSSIP_ACTION_INFO_DEF + 4,
+                    "",
+                    0,
+                    true
+                );
         }
         
         player->PlayerTalkClass->SendGossipMenu(player->GetGossipTextId(creature), creature->GetGUID());
@@ -251,19 +253,16 @@ class npc_arena_watcher : public CreatureScript
 
                         if (teamOne && teamTwo)
                         {
-                            std::stringstream gossipItem;
-                            gossipItem << bg->GetBgMap()->GetMapName() << " : ";
-                            gossipItem << teamOne->GetName() << " (";
-                            gossipItem << teamOne->GetRating() << ") vs. ";
-                            gossipItem << teamTwo->GetName() << " (";
-                            gossipItem << teamTwo->GetRating() << ")";
-                            player->ADD_GOSSIP_ITEM(GOSSIP_ICON_CHAT, gossipItem.str(), GOSSIP_SENDER_MAIN + bgTypeId, itr->first + GOSSIP_OFFSET);
+                            char gossipTextFormat[100];
+                            snprintf(gossipTextFormat, 100, "%s : %s (%u) vs. %s (%u)", bg->GetBgMap()->GetMapName(), teamOne->GetName().c_str(), teamOne->GetRating(), teamTwo->GetName().c_str(), teamTwo->GetRating());
+                            player->ADD_GOSSIP_ITEM(GOSSIP_ICON_CHAT, gossipTextFormat, GOSSIP_SENDER_MAIN + bgTypeId, itr->first + GOSSIP_OFFSET);
                         }
                     }
                     else
                     {
-                        std::string gossipItem = fmtstring("[%u] %s : %u vs. %u", itr->first, bg->GetBgMap()->GetMapName(), playerCount, playerCount);
-                        player->ADD_GOSSIP_ITEM(GOSSIP_ICON_CHAT, gossipItem.c_str(), GOSSIP_SENDER_MAIN + bgTypeId, itr->first + GOSSIP_OFFSET);
+                        char gossipTextFormat[100];
+                        snprintf(gossipTextFormat, 100, "[%u] %s : %u vs. %u", itr->first, bg->GetBgMap()->GetMapName(), playerCount, playerCount);
+                        player->ADD_GOSSIP_ITEM(GOSSIP_ICON_CHAT, gossipTextFormat, GOSSIP_SENDER_MAIN + bgTypeId, itr->first + GOSSIP_OFFSET);
                     }
 
                     bracketExists = true;
@@ -368,9 +367,9 @@ class npc_arena_watcher : public CreatureScript
     }
 };
 
-void AddSC_NPC_ArenaWatcher()
+void AddSC_Mod_ArenaWatcher()
 {
-    new npc_ArenaWatcher_WorldScript();
-    new npc_ArenaWatcher_PlayerScript();
+    new mod_ArenaWatcher_WorldScript();
+    new mod_ArenaWatcher_PlayerScript();
     new npc_arena_watcher();
 }
