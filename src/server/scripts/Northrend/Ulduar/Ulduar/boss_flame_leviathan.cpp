@@ -964,8 +964,9 @@ public:
             me->SetReactState(REACT_PASSIVE);
         }
 
-        void WaypointReached(uint32 /*i*/)
+        void WaypointReached(uint32 /*waypointId*/)
         {
+
         }
 
         void Reset()
@@ -1685,7 +1686,7 @@ class spell_pursue : public SpellScriptLoader
             void FilterTargetsSubsequently(std::list<Unit*>& targets)
             {
                 targets.clear();
-                if(_target)
+                if (_target)
                     targets.push_back(_target);
             }
 

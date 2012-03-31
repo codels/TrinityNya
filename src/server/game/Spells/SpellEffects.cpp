@@ -2767,7 +2767,7 @@ void Spell::EffectLearnSkill(SpellEffIndex effIndex)
     if (damage < 0)
         return;
 
-    uint32 skillid =  m_spellInfo->Effects[effIndex].MiscValue;
+    uint32 skillid = m_spellInfo->Effects[effIndex].MiscValue;
     uint16 skillval = unitTarget->ToPlayer()->GetPureSkillValue(skillid);
     unitTarget->ToPlayer()->SetSkill(skillid, m_spellInfo->Effects[effIndex].CalcValue(), skillval?skillval:1, damage*75);
 }
@@ -4654,7 +4654,8 @@ void Spell::EffectScriptEffect(SpellEffIndex effIndex)
                         45684                             // Polymorph
                     };
 
-                    static uint32 const spellTarget[5] = {
+                    static uint32 const spellTarget[5] =
+                    {
                         45673,                            // Bigger!
                         45672,                            // Shrunk
                         45677,                            // Yellow
@@ -5103,7 +5104,7 @@ void Spell::EffectEnchantHeldItem(SpellEffIndex effIndex)
         return;
 
     // must be equipped
-    if (!item ->IsEquipped())
+    if (!item->IsEquipped())
         return;
 
     if (m_spellInfo->Effects[effIndex].MiscValue)

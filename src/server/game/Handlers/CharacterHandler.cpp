@@ -1634,8 +1634,8 @@ void WorldSession::HandleCharFactionOrRaceChange(WorldPacket& recv_data)
     }
 
     Field* fields = result->Fetch();
-    uint32 playerClass = fields[0].GetUInt32();
-    uint32 level = fields[1].GetUInt32();
+    uint32 playerClass = uint32(fields[0].GetUInt8());
+    uint32 level = uint32(fields[1].GetUInt8());
     uint32 at_loginFlags = fields[2].GetUInt16();
     uint32 used_loginFlag = ((recv_data.GetOpcode() == CMSG_CHAR_RACE_CHANGE) ? AT_LOGIN_CHANGE_RACE : AT_LOGIN_CHANGE_FACTION);
 
@@ -1690,7 +1690,7 @@ void WorldSession::HandleCharFactionOrRaceChange(WorldPacket& recv_data)
     {
         WorldPacket data(SMSG_CHAR_FACTION_CHANGE, 1);
         data << uint8(CHAR_NAME_RESERVED);
-        SendPacket (&data);
+        SendPacket(&data);
         return;
     }
 
@@ -1741,7 +1741,6 @@ void WorldSession::HandleCharFactionOrRaceChange(WorldPacket& recv_data)
 
     // Switch Languages
     // delete all languages first
-
     stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CHAR_SKILL_LANGUAGES);
     stmt->setUInt32(0, lowGuid);
     trans->Append(stmt);
@@ -1750,52 +1749,50 @@ void WorldSession::HandleCharFactionOrRaceChange(WorldPacket& recv_data)
     stmt = CharacterDatabase.GetPreparedStatement(CHAR_INS_CHAR_SKILL_LANGUAGE);
     stmt->setUInt32(0, lowGuid);
 
-
     // Faction specific languages
-    if (team == BG_TEAM_ALLIANCE)
-    {
-        stmt->setUInt16(1, 98);
-    }
-    else if (team == BG_TEAM_HORDE)
-    {
+    if (team == BG_TEAM_HORDE)
         stmt->setUInt16(1, 109);
-    }
+    else
+        stmt->setUInt16(1, 98);
 
     trans->Append(stmt);
 
     // Race specific languages
-    stmt = CharacterDatabase.GetPreparedStatement(CHAR_INS_CHAR_SKILL_LANGUAGE);
-    stmt->setUInt32(0, lowGuid);
-
-    switch (race)
+    if (race != RACE_ORC && race != RACE_HUMAN)
     {
-    case RACE_DWARF:
-        stmt->setUInt16(1, 111);
-        break;
-    case RACE_DRAENEI:
-        stmt->setUInt16(1, 759);
-        break;
-    case RACE_GNOME:
-        stmt->setUInt16(1, 313);
-        break;
-    case RACE_NIGHTELF:
-        stmt->setUInt16(1, 113);
-        break;
-    case RACE_UNDEAD_PLAYER:
-        stmt->setUInt16(1, 673);
-        break;
-    case RACE_TAUREN:
-        stmt->setUInt16(1, 115);
-        break;
-    case RACE_TROLL:
-        stmt->setUInt16(1, 315);
-        break;
-    case RACE_BLOODELF:
-        stmt->setUInt16(1, 137);
-        break;
-    }
+        stmt = CharacterDatabase.GetPreparedStatement(CHAR_INS_CHAR_SKILL_LANGUAGE);
+        stmt->setUInt32(0, lowGuid);
 
-    trans->Append(stmt);
+        switch (race)
+        {
+            case RACE_DWARF:
+                stmt->setUInt16(1, 111);
+                break;
+            case RACE_DRAENEI:
+                stmt->setUInt16(1, 759);
+                break;
+            case RACE_GNOME:
+                stmt->setUInt16(1, 313);
+                break;
+            case RACE_NIGHTELF:
+                stmt->setUInt16(1, 113);
+                break;
+            case RACE_UNDEAD_PLAYER:
+                stmt->setUInt16(1, 673);
+                break;
+            case RACE_TAUREN:
+                stmt->setUInt16(1, 115);
+                break;
+            case RACE_TROLL:
+                stmt->setUInt16(1, 315);
+                break;
+            case RACE_BLOODELF:
+                stmt->setUInt16(1, 137);
+                break;
+        }
+
+        trans->Append(stmt);
+    }
 
     if (recv_data.GetOpcode() == CMSG_CHAR_FACTION_CHANGE)
     {
