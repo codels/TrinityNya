@@ -115,15 +115,15 @@ public:
         {
             if (waypointId == 7 && instance)
             {
-                Unit* target = Unit::GetUnit((*me), instance->GetData64(DATA_THRALL));
+                Unit* target = Unit::GetUnit(*me, instance->GetData64(DATA_THRALL));
                 if (target && target->isAlive())
                     me->AddThreat(target, 0.0f);
             }
         }
 
-        void JustDied(Unit* victim)
+        void JustDied(Unit* killer)
         {
-            hyjal_trashAI::JustDied(victim);
+            hyjal_trashAI::JustDied(killer);
             if (instance && IsEvent)
                 instance->SetData(DATA_AZGALOREVENT, DONE);
             DoPlaySoundToSet(me, SOUND_ONDEATH);
@@ -251,7 +251,7 @@ public:
                 AttackStart(who);
         }
 
-        void JustDied(Unit* /*victim*/)
+        void JustDied(Unit* /*killer*/)
         {
         }
 

@@ -3098,69 +3098,37 @@ public:
     };
 };
 
-
-class npc_vendor_titleFive : public CreatureScript
-{
-public:
-    npc_vendor_titleFive() : CreatureScript("npc_vendor_titleFive") { }
-
-    bool OnGossipHello(Player* player, Creature* creature)
-    {
-        if (creature->isQuestGiver())
-            player->PrepareQuestMenu(creature->GetGUID());
-
-        if (player->HasTitle(6) || player->HasTitle(20))
-        {
-            if (creature->isVendor())
-                player->ADD_GOSSIP_ITEM(GOSSIP_ICON_VENDOR, GOSSIP_TEXT_BROWSE_GOODS, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_TRADE);
-        }
-
-        player->SEND_GOSSIP_MENU(40034, creature->GetGUID());
-        return true;
-    }
-
-    bool OnGossipSelect(Player* player, Creature* creature, uint32 /*sender*/, uint32 action)
-    {
-        player->PlayerTalkClass->ClearMenus();
-        if (action == GOSSIP_ACTION_TRADE)
-            player->GetSession()->SendListInventory(creature->GetGUID());
-
-        return true;
-    }
-};
-
 void AddSC_npcs_special()
 {
-    new npc_air_force_bots;
-    new npc_lunaclaw_spirit;
-    new npc_chicken_cluck;
-    new npc_dancing_flames;
-    new npc_doctor;
-    new npc_injured_patient;
-    new npc_garments_of_quests;
-    new npc_guardian;
-    new npc_mount_vendor;
-    new npc_rogue_trainer;
-    new npc_sayge;
-    new npc_steam_tonk;
-    new npc_tonk_mine;
-    new npc_winter_reveler;
-    new npc_brewfest_reveler;
-    new npc_snake_trap;
-    new npc_mirror_image;
-    new npc_ebon_gargoyle;
-    new npc_lightwell;
-    new mob_mojo;
-    new npc_training_dummy;
-    new npc_shadowfiend;
-    new npc_wormhole;
-    new npc_pet_trainer;
-    new npc_locksmith;
-    new npc_tabard_vendor;
-    new npc_experience;
-    new npc_fire_elemental;
-    new npc_earth_elemental;
-    new npc_firework;
-    new npc_spring_rabbit;
-    new npc_vendor_titleFive;
+    new npc_air_force_bots();
+    new npc_lunaclaw_spirit();
+    new npc_chicken_cluck();
+    new npc_dancing_flames();
+    new npc_doctor();
+    new npc_injured_patient();
+    new npc_garments_of_quests();
+    new npc_guardian();
+    new npc_mount_vendor();
+    new npc_rogue_trainer();
+    new npc_sayge();
+    new npc_steam_tonk();
+    new npc_tonk_mine();
+    new npc_winter_reveler();
+    new npc_brewfest_reveler();
+    new npc_snake_trap();
+    new npc_mirror_image();
+    new npc_ebon_gargoyle();
+    new npc_lightwell();
+    new mob_mojo();
+    new npc_training_dummy();
+    new npc_shadowfiend();
+    new npc_wormhole();
+    new npc_pet_trainer();
+    new npc_locksmith();
+    new npc_tabard_vendor();
+    new npc_experience();
+    new npc_fire_elemental();
+    new npc_earth_elemental();
+    new npc_firework();
+    new npc_spring_rabbit();
 }

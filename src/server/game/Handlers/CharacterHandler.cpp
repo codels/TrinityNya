@@ -464,7 +464,7 @@ void WorldSession::HandleCharCreateCallback(PreparedQueryResult result, Characte
             if (result)
             {
                 Field* fields = result->Fetch();
-                createInfo->CharCount = fields[0].GetUInt8();
+                createInfo->CharCount = uint8(fields[0].GetUInt64()); // SQL's COUNT() returns uint64 but it will always be less than uint8.Max
 
                 if (createInfo->CharCount >= sWorld->getIntConfig(CONFIG_CHARACTERS_PER_REALM))
                 {
@@ -656,8 +656,6 @@ void WorldSession::HandleCharCreateCallback(PreparedQueryResult result, Characte
 
             LoginDatabase.CommitTransaction(trans);
 
-            newChar.CleanupsBeforeDelete();
-
             WorldPacket data(SMSG_CHAR_CREATE, 1);
             data << uint8(CHAR_CREATE_SUCCESS);
             SendPacket(&data);
@@ -668,6 +666,7 @@ void WorldSession::HandleCharCreateCallback(PreparedQueryResult result, Characte
             sScriptMgr->OnPlayerCreate(&newChar);
             sWorld->AddCharacterNameData(newChar.GetGUIDLow(), std::string(newChar.GetName()), newChar.getGender(), newChar.getRace(), newChar.getClass());
 
+            newChar.CleanupsBeforeDelete();
             delete createInfo;
             _charCreateCallback.Reset();
         }

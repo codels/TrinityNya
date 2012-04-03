@@ -1224,6 +1224,7 @@ void World::LoadConfigSettings(bool reload)
     m_int_configs[CONFIG_ANTICHEAT_DETECTIONS_ENABLED] = ConfigMgr::GetIntDefault("Anticheat.DetectionsEnabled",31);
     m_int_configs[CONFIG_ANTICHEAT_MAX_REPORTS_FOR_DAILY_REPORT] = ConfigMgr::GetIntDefault("Anticheat.MaxReportsForDailyReport",70);
 
+    // call ScriptMgr if we're reloading the configuration
     if (reload)
         sScriptMgr->OnConfigLoad(reload);
 }
@@ -1678,7 +1679,7 @@ void World::SetInitialWorldSettings()
 
     sLog->outString("Initializing Scripts...");
     sScriptMgr->Initialize();
-    sScriptMgr->OnConfigLoad(false); // Need Call after Initialize
+    sScriptMgr->OnConfigLoad(false);                                // must be done after the ScriptMgr has been properly initialized
 
     sLog->outString("Validating spell scripts...");
     sObjectMgr->ValidateSpellScripts();
@@ -2680,7 +2681,7 @@ void World::_UpdateRealmCharCount(PreparedQueryResult resultCharCount)
     {
         Field* fields = resultCharCount->Fetch();
         uint32 accountId = fields[0].GetUInt32();
-        uint32 charCount = fields[1].GetUInt32();
+        uint8 charCount = uint8(fields[1].GetUInt64());
 
         PreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_DEL_REALM_CHARACTERS_BY_REALM);
         stmt->setUInt32(0, accountId);
@@ -2688,7 +2689,7 @@ void World::_UpdateRealmCharCount(PreparedQueryResult resultCharCount)
         LoginDatabase.Execute(stmt);
 
         stmt = LoginDatabase.GetPreparedStatement(LOGIN_INS_REALM_CHARACTERS);
-        stmt->setUInt32(0, charCount);
+        stmt->setUInt8(0, charCount);
         stmt->setUInt32(1, accountId);
         stmt->setUInt32(2, realmID);
         LoginDatabase.Execute(stmt);
@@ -2966,7 +2967,7 @@ void World::LoadCharacterNameData()
 {
     sLog->outString("Loading character name data");
 
-    QueryResult result = CharacterDatabase.Query("SELECT guid, name, race, gender, class FROM characters");
+    QueryResult result = CharacterDatabase.Query("SELECT guid, name, race, gender, class FROM characters WHERE deleteDate IS NULL");
     if (!result)
     {
         sLog->outError("No character name data loaded, empty query");
