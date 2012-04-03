@@ -3070,24 +3070,67 @@ AuctionHouseBot.ItemsPerCycle = 100
 AuctionHouseBot.PlayerGuid = 0
 AuctionHouseBot.AccountId = 0
 
-#######################################################################
+###################################################################################################
+# AUTO LEARN SPELL SYSTEM
+#
+#   AutoLearn.Enable
+#        Description: Enabe/Disable Autolearn System.
+#        Default:     0 - (Disabled)
+#                     1 - (Enabled)
 
-#on/off autolearn
 AutoLearn.Enable = 0
-#check all spell when up level
+
+#   AutoLearn.Check.Level
+#        Description: Enabe/Disable Check Level For Spells.
+#        Default:     0 - (Disabled)
+#                     1 - (Enabled)
+
 AutoLearn.Check.Level = 0
-#check class spell
+
+#   AutoLearn.Spell.Class
+#        Description: Enabe/Disable Learn Class Spells.
+#        Default:     0 - (Disabled)
+#                     1 - (Enabled)
+
 AutoLearn.SpellClass = 0
-#check riding spell
+
+#   AutoLearn.Spell.Riding
+#        Description: Enabe/Disable Learn Riding Spells.
+#        Default:     0 - (Disabled)
+#                     1 - (Enabled)
+
 AutoLearn.SpellRiding = 0
-#check mount spell
+
+#   AutoLearn.Spell.Mount
+#        Description: Enabe/Disable Learn Mount Spells.
+#        Default:     0 - (Disabled)
+#                     1 - (Enabled)
+
 AutoLearn.SpellMount = 0
-#check weapon spell
+
+#   AutoLearn.Spell.Weapon
+#        Description: Enabe/Disable Learn Weapon Spells.
+#        Default:     0 - (Disabled)
+#                     1 - (Enabled)
+
 AutoLearn.SpellWeapon = 0
-#check dual spec
+
+#   AutoLearn.Spell.Profession
+#        Description: Enabe/Disable Learn Profession Spells.
+#        Default:     0 - (Disabled)
+#                     1 - (Enabled)
+
+AutoLearn.SpellProfession = 0
+
+#   AutoLearn.DualSpec
+#        Description: Enabe/Disable Learn Dual Spec.
+#        Default:     0 - (Disabled)
+#                     1 - (Enabled)
+
 AutoLearn.DualSpec = 0
 
-#######################################################################
+#
+###################################################################################################
 
 #on/off battleground history
 BattlegroundHistory.Enable = 0
@@ -3166,18 +3209,38 @@ MailHistory.Gameobject = 0
 #on/off mail item log
 MailHistory.Item = 0
 
-#######################################################################
+###################################################################################################
+# MULTIKILL SYSTEM
+#
+#    MultiKill.Enable
+#        Description: Enable Disable Multikill System.
+#        Default:     0 - (Disabled)
+#                     1 - (Enabled)
 
-#on/off multikill
 MultiKill.Enable = 0
-#only battleground
-MultiKill.BattleGroundOnly = 1
-#log in db
+
+#    MultiKill.BattleGround.Only
+#        Description: System works only battlegrounds.
+#        Default:     0 - (Disabled)
+#                     1 - (Enabled)
+
+MultiKill.BattleGround.Only = 0
+
+#    MultiKill.Log
+#        Description: Enable/Disable Multkill Logging in DB.
+#        Default:     0 - (Disabled)
+#                     1 - (Enabled)
+
 MultiKill.Log = 0
-#time beetwen kills(in seconds)
+
+#    MultiKill.Time.Between
+#        Description: The period between murders which it is possible to consider simultaneous.
+#        Default:     15
+
 MultiKill.Time.Between = 15
 
-#######################################################################
+#
+###################################################################################################
 
 #on/off special code
 SpecialCode.Enable = 0
