@@ -602,7 +602,6 @@ void Battleground::SetTeamStartLoc(uint32 TeamID, float X, float Y, float Z, flo
 
 void Battleground::SendPacketToAll(WorldPacket* packet)
 {
-    //trinity_nya: ...
     for (BattlegroundPlayerMap::const_iterator itr = m_Players.begin(); itr != m_Players.end(); ++itr)
         if (Player* player = _GetPlayer(itr, "SendPacketToAll"))
             player->GetSession()->SendPacket(packet);

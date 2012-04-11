@@ -37,68 +37,86 @@ bool ArenaWatcherOnlyGM = false;
 bool ArenaWatcherShowNoGames = false;
 bool ArenaWatcherOnlyRated = false;
 bool ArenaWatcherToPlayers = false;
+bool ArenaWatcherSilence = false;
+bool ArenaWatcherFly = false;
+float ArenaWatcherSpeed = 3.0f;
 
-std::vector<uint32> ArenaWatcherList;
+struct ArenaWatcher
+{
+    time_t mutetime;
+};
+
+typedef std::map<uint32, ArenaWatcher> ArenaWatcherMap;
+ArenaWatcherMap ArenaWatcherPlayers;
+
+bool IsWatcher(uint32 guid)
+{
+    ArenaWatcherMap::iterator itr = ArenaWatcherPlayers.find(guid);
+    if (itr != ArenaWatcherPlayers.end())
+        return true;
+    return false;
+}
 
 void ArenaWatcherStart(Player* player)
 {
-    player->setDeathState(CORPSE);
-    player->SetMovement(MOVE_WATER_WALK);
-    player->SetMovement(MOVE_UNROOT);
     player->SetGMVisible(false);
-
-    ArenaWatcherList.push_back(player->GetGUIDLow());
+    uint32 guid = player->GetGUIDLow();
+    
+    if (IsWatcher(guid))
+        return;
+    
+    ArenaWatcher data;
+    data.mutetime = player->GetSession()->m_muteTime;
+    ArenaWatcherPlayers[guid] = data;
 }
 
 void ArenaWatcherAfterTeleport(Player* player)
 {
-    player->SetSpeed(MOVE_WALK, 3.0f, true);
-    player->SetSpeed(MOVE_RUN, 3.0f, true);
-    player->SetSpeed(MOVE_SWIM, 3.0f, true);
-    player->SetSpeed(MOVE_FLIGHT, 3.0f, true);
+    player->SetMovement(MOVE_WATER_WALK);
+    player->SetMovement(MOVE_UNROOT);
     
-    Battleground* bg = player->GetBattleground();
-    if (!bg)
-        return;
-
-    WorldPacket status;
-    BattlegroundQueueTypeId bgQueueTypeId = sBattlegroundMgr->BGQueueTypeId(bg->GetTypeID(), bg->GetArenaType());
-    uint32 queueSlot = player->GetBattlegroundQueueIndex(bgQueueTypeId);
-    sBattlegroundMgr->BuildBattlegroundStatusPacket(&status, bg, queueSlot, STATUS_IN_PROGRESS, 0, bg->GetStartTime(), bg->GetArenaType(), bg->isArena() ? 0 : 1);
-    player->GetSession()->SendPacket(&status);
+    if (ArenaWatcherSilence)
+        player->GetSession()->m_muteTime = time(NULL) + 120 * MINUTE;
+    
+    if (ArenaWatcherFly)
+    {
+        player->SendMovementSetCanFly(true);
+        player->SetCanFly(true);
+    }
+    
+    player->SetSpeed(MOVE_WALK, ArenaWatcherSpeed, true);
+    player->SetSpeed(MOVE_RUN, ArenaWatcherSpeed, true);
+    player->SetSpeed(MOVE_SWIM, ArenaWatcherSpeed, true);
+    player->SetSpeed(MOVE_FLIGHT, ArenaWatcherSpeed, true);
+    player->setDeathState(CORPSE);
 }
 
-void ArenaWatcherEnd(Player* player, bool clear = false)
+void ArenaWatcherEnd(Player* player)
 {
-    if (!ArenaWatcherList.empty())
-    {
-        std::vector<uint32>::iterator iter = ArenaWatcherList.begin();
-        while(iter != ArenaWatcherList.end())
-        {
-            if (player->GetGUIDLow() == *iter)
-            {
-                clear = true;
-                iter = ArenaWatcherList.erase(iter);
-            }
-            else
-                ++iter;
-        }
-    }
-        
-    if (!clear)
+    uint32 guid = player->GetGUIDLow();
+    
+    if (!IsWatcher(guid))
         return;
+    
+    if (ArenaWatcherSilence)
+        player->GetSession()->m_muteTime = ArenaWatcherPlayers[guid].mutetime;
+        
 
-    player->ResurrectPlayer(100.0f, false);
-    player->SetMovement(MOVE_LAND_WALK);
-    player->SetMovement(MOVE_UNROOT);
-    player->SetGMVisible(true);
-    player->SetGameMaster(false);
-    player->SetAcceptWhispers(true);
-
-    player->SetSpeed(MOVE_WALK, 1.0f, true);
-    player->SetSpeed(MOVE_RUN, 1.0f, true);
-    player->SetSpeed(MOVE_SWIM, 1.0f, true);
-    player->SetSpeed(MOVE_FLIGHT, 1.0f, true);
+    ArenaWatcherMap::iterator itr = ArenaWatcherPlayers.find(guid);
+    if (itr != ArenaWatcherPlayers.end())
+    {
+        ArenaWatcherPlayers.erase(itr);
+        player->ResurrectPlayer(100.0f, false);
+        player->SetGMVisible(true);
+        player->SetGameMaster(false);
+        player->SetAcceptWhispers(true);
+        player->SendMovementSetCanFly(false);
+        player->SetCanFly(false);
+        player->SetSpeed(MOVE_WALK, 1.0f, true);
+        player->SetSpeed(MOVE_RUN, 1.0f, true);
+        player->SetSpeed(MOVE_SWIM, 1.0f, true);
+        player->SetSpeed(MOVE_FLIGHT, 1.0f, true);
+    }
 }
 
 class mod_ArenaWatcher_WorldScript : public WorldScript
@@ -113,9 +131,12 @@ class mod_ArenaWatcher_WorldScript : public WorldScript
         ArenaWatcherShowNoGames = ConfigMgr::GetBoolDefault("ArenaWatcher.ShowNoGames", false);
         ArenaWatcherOnlyRated = ConfigMgr::GetBoolDefault("ArenaWatcher.OnlyRated", false);
         ArenaWatcherToPlayers = ConfigMgr::GetBoolDefault("ArenaWatcher.ToPlayers", false);
+        ArenaWatcherSilence = ConfigMgr::GetBoolDefault("ArenaWatcher.Silence", false);
+        ArenaWatcherFly = ConfigMgr::GetBoolDefault("ArenaWatcher.Fly", false);
+        ArenaWatcherSpeed = ConfigMgr::GetFloatDefault("ArenaWatcher.Speed", 3.0f);
 
         if (!reload)
-            ArenaWatcherList.clear();
+            ArenaWatcherPlayers.clear();
     }
 };
 

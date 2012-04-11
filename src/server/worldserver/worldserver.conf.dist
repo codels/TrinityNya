@@ -3277,6 +3277,24 @@ ArenaWatcher.OnlyRated = 0
 #                     1 - (Enabled)
 
 ArenaWatcher.ToPlayers = 0
+
+#   Need description
+#        Default:     0 - (Disabled)
+#                     1 - (Enabled)
+
+ArenaWatcher.Silence = 0
+
+#   Need description
+#        Default:     1 - (Enabled)
+#                     0 - (Disabled)
+
+ArenaWatcher.Gravity = 1
+
+#   Need description
+#        Default:     3.0
+
+ArenaWatcher.Speed = 3.0
+
 #
 ###################################################################################################
 
