@@ -3245,20 +3245,41 @@ MultiKill.Time.Between = 15
 #on/off special code
 SpecialCode.Enable = 0
 
-#######################################################################
+###################################################################################################
+# ARENA WATCHER
+#
+#   On/Off arena watcher
+#        Default:     1 - (Enabled)
+#                     0 - (Disabled)
 
-#on/off arena watcher
 ArenaWatcher.Enable = 0
-#gossip menu only for game master
-ArenaWatcher.OnlyGM = 0
-#show gossip menu with 0 games
-ArenaWatcher.ShowNoGames = 0
-#can watch only battle is rated
-ArenaWatcher.OnlyRated = 0
-#can teleport to players
-ArenaWatcher.ToPlayers = 0
 
-#######################################################################
+#   Gossip menu only for game master
+#        Default:     0 - (Disabled)
+#                     1 - (Enabled)
+
+ArenaWatcher.OnlyGM = 0
+
+#   Show gossip menu with 0 games
+#        Default:     0 - (Disabled)
+#                     1 - (Enabled)
+
+ArenaWatcher.ShowNoGames = 0
+
+#   Can watch only if battle is rated
+#        Default:     0 - (Disabled)
+#                     1 - (Enabled)
+
+ArenaWatcher.OnlyRated = 0
+
+#   Can teleport to players
+#        Default:     0 - (Disabled)
+#                     1 - (Enabled)
+
+ArenaWatcher.ToPlayers = 0
+#
+###################################################################################################
+
 
 #on/off guild default
 GuildDefault.Enable = 0
