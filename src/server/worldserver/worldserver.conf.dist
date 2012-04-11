@@ -3285,10 +3285,10 @@ ArenaWatcher.ToPlayers = 0
 ArenaWatcher.Silence = 0
 
 #   Need description
-#        Default:     1 - (Enabled)
-#                     0 - (Disabled)
+#        Default:     0 - (Disabled)
+#                     1 - (Enabled)
 
-ArenaWatcher.Gravity = 1
+ArenaWatcher.Fly = 0
 
 #   Need description
 #        Default:     3.0
