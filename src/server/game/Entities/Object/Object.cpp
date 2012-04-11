@@ -1630,7 +1630,7 @@ void WorldObject::UpdateAllowedPositionZ(float x, float y, float &z) const
         default:
         {
             float ground_z = GetBaseMap()->GetHeight(GetPhaseMask(), x, y, z, true);
-            if(ground_z > INVALID_HEIGHT)
+            if (ground_z > INVALID_HEIGHT)
                 z = ground_z;
             break;
         }
@@ -2741,6 +2741,14 @@ void WorldObject::MovePositionToFirstCollision(Position &pos, float dist, float 
     pos.m_positionZ += 2.0f;
     destx = pos.m_positionX + dist * cos(angle);
     desty = pos.m_positionY + dist * sin(angle);
+
+    // Prevent invalid coordinates here, position is unchanged
+    if (!Trinity::IsValidMapCoord(destx, desty))
+    {
+        sLog->outCrash("WorldObject::MovePositionToFirstCollision invalid coordinates X: %f and Y: %f were passed!", destx, desty);
+        return;
+    }
+
     ground = GetMap()->GetHeight(GetPhaseMask(), destx, desty, MAX_HEIGHT, true);
     floor = GetMap()->GetHeight(GetPhaseMask(), destx, desty, pos.m_positionZ, true);
     destz = fabs(ground - pos.m_positionZ) <= fabs(floor - pos.m_positionZ) ? ground : floor;
