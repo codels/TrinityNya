@@ -40,6 +40,7 @@ class Creature;
 class CreatureAI;
 class DynamicObject;
 class GameObject;
+class GameObjectAI;
 class Guild;
 class GridMap;
 class Group;
@@ -522,6 +523,9 @@ class GameObjectScript : public ScriptObject, public UpdatableScript<GameObject>
 
         // Called when the game object is damaged (destructible buildings only).
         virtual void OnDamaged(GameObject* /*go*/, Player* /*player*/) { }
+
+        // Called when a GameObjectAI object is needed for the gameobject.
+        virtual GameObjectAI* GetAI(GameObject* /*go*/) const { return NULL; }
 };
 
 class AreaTriggerScript : public ScriptObject
@@ -1008,6 +1012,7 @@ class ScriptMgr
         void OnGameObjectDestroyed(GameObject* go, Player* player);
         void OnGameObjectDamaged(GameObject* go, Player* player);
         void OnGameObjectUpdate(GameObject* go, uint32 diff);
+        GameObjectAI* GetGameObjectAI(GameObject* go);
 
     public: /* AreaTriggerScript */
 

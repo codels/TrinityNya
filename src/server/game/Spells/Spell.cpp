@@ -2444,13 +2444,13 @@ void Spell::DoAllEffectOnTarget(TargetInfo* target)
         else
             procEx |= PROC_EX_NORMAL_HIT;
 
-        // Do triggers for unit (reflect triggers passed on hit phase for correct drop charge)
-        if (canEffectTrigger && missInfo != SPELL_MISS_REFLECT)
-            caster->ProcDamageAndSpell(unitTarget, procAttacker, procVictim, procEx, addhealth, m_attackType, m_spellInfo, m_triggeredByAuraSpell);
-
         int32 gain = caster->HealBySpell(unitTarget, m_spellInfo, addhealth, crit);
         unitTarget->getHostileRefManager().threatAssist(caster, float(gain) * 0.5f, m_spellInfo);
         m_healing = gain;
+
+        // Do triggers for unit (reflect triggers passed on hit phase for correct drop charge)
+        if (canEffectTrigger && missInfo != SPELL_MISS_REFLECT)
+            caster->ProcDamageAndSpell(unitTarget, procAttacker, procVictim, procEx, addhealth, m_attackType, m_spellInfo, m_triggeredByAuraSpell);
     }
     // Do damage and triggers
     else if (m_damage > 0)
@@ -3109,13 +3109,13 @@ void Spell::cast(bool skipCheck)
         // should be done before the spell is actually executed
         sScriptMgr->OnPlayerSpellCast(playerCaster, this, skipCheck);
 
-        // Let any pets know we've attacked something. As of 3.0.2 pets begin
-        //  attacking their owner's target immediately
-        if (Pet* playerPet = playerCaster->GetPet())
-        {
-            if (playerPet->isAlive() && playerPet->isControlled() && (m_targets.GetTargetMask() & TARGET_FLAG_UNIT))
-                playerPet->AI()->OwnerAttacked(m_targets.GetObjectTarget()->ToUnit());
-        }
+        // As of 3.0.2 pets begin attacking their owner's target immediately
+        // Let any pets know we've attacked something. Check DmgClass for harmful spells only
+        // This prevents spells such as Hunter's Mark from triggering pet attack
+        if (this->GetSpellInfo()->DmgClass != SPELL_DAMAGE_CLASS_NONE)
+            if (Pet* playerPet = playerCaster->GetPet())
+                if (playerPet->isAlive() && playerPet->isControlled() && (m_targets.GetTargetMask() & TARGET_FLAG_UNIT))
+                    playerPet->AI()->OwnerAttacked(m_targets.GetObjectTarget()->ToUnit());
     }
     SetExecutedCurrently(true);
 
@@ -3429,36 +3429,6 @@ void Spell::_handle_immediate_phase()
     // process items
     for (std::list<ItemTargetInfo>::iterator ihit= m_UniqueItemInfo.begin(); ihit != m_UniqueItemInfo.end(); ++ihit)
         DoAllEffectOnTarget(&(*ihit));
-
-    if (!m_originalCaster)
-        return;
-    // Handle procs on cast
-    // TODO: finish new proc system:P
-    if (m_UniqueTargetInfo.empty())
-    {
-        uint32 procAttacker = m_procAttacker;
-        if (!procAttacker)
-        {
-            bool positive = m_spellInfo->IsPositive();
-            switch (m_spellInfo->DmgClass)
-            {
-                case SPELL_DAMAGE_CLASS_MAGIC:
-                    if (positive)
-                        procAttacker |= PROC_FLAG_DONE_SPELL_MAGIC_DMG_CLASS_POS;
-                    else
-                        procAttacker |= PROC_FLAG_DONE_SPELL_MAGIC_DMG_CLASS_NEG;
-                break;
-                case SPELL_DAMAGE_CLASS_NONE:
-                    if (positive)
-                        procAttacker |= PROC_FLAG_DONE_SPELL_NONE_DMG_CLASS_POS;
-                    else
-                        procAttacker |= PROC_FLAG_DONE_SPELL_NONE_DMG_CLASS_NEG;
-                break;
-            }
-        }
-        // Proc damage for spells which have only dest targets (2484 should proc 51486 for example)
-        m_originalCaster->ProcDamageAndSpell(NULL, procAttacker, 0, m_procEx | PROC_EX_NORMAL_HIT, 0, BASE_ATTACK, m_spellInfo, m_triggeredByAuraSpell);
-    }
 }
 
 void Spell::_handle_finish_phase()

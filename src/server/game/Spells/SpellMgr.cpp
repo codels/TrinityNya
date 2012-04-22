@@ -2111,7 +2111,7 @@ void SpellMgr::LoadEnchantCustomAttr()
             continue;
 
         // TODO: find a better check
-        if (!(spellInfo->AttributesEx2 & SPELL_ATTR2_UNK13) || !(spellInfo->Attributes & SPELL_ATTR0_NOT_SHAPESHIFT))
+        if (!(spellInfo->AttributesEx2 & SPELL_ATTR2_PRESERVE_ENCHANT_IN_ARENA) || !(spellInfo->Attributes & SPELL_ATTR0_NOT_SHAPESHIFT))
             continue;
 
         for (uint32 j = 0; j < MAX_SPELL_EFFECTS; ++j)
@@ -3332,6 +3332,19 @@ void SpellMgr::LoadDbcDataCorrections()
                 spellInfo->EffectImplicitTargetB[1] = TARGET_UNIT_NEARBY_ENTRY;
                 spellInfo->EffectImplicitTargetB[2] = TARGET_UNIT_NEARBY_ENTRY;
                 break;
+            case 62301: // Cosmic Smash (Algalon the Observer)
+                spellInfo->MaxAffectedTargets = 1;
+                break;
+            case 64598: // Cosmic Smash (Algalon the Observer)
+                spellInfo->MaxAffectedTargets = 3;
+                break;
+            case 62293: // Cosmic Smash (Algalon the Observer)
+                spellInfo->EffectImplicitTargetB[0] = TARGET_DEST_CASTER;
+                break;
+            case 62311: // Cosmic Smash (Algalon the Observer)
+            case 64596: // Cosmic Smash (Algalon the Observer)
+                spellInfo->rangeIndex = 6;  // 100yd
+                break;
             // ENDOF ULDUAR SPELLS
             //
             // TRIAL OF THE CRUSADER SPELLS
@@ -3381,9 +3394,9 @@ void SpellMgr::LoadDbcDataCorrections()
             case 70460: // Coldflame Jets (Traps after Saurfang)
                 spellInfo->DurationIndex = 1;   // 10 seconds
                 break;
-            case 71413: // Green Ooze Summon (Professor Putricide)
-            case 71414: // Orange Ooze Summon (Professor Putricide)
-                spellInfo->EffectImplicitTargetA[0] = TARGET_DEST_DEST;
+            case 71412: // Green Ooze Summon (Professor Putricide)
+            case 71415: // Orange Ooze Summon (Professor Putricide)
+                spellInfo->EffectImplicitTargetA[0] = TARGET_UNIT_TARGET_ANY;
                 break;
             case 71159: // Awaken Plagued Zombies
                 spellInfo->DurationIndex = 21;

@@ -253,6 +253,7 @@ m_HostileRefManager(this)
 
     _focusSpell = NULL;
     _targetLocked = false;
+    _lastLiquid = NULL;
 }
 
 ////////////////////////////////////////////////////////////
@@ -460,7 +461,7 @@ void Unit::resetAttackTimer(WeaponAttackType type)
 
 bool Unit::IsWithinCombatRange(const Unit* obj, float dist2compare) const
 {
-    if (!obj || !IsInMap(obj))
+    if (!obj || !IsInMap(obj) || !InSamePhase(obj))
         return false;
 
     float dx = GetPositionX() - obj->GetPositionX();
@@ -476,7 +477,7 @@ bool Unit::IsWithinCombatRange(const Unit* obj, float dist2compare) const
 
 bool Unit::IsWithinMeleeRange(const Unit* obj, float dist) const
 {
-    if (!obj || !IsInMap(obj))
+    if (!obj || !IsInMap(obj) || !InSamePhase(obj))
         return false;
 
     float dx = GetPositionX() - obj->GetPositionX();
@@ -1543,7 +1544,7 @@ void Unit::CalcAbsorbResist(Unit* victim, SpellSchoolMask schoolMask, DamageEffe
 
     // Magic damage, check for resists
     // Ignore spells that cant be resisted
-    if ((schoolMask & SPELL_SCHOOL_MASK_NORMAL) == 0 && (spellInfo && (spellInfo->AttributesEx4 & SPELL_ATTR4_IGNORE_RESISTANCES) == 0))
+    if ((schoolMask & SPELL_SCHOOL_MASK_NORMAL) == 0 && (!spellInfo || (spellInfo->AttributesEx4 & SPELL_ATTR4_IGNORE_RESISTANCES) == 0))
     {
         float victimResistance = float(victim->GetResistance(schoolMask));
         victimResistance += float(GetTotalAuraModifierByMiscMask(SPELL_AURA_MOD_TARGET_RESISTANCE, schoolMask));
@@ -3090,6 +3091,48 @@ bool Unit::IsUnderWater() const
     return GetBaseMap()->IsUnderWater(GetPositionX(), GetPositionY(), GetPositionZ());
 }
 
+void Unit::UpdateUnderwaterState(Map* m, float x, float y, float z)
+{
+    if (!isPet() && !IsVehicle())
+        return;
+
+    LiquidData liquid_status;
+    ZLiquidStatus res = m->getLiquidStatus(x, y, z, MAP_ALL_LIQUIDS, &liquid_status);
+    if (!res)
+    {
+        if (_lastLiquid && _lastLiquid->SpellId)
+            RemoveAurasDueToSpell(_lastLiquid->SpellId);
+
+        RemoveAurasWithInterruptFlags(AURA_INTERRUPT_FLAG_NOT_UNDERWATER);
+        _lastLiquid = NULL;
+        return;
+    }
+
+    if (uint32 liqEntry = liquid_status.entry)
+    {
+        LiquidTypeEntry const* liquid = sLiquidTypeStore.LookupEntry(liqEntry);
+        if (_lastLiquid && _lastLiquid->SpellId && _lastLiquid->Id != liqEntry)
+            RemoveAurasDueToSpell(_lastLiquid->SpellId);
+
+        if (liquid && liquid->SpellId)
+        {
+            if (res & (LIQUID_MAP_UNDER_WATER | LIQUID_MAP_IN_WATER))
+                CastSpell(this, liquid->SpellId, true);
+            else
+                RemoveAurasDueToSpell(liquid->SpellId);
+        }
+
+        RemoveAurasWithInterruptFlags(AURA_INTERRUPT_FLAG_NOT_ABOVEWATER);
+        _lastLiquid = liquid;
+    }
+    else if (_lastLiquid && _lastLiquid->SpellId)
+    {
+        RemoveAurasDueToSpell(_lastLiquid->SpellId);
+        RemoveAurasWithInterruptFlags(AURA_INTERRUPT_FLAG_NOT_UNDERWATER);
+        _lastLiquid = NULL;
+    }
+}
+
 void Unit::DeMorph()
 {
     SetDisplayId(GetNativeDisplayId());
@@ -3609,8 +3652,9 @@ void Unit::RemoveAurasDueToSpellByDispel(uint32 spellId, uint32 dispellerSpellId
                         {
                             // final heal
                             int32 healAmount = aurEff->GetAmount();
-                            int32 stack = dispelInfo.GetRemovedCharges();
-                            CastCustomSpell(this, 33778, &healAmount, &stack, NULL, true, NULL, NULL, aura->GetCasterGUID());
+                            if (Unit* caster = aura->GetCaster())
+                                healAmount = caster->SpellHealingBonus(this, aura->GetSpellInfo(), healAmount, HEAL, dispelInfo.GetRemovedCharges());
+                            CastCustomSpell(this, 33778, &healAmount, NULL, NULL, true, NULL, NULL, aura->GetCasterGUID());
 
                             // mana
                             if (Unit* caster = aura->GetCaster())
@@ -4500,7 +4544,7 @@ float Unit::GetTotalAuraMultiplierByMiscValue(AuraType auratype, int32 misc_valu
             if (!sSpellMgr->AddSameEffectStackRuleSpellGroups((*i)->GetSpellInfo(), (*i)->GetAmount(), SameEffectSpellGroup))
                 AddPctN(multiplier, (*i)->GetAmount());
     }
-    
+
     for (std::map<SpellGroup, int32>::const_iterator itr = SameEffectSpellGroup.begin(); itr != SameEffectSpellGroup.end(); ++itr)
         AddPctN(multiplier, itr->second);
 
@@ -4547,7 +4591,7 @@ int32 Unit::GetTotalAuraModifierByAffectMask(AuraType auratype, SpellInfo const*
             if (!sSpellMgr->AddSameEffectStackRuleSpellGroups((*i)->GetSpellInfo(), (*i)->GetAmount(), SameEffectSpellGroup))
                 modifier += (*i)->GetAmount();
     }
-    
+
     for (std::map<SpellGroup, int32>::const_iterator itr = SameEffectSpellGroup.begin(); itr != SameEffectSpellGroup.end(); ++itr)
         modifier += itr->second;
 
@@ -6000,6 +6044,8 @@ bool Unit::HandleDummyAuraProc(Unit* victim, uint32 damage, AuraEffect* triggere
                 // Siphon Life
                 case 63108:
                 {
+                    if (!damage)
+                        break;
                     // Glyph of Siphon Life
                     if (HasAura(56216))
                         triggerAmount += triggerAmount / 4;
@@ -7354,20 +7400,6 @@ bool Unit::HandleDummyAuraProc(Unit* victim, uint32 damage, AuraEffect* triggere
                 triggered_spell_id = 63685;
                 break;
             }
-            // Storm, Earth and Fire
-            if (dummySpell->SpellIconID == 3063)
-            {
-                // Earthbind Totem summon only
-                if (procSpell->Id != 2484)
-                    return false;
-
-                float chance = (float)triggerAmount;
-                if (!roll_chance_f(chance))
-                    return false;
-
-                triggered_spell_id = 64695;
-                break;
-            }
             // Ancestral Awakening
             if (dummySpell->SpellIconID == 3065)
             {
@@ -7396,8 +7428,7 @@ bool Unit::HandleDummyAuraProc(Unit* victim, uint32 damage, AuraEffect* triggere
                 if (GetTypeId() != TYPEID_PLAYER  || !victim || !victim->isAlive() || !castItem || !castItem->IsEquipped())
                     return false;
 
-                Player* player = ToPlayer();
-                WeaponAttackType attType = WeaponAttackType(player->GetAttackBySlot(castItem->GetSlot()));
+                WeaponAttackType attType = WeaponAttackType(Player::GetAttackBySlot(castItem->GetSlot()));
                 if ((attType != BASE_ATTACK && attType != OFF_ATTACK)
                     || (attType == BASE_ATTACK && procFlag & PROC_FLAG_DONE_OFFHAND_ATTACK)
                     || (attType == OFF_ATTACK && procFlag & PROC_FLAG_DONE_MAINHAND_ATTACK))
@@ -7985,11 +8016,7 @@ bool Unit::HandleAuraProc(Unit* victim, uint32 damage, Aura* triggeredByAura, Sp
                     for (uint8 i = 1; i < stack; ++i)
                         dmg += mod * stack;
                     if (Unit* caster = triggeredByAura->GetCaster())
-                    {
                         caster->CastCustomSpell(70701, SPELLVALUE_BASE_POINT0, dmg);
-                        if (Creature* creature = caster->ToCreature())
-                            creature->DespawnOrUnsummon(1);
-                    }
                     break;
                 }
                 // Ball of Flames Proc
@@ -8200,6 +8227,16 @@ bool Unit::HandleAuraProc(Unit* victim, uint32 damage, Aura* triggeredByAura, Sp
                     CastCustomSpell(this, 70845, &basepoints0, NULL, NULL, true);
                     break;
                 }
+                // Recklessness
+                case 1719:
+                {
+                    //! Possible hack alert
+                    //! Don't drop charges on proc, they will be dropped on SpellMod removal
+                    //! Before this change, it was dropping two charges per attack, one in ProcDamageAndSpellFor, and one in RemoveSpellMods.
+                    //! The reason of this behaviour is Recklessness having three auras, 2 of them can not proc (isTriggeredAura array) but the other one can, making the whole spell proc.
+                    *handled = true;
+                    break;
+                }
                 default:
                     break;
             }
@@ -8322,6 +8359,12 @@ bool Unit::HandleProcTriggerSpell(Unit* victim, uint32 damage, AuraEffect* trigg
                     CastSpell(this, 50422, true);
                     RemoveAuraFromStack(auraSpellInfo->Id);
                     return false;
+                }
+                if (auraSpellInfo->Id == 50720)
+                {
+                    target = triggeredByAura->GetCaster();
+                    if (!target)
+                        return false;
                 }
                 break;
             case SPELLFAMILY_WARLOCK:
@@ -9552,7 +9595,7 @@ bool Unit::Attack(Unit* victim, bool meleeAttack)
     if (this->GetTypeId() == TYPEID_PLAYER)
     {
         Pet* playerPet = this->ToPlayer()->GetPet();
-        
+
         if (playerPet && playerPet->isAlive())
             playerPet->AI()->OwnerAttacked(victim);
     }
@@ -17273,6 +17316,9 @@ bool Unit::UpdatePosition(float x, float y, float z, float orientation, bool tel
     else if (turn)
         UpdateOrientation(orientation);
 
+    // code block for underwater state update
+    UpdateUnderwaterState(GetMap(), x, y, z);
+
     return (relocated || turn);
 }
 
@@ -17577,7 +17623,7 @@ bool Unit::SetWalk(bool enable)
     return true;
 }
 
-bool Unit::SetDisableGravity(bool disable)
+bool Unit::SetDisableGravity(bool disable, bool /*packetOnly = false*/)
 {
     if (disable == IsLevitating())
         return false;

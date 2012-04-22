@@ -392,23 +392,6 @@ void Spell::EffectSchoolDMG(SpellEffIndex effIndex)
                         if (!unitTarget->HasAura(27825))
                             return;
                         break;
-                    // Cataclysmic Bolt
-                    case 38441:
-                    {
-                        damage = unitTarget->CountPctFromMaxHealth(50);
-                        break;
-                    }
-                    case 20625: // Ritual of Doom Sacrifice
-                    case 29142: // Eyesore Blaster
-                    case 35139: // Throw Boom's Doom
-                    case 42393: // Brewfest - Attack Keg
-                    case 55269: // Deathly Stare
-                    case 56578: // Rapid-Fire Harpoon
-                    case 62775: // Tympanic Tantrum
-                    {
-                        damage = unitTarget->CountPctFromMaxHealth(damage);
-                        break;
-                    }
                     // Gargoyle Strike
                     case 51963:
                     {
@@ -668,19 +651,19 @@ void Spell::EffectSchoolDMG(SpellEffIndex effIndex)
                     if (found)
                         damage += m_spellInfo->Effects[EFFECT_1].CalcValue();
 
-                    if (m_caster->GetTypeId() == TYPEID_PLAYER)
+                    if (Player* caster = m_caster->ToPlayer())
                     {
                         // Add Ammo and Weapon damage plus RAP * 0.1
-                        Item* item = m_caster->ToPlayer()->GetWeaponForAttack(RANGED_ATTACK);
-                        if (item)
+                        if (Item* item = caster->GetWeaponForAttack(RANGED_ATTACK))
                         {
-                            float dmg_min = item->GetTemplate()->Damage->DamageMin;
-                            float dmg_max = item->GetTemplate()->Damage->DamageMax;
+                            ItemTemplate const* weaponTemplate = item->GetTemplate();
+                            float dmg_min = weaponTemplate->Damage[0].DamageMin;
+                            float dmg_max = weaponTemplate->Damage[0].DamageMax;
                             if (dmg_max == 0.0f && dmg_min > dmg_max)
                                 damage += int32(dmg_min);
                             else
                                 damage += irand(int32(dmg_min), int32(dmg_max));
-                            damage += int32(m_caster->ToPlayer()->GetAmmoDPS()*item->GetTemplate()->Delay*0.001f);
+                            damage += int32(caster->GetAmmoDPS() * weaponTemplate->Delay * 0.001f);
                         }
                     }
                 }
@@ -1613,9 +1596,6 @@ void Spell::EffectHeal(SpellEffIndex /*effIndex*/)
                 }
             }
         }
-        // Lifebloom - final heal coef multiplied by original DoT stack
-        else if (m_spellInfo->Id == 33778)
-            addhealth = caster->SpellHealingBonus(unitTarget, m_spellInfo, addhealth, HEAL, m_spellValue->EffectBasePoints[1]);
         // Death Pact - return pct of max health to caster
         else if (m_spellInfo->SpellFamilyName == SPELLFAMILY_DEATHKNIGHT && m_spellInfo->SpellFamilyFlags[0] & 0x00080000)
             addhealth = caster->SpellHealingBonus(unitTarget, m_spellInfo, int32(caster->CountPctFromMaxHealth(damage)), HEAL);

@@ -365,7 +365,7 @@ class spell_warr_concussion_blow : public SpellScriptLoader
 
             void HandleDummy(SpellEffIndex /* effIndex */)
             {
-                SetHitDamage(GetHitDamage() + CalculatePctF(GetHitDamage(),GetCaster()->GetTotalAttackPowerValue(BASE_ATTACK)));
+                SetHitDamage(CalculatePctN(GetCaster()->GetTotalAttackPowerValue(BASE_ATTACK), GetEffectValue()));
             }
 
             void Register()
@@ -441,9 +441,9 @@ public:
             if (!spellId)
                 return;
 
-            Unit* target = GetHitUnit();
-            if (target->HasUnitState(UNIT_STATE_CASTING))
-                target->CastSpell(target, spellId, true);
+            if (Player* target = GetHitPlayer())
+                if (target->HasUnitState(UNIT_STATE_CASTING))
+                    target->CastSpell(target, spellId, true);
         }
 
         void Register()

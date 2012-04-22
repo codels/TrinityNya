@@ -726,7 +726,6 @@ Player::Player(WorldSession* session): Unit(true), m_achievementMgr(this), m_rep
     for (uint8 i=0; i<MAX_TIMERS; i++)
         m_MirrorTimer[i] = DISABLED_MIRROR_TIMER;
 
-    _lastLiquid = NULL;
     m_MirrorTimerFlags = UNDERWATER_NONE;
     m_MirrorTimerFlagsLast = UNDERWATER_NONE;
     m_isInWater = false;
@@ -6849,11 +6848,6 @@ bool Player::UpdatePosition(float x, float y, float z, float orientation, bool t
     if (GetGroup())
         SetGroupUpdateFlag(GROUP_UPDATE_FLAG_POSITION);
 
-    // code block for underwater state update
-    // Unit::UpdatePosition() checks for validity and updates our coordinates
-    // so we re-fetch them instead of using "raw" coordinates from function params
-    UpdateUnderwaterState(GetMap(), GetPositionX(), GetPositionY(), GetPositionZ());
-
     if (GetTrader() && !IsWithinDistInMap(GetTrader(), INTERACTION_DISTANCE))
         GetSession()->SendCancelTrade();
 
@@ -9255,6 +9249,9 @@ void Player::SendInitWorldStates(uint32 zoneid, uint32 areaid)
         case 4100:  // The Culling of Stratholme
             NumberOfFields = 13;
             break;
+        case 4273:  // Ulduar
+            NumberOfFields = 10;
+            break;
          default:
             NumberOfFields = 12;
             break;
@@ -9797,6 +9794,16 @@ void Player::SendInitWorldStates(uint32 zoneid, uint32 areaid)
                 data << uint32(3504) << uint32(0);              // 11 WORLDSTATE_WAVE_COUNT
                 data << uint32(3931) << uint32(25);             // 12 WORLDSTATE_TIME_GUARDIAN
                 data << uint32(3932) << uint32(0);              // 13 WORLDSTATE_TIME_GUARDIAN_SHOW
+            }
+            break;
+        // Ulduar
+        case 4273:
+            if (instance && mapid == 603)
+                instance->FillInitialWorldStates(data);
+            else
+            {
+                data << uint32(4132) << uint32(0);              // 9  WORLDSTATE_SHOW_CRATES
+                data << uint32(4131) << uint32(0);              // 10 WORLDSTATE_CRATES_REVEALED
             }
             break;
         default:
@@ -17738,7 +17745,7 @@ void Player::_LoadInventory(PreparedQueryResult result, uint32 timeDiff)
                         ItemPosCountVec dest;
                         err = CanStoreItem(itr->second->GetSlot(), slot, dest, item);
                         if (err == EQUIP_ERR_OK)
-                            itr->second->StoreItem(slot, item, true);
+                            item = StoreItem(dest, item, true);
                     }
                 }
 
@@ -18399,10 +18406,10 @@ void Player::UnbindInstance(BoundInstancesMap::iterator &itr, Difficulty difficu
             CharacterDatabase.Execute(stmt);
         }
 
-        itr->second.save->RemovePlayer(this);               // save can become invalid
         if (itr->second.perm)
             GetSession()->SendCalendarRaidLockout(itr->second.save, false);
 
+        itr->second.save->RemovePlayer(this);               // save can become invalid
         m_boundInstances[difficulty].erase(itr++);
     }
 }
@@ -19873,7 +19880,11 @@ void Player::SendResetInstanceSuccess(uint32 MapId)
 
 void Player::SendResetInstanceFailed(uint32 reason, uint32 MapId)
 {
-    // TODO: find what other fail reasons there are besides players in the instance
+    /*reasons for instance reset failure:
+    // 0: There are players inside the instance.
+    // 1: There are players offline in your party.
+    // 2>: There are players in your party attempting to zone into an instance.
+    */
     WorldPacket data(SMSG_INSTANCE_RESET_FAILED, 4);
     data << uint32(reason);
     data << uint32(MapId);
