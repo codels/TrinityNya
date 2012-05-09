@@ -61,14 +61,7 @@ void AHLoadFromDB()
     {
         Field* fields = result->Fetch();
 
-        AHItemInfo info;
-
-        info.ItemId         = fields[0].GetUInt32();
-        info.ItemCount      = fields[1].GetUInt32();
-        info.ItemStack      = fields[2].GetUInt32();
-        info.StartBind      = fields[3].GetUInt32();
-        info.BuyOut         = fields[4].GetUInt32();
-        info.CurrentCount   = AHItemList[info.ItemId];
+        AHItemInfo info(fields[0].GetUInt32(), fields[1].GetUInt32(), AHItemList[fields[0].GetUInt32()], fields[2].GetUInt32(), fields[3].GetUInt32(), fields[4].GetUInt32());
 
         ItemTemplate const* itemTemplate = sObjectMgr->GetItemTemplate(info.ItemId);
         if (!itemTemplate)
