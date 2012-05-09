@@ -135,7 +135,7 @@ CreatureBaseStats const* CreatureBaseStats::GetBaseStats(uint8 level, uint8 unit
 
 bool ForcedDespawnDelayEvent::Execute(uint64 /*e_time*/, uint32 /*p_time*/)
 {
-    m_owner.ForcedDespawn();
+    m_owner.DespawnOrUnsummon();    // since we are here, we are not TempSummon as object type cannot change during runtime
     return true;
 }
 
@@ -1129,7 +1129,7 @@ void Creature::SaveToDB(uint32 mapid, uint8 spawnMask, uint32 phaseMask)
     stmt->setUInt8(index++, uint8(GetDefaultMovementType()));
     stmt->setUInt32(index++, npcflag);
     stmt->setUInt32(index++, unit_flags);
-    stmt->setUInt32(index, dynamicflags);
+    stmt->setUInt32(index++, dynamicflags);
     trans->Append(stmt);
 
     WorldDatabase.CommitTransaction(trans);
