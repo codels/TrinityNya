@@ -240,7 +240,7 @@ bool BattlegroundSA::ResetObjs()
     }
 
     for (uint8 i = BG_SA_GREEN_GATE; i <= BG_SA_ANCIENT_GATE; i++)
-        UpdateWorldState(GetWorldStateFromGateID(i), GateStatus[i]);
+        UpdateWorldState(getWorldStateFromGateId(i), GateStatus[i]);
 
     for (int i = BG_SA_BOAT_ONE; i <= BG_SA_BOAT_TWO; i++)
         for (BattlegroundPlayerMap::const_iterator itr = GetPlayers().begin(); itr != GetPlayers().end(); ++itr)
@@ -396,7 +396,7 @@ void BattlegroundSA::FillInitialWorldStates(WorldPacket& data)
     uint32 horde_attacks = uint32(Attackers == TEAM_HORDE ? 1 : 0);
 
     for (uint8 i = BG_SA_GREEN_GATE; i <= BG_SA_ANCIENT_GATE; i++)
-        data << GetWorldStateFromGateID(i) << uint32(GateStatus[i]);
+        data << getWorldStateFromGateId(i) << uint32(GateStatus[i]);
 
     data << uint32(BG_SA_BONUS_TIMER) << uint32(0);
 

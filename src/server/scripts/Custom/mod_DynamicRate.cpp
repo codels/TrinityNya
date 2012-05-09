@@ -67,12 +67,10 @@ public:
 
     static bool HandleSetGameRateAccount(ChatHandler* handler, char const* args)
     {
-        if (!DynamicRateEnable) return false;
-
-        if (!*args)
+        if (!DynamicRateEnable || !*args || !handler)
             return false;
 
-        uint32 guid = handler->GetSession()->GetPlayer()->GetGUID();
+        uint32 guid = handler->GetSession()->GetPlayer()->GetGUIDLow();
 
         if (DynamicRate[guid].update + DynamicRateCooldown > time(NULL))
         {
@@ -105,7 +103,7 @@ public:
         if (!*args)
             return false;
 
-        uint32 guid = handler->GetSession()->GetPlayer()->GetGUID();
+        uint32 guid = handler->GetSession()->GetPlayer()->GetGUIDLow();
 
         if (DynamicRate[guid].update + DynamicRateCooldown > time(NULL))
         {
@@ -144,14 +142,14 @@ class Mod_DynamicRate_PlayerScript : public PlayerScript
     {
         if (!DynamicRateEnable) return;
 
-        amount *= DynamicRate[player->GetGUID()].rate;
+        amount *= DynamicRate[player->GetGUIDLow()].rate;
     }
 
     void OnLogin(Player* player)
     {
         if (!DynamicRateEnable) return;
 
-        uint32 guid = player->GetGUID();
+        uint32 guid = player->GetGUIDLow();
 
         DynamicRate[guid].rate = DynamicRateDefault;
         DynamicRate[guid].update = time(NULL);
@@ -184,9 +182,10 @@ class Mod_DynamicRate_PlayerScript : public PlayerScript
 
     void OnLogout(Player* player)
     {
-        if (!DynamicRateEnable) return;
+        if (!DynamicRateEnable)
+            return;
 
-        uint32 guid = player->GetGUID();
+        uint32 guid = player->GetGUIDLow();
 
         if (DynamicRate.empty())
             return;

@@ -50,19 +50,19 @@ public:
 
         if (param == "on")
         {
-            FriendChat[handler->GetSession()->GetPlayer()->GetGUID()].enable = true;
+            FriendChat[handler->GetSession()->GetPlayer()->GetGUIDLow()].enable = true;
             handler->SendSysMessage(LANG_FC_ON);
             return true;
         }
         else if (param == "off")
         {
-            FriendChat[handler->GetSession()->GetPlayer()->GetGUID()].enable = false;
+            FriendChat[handler->GetSession()->GetPlayer()->GetGUIDLow()].enable = false;
             handler->SendSysMessage(LANG_FC_OFF);
             return true;
         }
         else
         {
-            if (FriendChat[handler->GetSession()->GetPlayer()->GetGUID()].enable)
+            if (FriendChat[handler->GetSession()->GetPlayer()->GetGUIDLow()].enable)
                 handler->SendSysMessage(LANG_FC_ON);
             else
                 handler->SendSysMessage(LANG_FC_OFF);
@@ -84,16 +84,16 @@ class Mod_FriendChat_PlayerScript : public PlayerScript
         if (!friendChatEnable)
             return;
 
-        if (QueryResult result = CharacterDatabase.PQuery("SELECT `guid` FROM `character_friend_chat` WHERE `guid` = '%u'", player->GetGUID()))
-            FriendChat[player->GetGUID()].enable = true;
+        if (QueryResult result = CharacterDatabase.PQuery("SELECT `guid` FROM `character_friend_chat` WHERE `guid` = '%u'", player->GetGUIDLow()))
+            FriendChat[player->GetGUIDLow()].enable = true;
         else
-            FriendChat[player->GetGUID()].enable = false;
+            FriendChat[player->GetGUIDLow()].enable = false;
     }
 
     // The following methods are called when a player sends a chat message.
     void OnChat(Player* player, uint32 /*type*/, uint32 /*lang*/, std::string& msg, Player* receiver)
     {
-        if (!friendChatEnable || !receiver || !FriendChat[receiver->GetGUID()].enable || receiver->GetSocial()->HasFriend(player->GetGUID()))
+        if (!friendChatEnable || !receiver || !FriendChat[receiver->GetGUIDLow()].enable || receiver->GetSocial()->HasFriend(player->GetGUIDLow()))
             return;
 
         msg = "";
@@ -105,7 +105,7 @@ class Mod_FriendChat_PlayerScript : public PlayerScript
         if (!friendChatEnable)
             return;
 
-        uint32 guid = player->GetGUID();
+        uint32 guid = player->GetGUIDLow();
 
         if (FriendChat[guid].enable)
             CharacterDatabase.PExecute("REPLACE INTO `character_friend_chat` (`guid`) VALUES ('%u')", guid);

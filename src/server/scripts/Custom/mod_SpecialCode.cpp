@@ -28,18 +28,17 @@ class Mod_SpecialCode_AllCreatureScript : public AllCreatureScript
 
     void AllCreatureCode(Player* player, Creature* /*creature*/, uint32 /*sender*/, uint32 /*action*/, const char* code)
     {
-        //sLog->outError("AllCreatureCode");
-        if (!SCEnable || !player)
+        if (!SCEnable || !player || !*code)
             return;
 
-        QueryResult result = CharacterDatabase.PQuery(SQL_CODE, code);
+        std::string std_code(code);
+        CharacterDatabase.EscapeString(std_code);
+        QueryResult result = CharacterDatabase.PQuery(SQL_CODE, std_code.c_str());
         if (!result)
         {
             player->CLOSE_GOSSIP_MENU();
             return;
         }
-
-        //sLog->outError("AllCreatureCode: query one complete");
 
         uint32 codeId = (*result)[0].GetUInt32();
         std::string subject = (*result)[5].GetString();
@@ -51,8 +50,6 @@ class Mod_SpecialCode_AllCreatureScript : public AllCreatureScript
         uint16 currentTotal = 0;
         uint16 currentAccount = 0;
         uint16 currentCharacter = 0;
-
-        //sLog->outError("AllCreatureCode: codeId: %u",codeId);
 
         if (maxTotal > 0)
         {

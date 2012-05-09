@@ -173,7 +173,7 @@ class Mod_MultiKill_PlayerScript : public PlayerScript
                     else
                     {
                         WorldPacket data(SMSG_PLAY_SOUND, 4);
-                        data << uint32(MultiKillInfo[i].Sound) << player->GetGUID();
+                        data << uint32(MultiKillInfo[i].Sound) << player->GetGUIDLow();
                         sWorld->SendGlobalMessage(&data);
                     }
                 }
@@ -200,7 +200,7 @@ class Mod_MultiKill_PlayerScript : public PlayerScript
 
                 CharacterDatabase.PExecute(
                     "INSERT INTO `character_multikill` (`guid`, `count`, `type`, `time`) VALUES ('%u', '%u', '%u', CURRENT_TIMESTAMP())",
-                        player->GetGUID(), killed, killedType
+                        player->GetGUIDLow(), killed, killedType
                 );
 
                 return;
@@ -223,8 +223,8 @@ class Mod_MultiKill_PlayerScript : public PlayerScript
         if (!MultiKillEnable)
             return;
 
-        uint32 killerGuid = killer->GetGUID();
-        uint32 killedGuid = killed->GetGUID();
+        uint32 killerGuid = killer->GetGUIDLow();
+        uint32 killedGuid = killed->GetGUIDLow();
 
         ResetCounter(killedGuid);
 
@@ -254,7 +254,7 @@ class Mod_MultiKill_PlayerScript : public PlayerScript
 
     void OnPlayerJoinedBattleground(Player* player, Battleground* /*bg*/)
     {
-        ResetCounter(player->GetGUID());
+        ResetCounter(player->GetGUIDLow());
     }
 
     void OnPlayerFirstKillBattleground(Player* player, Battleground* /*bg*/)
@@ -267,12 +267,12 @@ class Mod_MultiKill_PlayerScript : public PlayerScript
         if (!MultiKillEnable)
             return;
 
-        ResetCounter(killed->GetGUID());
+        ResetCounter(killed->GetGUIDLow());
     }
 
     void OnLogin(Player* player)
     {
-        ResetCounter(player->GetGUID());
+        ResetCounter(player->GetGUIDLow());
     }
 
     void OnLogout(Player* player)
@@ -280,7 +280,7 @@ class Mod_MultiKill_PlayerScript : public PlayerScript
         if (!MultiKillEnable)
             return;
 
-        uint32 guid = player->GetGUID();
+        uint32 guid = player->GetGUIDLow();
 
         if (MultiKillPlayer.empty())
             return;

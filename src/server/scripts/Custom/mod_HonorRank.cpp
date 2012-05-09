@@ -90,14 +90,16 @@ class Mod_HonorRank_PlayerScript : public PlayerScript
 
     void OnPVPKill(Player* killer, Player* /*killed*/)
     {
-        if (!HonorRankEnable || !HonorRankCheckLogin) return;
+        if (!HonorRankEnable || !HonorRankCheckLogin)
+            return;
 
         CheckAllTitle(killer);
     }
 
     void OnLogin(Player* player)
     {
-        if (!HonorRankEnable || !HonorRankCheckKill) return;
+        if (!HonorRankEnable || !HonorRankCheckKill)
+            return;
 
         CheckAllTitle(player);
     }

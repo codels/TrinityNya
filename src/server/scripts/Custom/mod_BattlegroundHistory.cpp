@@ -54,7 +54,7 @@ class Mod_BattlegroundHistory_AllBattlegroundScript : public AllBattlegroundScri
         {
             Player* player = ObjectAccessor::FindPlayer(itr->first);
             if (!player)
-                return;
+                continue;
 
             if(itr->second->DamageDone >= totaldamagedone)
             {

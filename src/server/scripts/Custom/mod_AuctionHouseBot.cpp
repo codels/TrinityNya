@@ -20,13 +20,11 @@ struct AHItemInfo
 bool AHEnable = false;
 int AHInterval = 5;
 uint32 AHPlayerGuid = 0;
-uint32 AHAccountId = 0;
 uint32 AHItemsPerCycle = 100;
 uint32 AHItemCountCheck = 0;
 IntervalTimer AuctionHouseTimer;
 std::vector<AHItemInfo> AHItems;
 
-Player* AHPlayer = NULL;
 AuctionHouseEntry const* AHEntry = NULL;
 AuctionHouseObject* AuctionHouse = NULL;
 
@@ -103,15 +101,16 @@ void AHLoadFromDB()
 void AHAddItem(AHItemInfo& info)
 {
     //sLog->outError("MOD: AHAddItem() item %u count %u stack %u bind %u buy %u", info.ItemId, info.ItemCount, info.ItemStack, info.StartBind, info.BuyOut);
-    Item* item = Item::CreateItem(info.ItemId, 1, AHPlayer);
+    if (!AHEntry || !AuctionHouse)
+        return;
+    
+    Item* item = Item::CreateItem(info.ItemId, 1, NULL);
 
     if (!item)
     {
         sLog->outError("MOD: AHAddItem() returned NULL");
         return;
     }
-
-    item->AddToUpdateQueueOf(AHPlayer);
 
     uint32 randomPropertyId = Item::GenerateItemRandomPropertyId(info.ItemId);
     if (randomPropertyId != 0)
@@ -135,32 +134,30 @@ void AHAddItem(AHItemInfo& info)
     auctionEntry->expire_time = (time_t) AUCTION_TIME + time(NULL);
     auctionEntry->auctionHouseEntry = AHEntry;
     item->SaveToDB(trans);
-    item->RemoveFromUpdateQueueOf(AHPlayer);
     sAuctionMgr->AddAItem(item);
     AuctionHouse->AddAuction(auctionEntry);
     auctionEntry->SaveToDB(trans);
     CharacterDatabase.CommitTransaction(trans);
-
     return;
 }
 
 void AuctionHouseCheck()
 {
-    if (!AHEnable || !AHEntry || !AuctionHouse || !AHPlayer || AHItems.empty())
+    if (!AHEnable || AHItems.empty())
         return;
 
     AuctionHouseTimer.Reset();
     AHItemCountCheck = 0;
-
+    
     for (uint32 i = 0; i < AHItems.size(); ++i)
-        for (uint32 j = AHItems[i].CurrentCount; j < AHItems[i].ItemCount; j++)
-        {
-            AHAddItem(AHItems[i]);
-            ++AHItemCountCheck;
+        if (AHItems[i].CurrentCount < AHItems[i].ItemCount)
+            for (uint32 j = AHItems[i].CurrentCount; j < AHItems[i].ItemCount; ++j)
+            {
+                AHAddItem(AHItems[i]);
 
-            if (AHItemCountCheck >= AHItemsPerCycle)
-                return;
-        }
+                if (++AHItemCountCheck > AHItemsPerCycle)
+                    return;
+            }
 }
 
 class Mod_AuctionHouseBot_AuctionHouseScript : public AuctionHouseScript
@@ -212,7 +209,6 @@ class Mod_AuctionHouseBot_WorldScript : public WorldScript
 
         AHInterval      = ConfigMgr::GetIntDefault("AuctionHouseBot.Interval", 5);
         AHPlayerGuid    = ConfigMgr::GetIntDefault("AuctionHouseBot.PlayerGuid", 0);
-        AHAccountId     = ConfigMgr::GetIntDefault("AuctionHouseBot.AccountId", 0);
         AHItemsPerCycle = ConfigMgr::GetIntDefault("AuctionHouseBot.ItemsPerCycle", 100);
 
         AuctionHouseTimer.SetInterval(AHInterval * MINUTE * IN_MILLISECONDS);
@@ -236,29 +232,6 @@ class Mod_AuctionHouseBot_WorldScript : public WorldScript
                 AHEnable = false;
                 return;
             }
-        }
-
-        if (AHPlayerGuid != 0 && AHAccountId != 0)
-        {
-            if (!AHPlayer)
-            {
-                WorldSession _session(AHAccountId, NULL, SEC_PLAYER, 0, 0, LOCALE_enUS, 0, false);
-                Player NewPlayer(&_session);
-                NewPlayer.Initialize(AHPlayerGuid);
-                sObjectAccessor->AddObject(&NewPlayer);
-                AHPlayer = &NewPlayer;
-                if (!AHPlayer)
-                {
-                    AHEnable = false;
-                    return;
-                }
-                //sLog->outError("AHPlayer " UI64FMTD " %u %s", AHPlayer->GetGUID(), AHPlayer->GetGUIDLow(), AHPlayer->GetName());
-            }
-        }
-        else
-        {
-            AHEnable = false;
-            return;
         }
 
         if (!reload)
@@ -295,7 +268,7 @@ class Mod_AuctionHouseBot_MailScript : public MailScript
 
     void OnSendMail(MailDraft* const /*draft*/, MailReceiver const& receiver, MailSender const& /*sender*/, uint32 /*mailId*/, bool& needDelete)
     {
-        if (!needDelete && receiver.GetPlayerGUIDLow() == AHPlayerGuid)
+        if (receiver.GetPlayerGUIDLow() == AHPlayerGuid)
             needDelete = true;
     }
 };
