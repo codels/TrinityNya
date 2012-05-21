@@ -8,13 +8,14 @@
 
 struct AHItemInfo
 {
-    AHItemInfo() : ItemId(0), ItemCount(0), CurrentCount(0), ItemStack(0), StartBind(0), BuyOut(0) { }
-    uint32  ItemId;
-    uint32  ItemCount;
-    uint32  CurrentCount;
-    uint32  ItemStack;
-    uint32  StartBind;
-    uint32  BuyOut;
+    AHItemInfo(uint32 _id, uint32 _max, uint32 _count, uint32 _stack, uint32 _bind, uint32 _buy) :
+        id(_id), max(_max), count(_count), stack(_stack), bind(_bind), buy(_buy) { }
+    uint32  id;
+    uint32  max;
+    uint32  count;
+    uint32  stack;
+    uint32  bind;
+    uint32  buy;
 };
 
 bool AHEnable = false;
@@ -63,22 +64,22 @@ void AHLoadFromDB()
 
         AHItemInfo info(fields[0].GetUInt32(), fields[1].GetUInt32(), AHItemList[fields[0].GetUInt32()], fields[2].GetUInt32(), fields[3].GetUInt32(), fields[4].GetUInt32());
 
-        ItemTemplate const* itemTemplate = sObjectMgr->GetItemTemplate(info.ItemId);
+        ItemTemplate const* itemTemplate = sObjectMgr->GetItemTemplate(info.id);
         if (!itemTemplate)
         {
-            sLog->outError("MOD: AHBot item proto not found for item %u", info.ItemId);
+            sLog->outError("MOD: AHBot item proto not found for item %u", info.id);
             continue;
         }
 
-        if (info.ItemStack > itemTemplate->GetMaxStackSize())
+        if (info.stack > itemTemplate->GetMaxStackSize())
         {
-            sLog->outError("MOD: AHBot item stack %u > max stack %u for item %u", info.ItemStack, itemTemplate->GetMaxStackSize(), info.ItemId);
-            info.ItemStack = itemTemplate->GetMaxStackSize();
+            sLog->outError("MOD: AHBot item stack %u > max stack %u for item %u", info.stack, itemTemplate->GetMaxStackSize(), info.id);
+            info.stack = itemTemplate->GetMaxStackSize();
         }
 
-        if (info.ItemStack == 0)
+        if (info.stack == 0)
         {
-            sLog->outError("MOD: AHBot item stack 0 for item %u", info.ItemId);
+            sLog->outError("MOD: AHBot item stack 0 for item %u", info.id);
             continue;
         }
 
@@ -93,11 +94,10 @@ void AHLoadFromDB()
 
 void AHAddItem(AHItemInfo& info)
 {
-    //sLog->outError("MOD: AHAddItem() item %u count %u stack %u bind %u buy %u", info.ItemId, info.ItemCount, info.ItemStack, info.StartBind, info.BuyOut);
     if (!AHEntry || !AuctionHouse)
         return;
     
-    Item* item = Item::CreateItem(info.ItemId, 1, NULL);
+    Item* item = Item::CreateItem(info.id, 1, NULL);
 
     if (!item)
     {
@@ -105,12 +105,12 @@ void AHAddItem(AHItemInfo& info)
         return;
     }
 
-    uint32 randomPropertyId = Item::GenerateItemRandomPropertyId(info.ItemId);
+    uint32 randomPropertyId = Item::GenerateItemRandomPropertyId(info.id);
     if (randomPropertyId != 0)
         item->SetItemRandomProperties(randomPropertyId);
 
-    item->SetCount(info.ItemStack);
-    uint32 deposit =  sAuctionMgr->GetAuctionDeposit(AHEntry, AUCTION_TIME, item, info.ItemStack);
+    item->SetCount(info.stack);
+    uint32 deposit =  sAuctionMgr->GetAuctionDeposit(AHEntry, AUCTION_TIME, item, info.stack);
 
     SQLTransaction trans = CharacterDatabase.BeginTransaction();
     AuctionEntry* auctionEntry = new AuctionEntry;
@@ -119,8 +119,8 @@ void AHAddItem(AHItemInfo& info)
     auctionEntry->item_guidlow = item->GetGUIDLow();
     auctionEntry->item_template = item->GetEntry();
     auctionEntry->owner = AHPlayerGuid;
-    auctionEntry->startbid = info.StartBind;
-    auctionEntry->buyout = info.BuyOut;
+    auctionEntry->startbid = info.bind;
+    auctionEntry->buyout = info.buy;
     auctionEntry->bidder = 0;
     auctionEntry->bid = 0;
     auctionEntry->deposit = deposit;
@@ -143,8 +143,8 @@ void AuctionHouseCheck()
     AHItemCountCheck = 0;
     
     for (uint32 i = 0; i < AHItems.size(); ++i)
-        if (AHItems[i].CurrentCount < AHItems[i].ItemCount)
-            for (uint32 j = AHItems[i].CurrentCount; j < AHItems[i].ItemCount; ++j)
+        if (AHItems[i].count < AHItems[i].max)
+            for (uint32 j = AHItems[i].count; j < AHItems[i].max; ++j)
             {
                 AHAddItem(AHItems[i]);
 
@@ -165,9 +165,9 @@ class Mod_AuctionHouseBot_AuctionHouseScript : public AuctionHouseScript
                 return;
 
             for (uint32 i = 0; i < AHItems.size(); ++i)
-                if (AHItems[i].ItemId == entry->item_template)
+                if (AHItems[i].id == entry->item_template)
                 {
-                    ++AHItems[i].CurrentCount;
+                    ++AHItems[i].count;
                     return;
                 }
         }
@@ -179,10 +179,10 @@ class Mod_AuctionHouseBot_AuctionHouseScript : public AuctionHouseScript
                 return;
 
             for (uint32 i = 0; i < AHItems.size(); ++i)
-                if (AHItems[i].ItemId == entry->item_template)
+                if (AHItems[i].id == entry->item_template)
                 {
-                    if (AHItems[i].CurrentCount > 0)
-                        --AHItems[i].CurrentCount;
+                    if (AHItems[i].count > 0)
+                        --AHItems[i].count;
                     return;
                 }
         }
