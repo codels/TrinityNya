@@ -46,7 +46,6 @@ void DILoadDataFromDB()
         sLog->outString();
         return;
     }
-
     do
     {
         Field* fields = result->Fetch();
