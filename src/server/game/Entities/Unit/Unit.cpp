@@ -397,10 +397,25 @@ void Unit::UpdateSplineMovement(uint32 t_diff)
         m_movesplineTimer.Reset(POSITION_UPDATE_DELAY);
         Movement::Location loc = movespline->ComputePosition();
 
-        if (GetTypeId() == TYPEID_PLAYER)
-            ((Player*)this)->UpdatePosition(loc.x,loc.y,loc.z,loc.orientation);
-        else
-            GetMap()->CreatureRelocation((Creature*)this,loc.x,loc.y,loc.z,loc.orientation);
+        if (HasUnitMovementFlag(MOVEMENTFLAG_ONTRANSPORT))
+        {
+            Position& pos = m_movementInfo.t_pos;
+            pos.m_positionX = loc.x;
+            pos.m_positionY = loc.y;
+            pos.m_positionZ = loc.z;
+            pos.m_orientation = loc.orientation;
+            if (Unit* vehicle = GetVehicleBase())
+            {
+                loc.x += vehicle->GetPositionX();
+                loc.y += vehicle->GetPositionY();
+                loc.z += vehicle->GetPositionZMinusOffset();
+                loc.orientation = vehicle->GetOrientation();
+            }
+            else if (Transport* trans = GetTransport())
+                trans->CalculatePassengerPosition(loc.x, loc.y, loc.z, loc.orientation);
+        }
+
+        UpdatePosition(loc.x, loc.y, loc.z, loc.orientation);
     }
 }
 
@@ -415,13 +430,13 @@ void Unit::SendMonsterMoveExitVehicle(Position const* newPos)
     WorldPacket data(SMSG_MONSTER_MOVE, 1+12+4+1+4+4+4+12+GetPackGUID().size());
     data.append(GetPackGUID());
 
-    data << uint8(GetTypeId() == TYPEID_PLAYER ? 1 : 0);    // new in 3.1, bool
+    data << uint8(GetTypeId() == TYPEID_PLAYER ? 1 : 0);    // sets/unsets MOVEMENTFLAG2_UNK7 (0x40)
     data << GetPositionX() << GetPositionY() << GetPositionZ();
     data << getMSTime();
 
     data << uint8(SPLINETYPE_FACING_ANGLE);
     data << float(GetOrientation());                        // guess
-    data << uint32(SPLINEFLAG_EXIT_VEHICLE);
+    data << uint32(SPLINEFLAG_TRANSPORT_EXIT);
     data << uint32(0);                                      // Time in between points
     data << uint32(1);                                      // 1 single waypoint
     data << newPos->GetPositionX();
@@ -438,7 +453,7 @@ void Unit::SendMonsterMoveTransport(Unit* vehicleOwner)
     data.append(GetPackGUID());
     data.append(vehicleOwner->GetPackGUID());
     data << int8(GetTransSeat());
-    data << uint8(0);
+    data << uint8(0);                                       // sets/unsets MOVEMENTFLAG2_UNK7 (0x40)
     data << GetPositionX() - vehicleOwner->GetPositionX();
     data << GetPositionY() - vehicleOwner->GetPositionY();
     data << GetPositionZ() - vehicleOwner->GetPositionZ();
@@ -12670,7 +12685,7 @@ void Unit::UpdateSpeed(UnitMoveType mtype, bool forced)
         {
             // Set creature speed rate from CreatureInfo
             if (GetTypeId() == TYPEID_UNIT)
-                speed *= ToCreature()->GetCreatureTemplate()->speed_walk;
+                speed *= ToCreature()->GetCreatureTemplate()->speed_run;    // at this point, MOVE_WALK is never reached
 
             // Normalize speed by 191 aura SPELL_AURA_USE_NORMAL_MOVEMENT_SPEED if need
             // TODO: possible affect only on MOVE_RUN
@@ -12990,8 +13005,7 @@ void Unit::TauntFadeOut(Unit* taunter)
         return;
     }
 
-    //m_ThreatManager.tauntFadeOut(taunter);
-    target = m_ThreatManager.getHostilTarget();
+    target = creature->SelectVictim();  // might have more taunt auras remaining
 
     if (target && target != taunter)
     {
@@ -14789,6 +14803,7 @@ void Unit::StopMoving()
         return;
 
     Movement::MoveSplineInit init(*this);
+    init.MoveTo(GetPositionX(), GetPositionY(), GetPositionZMinusOffset());
     init.SetFacing(GetOrientation());
     init.Launch();
 }

@@ -3077,6 +3077,7 @@ void SpellMgr::LoadDbcDataCorrections()
             case 61588: // Blazing Harpoon
             case 52479: // Gift of the Harvester
             case 48246: // Ball of Flame
+            case 36384: // Skartax Purple Beam
                 spellInfo->MaxAffectedTargets = 1;
                 break;
             case 41376: // Spite
@@ -3118,7 +3119,7 @@ void SpellMgr::LoadDbcDataCorrections()
             case 50312: // Unholy Frenzy
                 spellInfo->MaxAffectedTargets = 15;
                 break;
-            case 33711: //Murmur's Touch
+            case 33711: // Murmur's Touch
             case 38794:
                 spellInfo->MaxAffectedTargets = 1;
                 spellInfo->EffectTriggerSpell[0] = 33760;
@@ -3271,6 +3272,9 @@ void SpellMgr::LoadDbcDataCorrections()
             case 63163: // Apply Enchanted Bridle (Argent Tournament)
                 spellInfo->EffectDieSides[0] = 0; // was 1, that should probably mean seat 0, but instead it's treated as spell 1
                 spellInfo->EffectBasePoints[0] = 52391; // Ride Vehicle (forces seat 0)
+                break;
+            case 45602: // Ride Carpet
+                spellInfo->EffectBasePoints[EFFECT_0] = 0; // force seat 0, vehicle doesn't have the required seat flags for "no seat specified (-1)"
                 break;
             case 64745: // Item - Death Knight T8 Tank 4P Bonus
             case 64936: // Item - Warrior T8 Protection 4P Bonus
