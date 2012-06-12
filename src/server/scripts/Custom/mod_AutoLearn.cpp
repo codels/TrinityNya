@@ -23,6 +23,7 @@ struct LearnSpellForClassInfo
 bool AutoLearnEnable = false;
 uint8 OnLevelSpellMask = 0;
 uint8 OnSkillSpellMask = 0;
+uint8 OnLoginSpellMask = 0;
 std::vector<LearnSpellForClassInfo> LearnSpellForClass;
 
 class Mod_AutoLearn_WorldScript : public WorldScript
@@ -40,18 +41,30 @@ class Mod_AutoLearn_WorldScript : public WorldScript
         uint8 loadSpellMask = OnLevelSpellMask | OnSkillSpellMask;
         OnLevelSpellMask = 0;
         OnSkillSpellMask = 0;
+        OnLoginSpellMask = 0;
 
         if (ConfigMgr::GetBoolDefault("AutoLearn.Check.Level", false))
         {
-            if (ConfigMgr::GetBoolDefault("AutoLearn.SpellClass", false)) OnLevelSpellMask += SPELL_MASK_CLASS;
-            if (ConfigMgr::GetBoolDefault("AutoLearn.SpellRiding", false)) OnLevelSpellMask += SPELL_MASK_RIDING;
-            if (ConfigMgr::GetBoolDefault("AutoLearn.SpellMount", false)) OnLevelSpellMask += SPELL_MASK_MOUNT;
-            if (ConfigMgr::GetBoolDefault("AutoLearn.SpellWeapon", false)) OnLevelSpellMask += SPELL_MASK_WEAPON;
-            if (ConfigMgr::GetBoolDefault("AutoLearn.DualSpec", false)) OnLevelSpellMask += SPELL_MASK_DUAL_SPEC;
+            if (ConfigMgr::GetBoolDefault("AutoLearn.SpellClass", false))
+                OnLevelSpellMask += SPELL_MASK_CLASS;
+            if (ConfigMgr::GetBoolDefault("AutoLearn.SpellRiding", false))
+                OnLevelSpellMask += SPELL_MASK_RIDING;
+            if (ConfigMgr::GetBoolDefault("AutoLearn.SpellMount", false))
+                OnLevelSpellMask += SPELL_MASK_MOUNT;
+            if (ConfigMgr::GetBoolDefault("AutoLearn.SpellWeapon", false))
+                OnLevelSpellMask += SPELL_MASK_WEAPON;
+            if (ConfigMgr::GetBoolDefault("AutoLearn.DualSpec", false))
+                OnLevelSpellMask += SPELL_MASK_DUAL_SPEC;
+            
+            if (ConfigMgr::GetBoolDefault("AutoLearn.Login.Spell", false))
+                OnLoginSpellMask += OnLevelSpellMask;
         }
 
         if (ConfigMgr::GetBoolDefault("AutoLearn.SpellProfession", false))
             OnSkillSpellMask += SPELL_MASK_PROFESSION;
+            
+        if (ConfigMgr::GetBoolDefault("AutoLearn.Login.Skill", false))
+            OnLoginSpellMask += OnSkillSpellMask;
 
         if (loadSpellMask != (OnLevelSpellMask | OnSkillSpellMask))
             LoadDataFromDataBase();
@@ -141,6 +154,15 @@ class Mod_AutoLearn_PlayerScript : public PlayerScript
             return;
 
         AutoLearnSpell(OnLevelSpellMask, Player);
+    }
+    
+    // Called when a player logs in.
+    void OnLogin(Player* player)
+    {
+        if (!AutoLearnEnable)
+            return;
+
+        AutoLearnSpell(OnLoginSpellMask, player);
     }
 
     // Called when a player skill update

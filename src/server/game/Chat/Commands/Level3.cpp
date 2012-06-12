@@ -2448,7 +2448,7 @@ bool ChatHandler::HandleResetAchievementsCommand (const char * args)
     if (target)
         target->GetAchievementMgr().Reset();
     else
-        AchievementMgr::DeleteFromDB(GUID_LOPART(target_guid));
+        AchievementMgr::DeleteFromDB(GUID_LOPART(target_guid), sObjectMgr->GetPlayerAccountIdByGUID(target_guid));
 
     return true;
 }

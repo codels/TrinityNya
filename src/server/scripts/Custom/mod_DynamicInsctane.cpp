@@ -1,6 +1,6 @@
 /*
-** Данный скрипт находится на стадии разработки, использовать на свой страх и риск.
-** Все замечания и пожелания на https://github.com/codels/TrinityNya
+** Experimental!!!
+** Dynamic Difficulty
 */
 
 #include "ScriptPCH.h"
@@ -12,8 +12,23 @@
 #define DI_SQL_DELETE "DELETE FROM `world_instance` WHERE `InstanceId` = '%u'"
 #define DI_SQL_CLEANUP "DELETE `w` FROM `world_instance` `w` LEFT JOIN `instance` `i` ON `w`.`InstanceId` = `i`.`id` WHERE `i`.`id` IS NULL"
 
-bool DynamicInstanceEnable = false;
+enum DynamicDifficulty
+{
+    DD_MAX_LEVEL = 80,
+    DD_EXPANSION_BC = 59,
+    DD_EXPANSION_WOTLK = 69,
+    DD_EXPANSION_CATACLYSM = 79,
+};
 
+bool DDEnable = false; // Dynamic Difficulty
+bool DDDungeon = true; // only dungeon
+
+int DDLevel = DD_MAX_LEVEL; // world level when not only dungeon
+/* future:
+        -1 : dynamic
+        0 : correcting features
+        1..X : all creature in level
+*/
 struct DITemplate
 {
     DITemplate() : level(0) {} // по умолчанию уровень подземелья 0, что значит не используются
@@ -60,7 +75,7 @@ void DILoadDataFromDB()
 
 bool DICreateOrExisted(Map* map)
 {
-    if (!DynamicInstanceEnable || !map->IsDungeon())
+    if (!DDEnable || !map->IsDungeon())
         return false;
 
     if (DIData[map->GetInstanceId()].isValid())
@@ -80,7 +95,7 @@ bool DICreateOrExisted(Map* map)
 
 void DIRemoveData(uint32 instanceid)
 {
-    if (!DynamicInstanceEnable)
+    if (!DDEnable)
         return;
 
     if (DIData.empty())
@@ -106,49 +121,98 @@ void DIRemoveData(uint32 instanceid)
 }
 
 /*
-** Функция изменения существа под уровень подземелья
-**
-** Изменяет все основные характеристики, игнорирует:
-**   - Тотемы
-**   - Триггеры
-**   - Мирных животных
-**
-** Максимальный уровень существа 80, в итоге нужна формула
-** для создания всех характеристик существ, без каких либо таблиц
-**
-** Проблемы:
-**   - Некоторые заклинания работают от уровня создателя, а некоторые нет
-**     могут возникать не приятные ошибки, которые исправляются
-**     заменой заклинания, либо поиском определения таких заклинаний
+    CREATURE_TYPE_BEAST            = 1,
+    CREATURE_TYPE_DRAGONKIN        = 2,
+    CREATURE_TYPE_DEMON            = 3,
+    CREATURE_TYPE_ELEMENTAL        = 4,
+    CREATURE_TYPE_GIANT            = 5,
+    CREATURE_TYPE_UNDEAD           = 6,
+    CREATURE_TYPE_HUMANOID         = 7,
+    CREATURE_TYPE_CRITTER          = 8,
+    CREATURE_TYPE_MECHANICAL       = 9,
+    CREATURE_TYPE_NOT_SPECIFIED    = 10,
+    CREATURE_TYPE_TOTEM            = 11,
+    CREATURE_TYPE_NON_COMBAT_PET   = 12,
+    CREATURE_TYPE_GAS_CLOUD        = 13
+    
+    CREATURE_FAMILY_WOLF           = 1,
+    CREATURE_FAMILY_CAT            = 2,
+    CREATURE_FAMILY_SPIDER         = 3,
+    CREATURE_FAMILY_BEAR           = 4,
+    CREATURE_FAMILY_BOAR           = 5,
+    CREATURE_FAMILY_CROCOLISK      = 6,
+    CREATURE_FAMILY_CARRION_BIRD   = 7,
+    CREATURE_FAMILY_CRAB           = 8,
+    CREATURE_FAMILY_GORILLA        = 9,
+    CREATURE_FAMILY_HORSE_CUSTOM   = 10,                    // not exist in DBC but used for horse like beasts in DB
+    CREATURE_FAMILY_RAPTOR         = 11,
+    CREATURE_FAMILY_TALLSTRIDER    = 12,
+    CREATURE_FAMILY_FELHUNTER      = 15,
+    CREATURE_FAMILY_VOIDWALKER     = 16,
+    CREATURE_FAMILY_SUCCUBUS       = 17,
+    CREATURE_FAMILY_DOOMGUARD      = 19,
+    CREATURE_FAMILY_SCORPID        = 20,
+    CREATURE_FAMILY_TURTLE         = 21,
+    CREATURE_FAMILY_IMP            = 23,
+    CREATURE_FAMILY_BAT            = 24,
+    CREATURE_FAMILY_HYENA          = 25,
+    CREATURE_FAMILY_BIRD_OF_PREY   = 26,
+    CREATURE_FAMILY_WIND_SERPENT   = 27,
+    CREATURE_FAMILY_REMOTE_CONTROL = 28,
+    CREATURE_FAMILY_FELGUARD       = 29,
+    CREATURE_FAMILY_DRAGONHAWK     = 30,
+    CREATURE_FAMILY_RAVAGER        = 31,
+    CREATURE_FAMILY_WARP_STALKER   = 32,
+    CREATURE_FAMILY_SPOREBAT       = 33,
+    CREATURE_FAMILY_NETHER_RAY     = 34,
+    CREATURE_FAMILY_SERPENT        = 35,
+    CREATURE_FAMILY_MOTH           = 37,
+    CREATURE_FAMILY_CHIMAERA       = 38,
+    CREATURE_FAMILY_DEVILSAUR      = 39,
+    CREATURE_FAMILY_GHOUL          = 40,
+    CREATURE_FAMILY_SILITHID       = 41,
+    CREATURE_FAMILY_WORM           = 42,
+    CREATURE_FAMILY_RHINO          = 43,
+    CREATURE_FAMILY_WASP           = 44,
+    CREATURE_FAMILY_CORE_HOUND     = 45,
+    CREATURE_FAMILY_SPIRIT_BEAST   = 46
 */
 bool DICreatureCalcStats(Creature* creature)
 {
-    if (!DynamicInstanceEnable || !creature->isAlive())
+    if (!DDEnable || !creature->isAlive())
         return false;
 
     if (creature->isTotem() || creature->isTrigger() || creature->GetCreatureType() == CREATURE_TYPE_CRITTER || creature->isSpiritService())
         return false;
 
+    uint8 level = 1;
+    
     Map* map = creature->GetMap();
+    Difficulty MapDiff = map->GetDifficulty();
+        
+    if (DDDungeon)
+    {
+        if (!map || !DICreateOrExisted(map))
+            return false;
 
-    if (!map || !DICreateOrExisted(map))
-        return false;
-
-    uint32 instanceid = map->GetInstanceId();
+        uint32 instanceid = map->GetInstanceId();
+        
+        level = DIData[instanceid].level;
+    }
+    else
+        level = DDLevel;
 
     const CreatureTemplate* cinfo = creature->GetCreatureTemplate();
 
-    uint8 level = DIData[instanceid].level;
-
-    uint8 clevel = cinfo->maxlevel;
-    if (clevel > 80) clevel = 80; // можно отказаться
-
     creature->SetLevel(level);
 
-    // определение дополнения
+    // check expansion from level
     uint8 expansion = 0;
-    if (level > 59) expansion++;
-    if (level > 69) expansion++;
+    bool max = level > DD_EXPANSION_CATACLYSM;
+    if (level > DD_EXPANSION_BC)
+        expansion++;
+    if (level > DD_EXPANSION_WOTLK)
+        expansion++;
 
     uint32 rank = creature->isPet() ? 0 : cinfo->rank;
 
@@ -156,34 +220,88 @@ bool DICreatureCalcStats(Creature* creature)
 
     float damagemod = 1.0f;
     float healthmod = 1.0f;
+    uint32 attackTime = cinfo->baseattacktime;
 
-    if (rank == CREATURE_ELITE_NORMAL)
-        healthmod *= sWorld->getRate(RATE_CREATURE_NORMAL_HP);
-    else if (rank == CREATURE_ELITE_ELITE)
+    if (rank == CREATURE_ELITE_ELITE)
+    {
         healthmod *= sWorld->getRate(RATE_CREATURE_ELITE_ELITE_HP);
+        damagemod *= 2;
+    }
     else if (rank == CREATURE_ELITE_RAREELITE)
     {
         healthmod *= sWorld->getRate(RATE_CREATURE_ELITE_RAREELITE_HP);
-        damagemod *= 1.5;
+        damagemod *= 3;
     }
     else if (rank == CREATURE_ELITE_WORLDBOSS)
-        healthmod *= sWorld->getRate(RATE_CREATURE_ELITE_WORLDBOSS_HP);
-    else if (rank == CREATURE_ELITE_RARE)
-        healthmod *= sWorld->getRate(RATE_CREATURE_ELITE_RARE_HP);
-    else
-        healthmod *= sWorld->getRate(RATE_CREATURE_ELITE_ELITE_HP);
-
-    if (rank != CREATURE_ELITE_NORMAL)
     {
+        healthmod *= sWorld->getRate(RATE_CREATURE_ELITE_WORLDBOSS_HP);
+        damagemod *= 8;
+    }
+    else if (rank == CREATURE_ELITE_RARE)
+    {
+        healthmod *= sWorld->getRate(RATE_CREATURE_ELITE_RARE_HP);
         damagemod *= 2;
-        healthmod *= 3;
+    }
+    // CREATURE_ELITE_NORMAL
+    else
+    {
+        //healthmod *= sWorld->getRate(RATE_CREATURE_ELITE_NORMAL_HP);
+    }
+    
+    if (MapDiff == DUNGEON_DIFFICULTY_HEROIC)
+    {
+        damagemod *= 1.5;
+    }
+    else if (MapDiff == DUNGEON_DIFFICULTY_EPIC) // WTF?
+    {
+        damagemod *= 4;
+    }
+    else if (MapDiff == RAID_DIFFICULTY_10MAN_NORMAL)
+    {
+        damagemod *= 2.5;
+    }
+    else if (MapDiff == RAID_DIFFICULTY_25MAN_NORMAL)
+    {
+        damagemod *= 3.5;
+    }
+    else if (MapDiff == RAID_DIFFICULTY_10MAN_HEROIC)
+    {
+        damagemod *= 4;
+    }
+    else if (MapDiff == RAID_DIFFICULTY_25MAN_HEROIC)
+    {
+        damagemod *= 5;
+    }
+    // REGULAR_DIFFICULTY, DUNGEON_DIFFICULTY_NORMAL
+    else
+    {
+        //..nothing
+    }
+    
+    if (cinfo->type == CREATURE_TYPE_BEAST)
+    {
+        if (cinfo->family == CREATURE_FAMILY_WOLF)
+            attackTime = 1500;
+        else if (cinfo->family == CREATURE_FAMILY_CAT)
+            attackTime = 1000;
     }
 
     uint32 basehp = stats->GenerateHealth(expansion, cinfo->ModHealth);
     uint32 health = uint32(basehp * healthmod);
+    
+    //float dmgbase = (0.5 * pow(1.05, level * 2)) * (attackTime / 1000) * damagemod;
+    float dmgbase = 1;
 
-    // формула взята с головы =)
-    float dmgbase = (0.5 * pow(1.05, level * 2)) * (cinfo->baseattacktime / 1000) * damagemod;
+    if (expansion == 0)
+        dmgbase = 1.7 * level;
+    else if (expansion == 1)
+        dmgbase = 4 * level;
+    else if (expansion == 2 && !max)
+        dmgbase = 4 * level;
+    else if (max)
+        dmgbase = 6 * level;
+
+        
     float dmgmin = dmgbase * 0.95;
     float dmgmax = dmgbase * 1.05;
 
@@ -229,12 +347,15 @@ bool DICreatureCalcStats(Creature* creature)
 */
 uint32 DICreatureLoot(Creature* creature)
 {
-    Map* map = creature->GetMap();
+    if (DDDungeon)
+    {
+        Map* map = creature->GetMap();
 
-    if (!map || !DICreateOrExisted(map))
-        return 0;
+        if (!map || !DICreateOrExisted(map))
+            return 0;
+    }
 
-    // Вернуть новый номер шаблона добычи, 0 - использовать стандартную добычу
+    // if 0, used default value from database
     return 0;
 }
 
@@ -245,9 +366,11 @@ class Mod_DynamicInstance_WorldScript : public WorldScript
 
     void OnConfigLoad(bool /*reload*/)
     {
-        DynamicInstanceEnable = ConfigMgr::GetBoolDefault("DynamicInstance.Enable", false);
+        DDEnable  = ConfigMgr::GetBoolDefault("DynamicDifficulty.Enable", false);
+        DDDungeon = ConfigMgr::GetBoolDefault("DynamicDifficulty.DungeonOnly", true);
+        DDLevel   = ConfigMgr::GetIntDefault("DynamicDifficulty.WorldLevel", DD_MAX_LEVEL);
 
-        if (!DynamicInstanceEnable)
+        if (!DDEnable)
             return;
 
         DILoadDataFromDB();
@@ -261,12 +384,14 @@ class Mod_DynamicInstance_AllInstanceScript : public AllInstanceScript
 
     void AllInstanceDeleteFromDB(uint32 instanceid)
     {
-        DIRemoveData(instanceid);
+        if (DDDungeon)
+            DIRemoveData(instanceid);
     }
 
     void AllInstanceOnPlayerEnter(Map* map, Player* /*player*/)
     {
-        DICreateOrExisted(map);
+        if (DDDungeon)
+            DICreateOrExisted(map);
     }
 };
 
@@ -277,7 +402,7 @@ class Mod_DynamicInstance_AllCreatureScript : public AllCreatureScript
 
     void AllCreatureSelectLevel(Creature* creature, bool& needSetStats)
     {
-        if (!DynamicInstanceEnable)
+        if (!DDEnable)
             return;
 
         needSetStats = !DICreatureCalcStats(creature);
@@ -290,32 +415,41 @@ class Mod_DynamicInstance_AllCreatureScript : public AllCreatureScript
 
     void AllCreatureCreateLoot(Creature* creature, uint32& lootid)
     {
-        if (!DynamicInstanceEnable || lootid != 0)
+        if (!DDEnable || lootid != 0)
             return;
 
         if (uint32 newlootid = DICreatureLoot(creature))
             lootid = newlootid;
     }
 
-    void AllCreatureSpellDamageMod(Creature* creature, float& doneTotalMod)
+    void AllCreatureSpellDamageMod(Creature* creature, SpellInfo const* spellProto, DamageEffectType damagetype, float& doneTotalMod)
     {
-        if (!DynamicInstanceEnable)
+        //if (spellProto->SchoolMask == SPELL_SCHOOL_MASK_NORMAL)
+            //return;
+            
+        if (!DDEnable)
             return;
-
-        Map* map = creature->GetMap();
-
-        if (!map || !map->IsDungeon())
+            
+        if (!spellProto->MaxLevel)
             return;
-
-        uint32 instanceid = map->GetInstanceId();
-
-        if (!DIData[instanceid].isValid())
+            
+        if (creature->isTotem() || creature->isTrigger() || creature->GetCreatureType() == CREATURE_TYPE_CRITTER || creature->isSpiritService())
             return;
+            
+        /*uint8 level = creature->GetCreatureTemplate()->maxlevel;
+        
+        if (level > DD_MAX_LEVEL)
+            level = DD_MAX_LEVEL;*/
+        
+        if (DDDungeon)
+        {
+            Map* map = creature->GetMap();
+            
+            if (!map || !map->IsDungeon())
+                return;
+        }
 
-        uint8 level = creature->GetCreatureTemplate()->maxlevel;
-        if (level > 80) level = 80;
-
-        doneTotalMod *= pow(1.05, (1.55 * (DIData[instanceid].level - level)));
+        doneTotalMod *= pow(1.05, (1.3 * (creature->getLevel() - spellProto->SpellLevel)));
     }
 };
 

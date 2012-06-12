@@ -3130,6 +3130,20 @@ AutoLearn.SpellProfession = 0
 
 AutoLearn.DualSpec = 0
 
+#   AutoLearn.Login.Spell
+#        Description: Check spells on login
+#        Default:     0 - (Disabled)
+#                     1 - (Enabled)
+
+AutoLearn.Login.Spell = 0
+
+#   AutoLearn.Login.Skill
+#        Description: Check skills on login
+#        Default:     0 - (Disabled)
+#                     1 - (Enabled)
+
+AutoLearn.Login.Skill = 0
+
 #
 ###################################################################################################
 
@@ -3139,7 +3153,9 @@ BattlegroundHistory.Enable = 0
 #######################################################################
 
 #on/off dynamic instance (warning, in dev!!!)
-DynamicInstance.Enable = 0
+DynamicDifficulty.Enable = 0
+DynamicDifficulty.DungeonOnly = 0
+DynamicDifficulty.WorldLevel = 80
 
 #######################################################################
 
@@ -3306,3 +3322,6 @@ GuildDefault.Enable = 0
 GuildDefault.ID = 0
 #guild rank
 GuildDefault.Rank = 0
+
+// Achievements for account
+Account.Achievements = 0

@@ -10408,8 +10408,7 @@ uint32 Unit::SpellDamageBonusDone(Unit* victim, SpellInfo const* spellProto, uin
     if (GetTypeId() == TYPEID_UNIT && !ToCreature()->isPet())
     {
         DoneTotalMod *= ToCreature()->GetSpellDamageMod(ToCreature()->GetCreatureTemplate()->rank);
-		if (spellProto->SchoolMask != SPELL_SCHOOL_MASK_NORMAL)
-			sScriptMgr->AllCreatureSpellDamageMod(ToCreature(), DoneTotalMod);
+		sScriptMgr->AllCreatureSpellDamageMod(ToCreature(), spellProto, damagetype, DoneTotalMod);
     }
 
     // Some spells don't benefit from pct done mods

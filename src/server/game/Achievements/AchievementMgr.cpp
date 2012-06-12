@@ -455,7 +455,7 @@ void AchievementMgr::Reset()
 
     m_completedAchievements.clear();
     m_criteriaProgress.clear();
-    DeleteFromDB(m_player->GetGUIDLow());
+    DeleteFromDB(m_player->GetGUIDLow(), m_player->GetSession()->GetAccountId());
 
     // re-fill data
     CheckAllAchievementCriteria();
@@ -493,22 +493,35 @@ void AchievementMgr::ResetAchievementCriteria(AchievementCriteriaTypes type, uin
     }
 }
 
-void AchievementMgr::DeleteFromDB(uint32 lowguid)
+void AchievementMgr::DeleteFromDB(uint32 lowguid, uint32 accountId)
 {
     SQLTransaction trans = CharacterDatabase.BeginTransaction();
 
-    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CHAR_ACHIEVEMENT);
-    stmt->setUInt32(0, lowguid);
-    trans->Append(stmt);
+    if (sWorld->getBoolConfig(CONFIG_ACCOUNT_ACHIEVEMENTS))
+    {
+        PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CHAR_ACHIEVEMENT_ACC);
+        stmt->setUInt32(0, accountId);
+        trans->Append(stmt);
 
-    stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CHAR_ACHIEVEMENT_PROGRESS);
-    stmt->setUInt32(0, lowguid);
-    trans->Append(stmt);
+        stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CHAR_ACHIEVEMENT_PROGRESS_ACC);
+        stmt->setUInt32(0, accountId);
+        trans->Append(stmt);
+    }
+    else
+    {
+        PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CHAR_ACHIEVEMENT);
+        stmt->setUInt32(0, lowguid);
+        trans->Append(stmt);
+
+        stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CHAR_ACHIEVEMENT_PROGRESS);
+        stmt->setUInt32(0, lowguid);
+        trans->Append(stmt);
+    }
 
     CharacterDatabase.CommitTransaction(trans);
 }
 
-void AchievementMgr::SaveToDB(SQLTransaction& trans)
+void AchievementMgr::SaveToDB(SQLTransaction& trans, bool account)
 {
     if (!m_completedAchievements.empty())
     {
@@ -523,8 +536,16 @@ void AchievementMgr::SaveToDB(SQLTransaction& trans)
             /// first new/changed record prefix
             if (!need_execute)
             {
-                ssdel << "DELETE FROM character_achievement WHERE guid = " << GetPlayer()->GetGUIDLow() << " AND achievement IN (";
-                ssins << "INSERT INTO character_achievement (guid, achievement, date) VALUES ";
+                if (account)
+                {
+                    ssdel << "DELETE FROM account_achievement WHERE id = " << GetPlayer()->GetSession()->GetAccountId() << " AND achievement IN (";
+                    ssins << "INSERT INTO account_achievement (id, achievement, date) VALUES ";
+                }
+                else
+                {
+                    ssdel << "DELETE FROM character_achievement WHERE guid = " << GetPlayer()->GetGUIDLow() << " AND achievement IN (";
+                    ssins << "INSERT INTO character_achievement (guid, achievement, date) VALUES ";
+                }
                 need_execute = true;
             }
             /// next new/changed record prefix
@@ -536,7 +557,10 @@ void AchievementMgr::SaveToDB(SQLTransaction& trans)
 
             // new/changed record data
             ssdel << iter->first;
-            ssins << '(' << GetPlayer()->GetGUIDLow() << ',' << iter->first << ',' << uint64(iter->second.date) << ')';
+            if (account)
+                ssins << '(' << GetPlayer()->GetSession()->GetAccountId() << ',' << iter->first << ',' << uint64(iter->second.date) << ')';
+            else
+                ssins << '(' << GetPlayer()->GetGUIDLow() << ',' << iter->first << ',' << uint64(iter->second.date) << ')';
 
             /// mark as saved in db
             iter->second.changed = false;
@@ -567,7 +591,10 @@ void AchievementMgr::SaveToDB(SQLTransaction& trans)
                 /// first new/changed record prefix (for any counter value)
                 if (!need_execute_del)
                 {
-                    ssdel << "DELETE FROM character_achievement_progress WHERE guid = " << GetPlayer()->GetGUIDLow() << " AND criteria IN (";
+                    if (account)
+                        ssdel << "DELETE FROM account_achievement_progress WHERE id = " << GetPlayer()->GetSession()->GetAccountId()  << " AND criteria IN (";
+                    else
+                        ssdel << "DELETE FROM character_achievement_progress WHERE guid = " << GetPlayer()->GetGUIDLow() << " AND criteria IN (";
                     need_execute_del = true;
                 }
                 /// next new/changed record prefix
@@ -584,7 +611,10 @@ void AchievementMgr::SaveToDB(SQLTransaction& trans)
                 /// first new/changed record prefix
                 if (!need_execute_ins)
                 {
-                    ssins << "INSERT INTO character_achievement_progress (guid, criteria, counter, date) VALUES ";
+                    if (account)
+                        ssins << "INSERT INTO account_achievement_progress (id, criteria, counter, date) VALUES ";
+                    else
+                        ssins << "INSERT INTO character_achievement_progress (guid, criteria, counter, date) VALUES ";
                     need_execute_ins = true;
                 }
                 /// next new/changed record prefix
@@ -592,7 +622,10 @@ void AchievementMgr::SaveToDB(SQLTransaction& trans)
                     ssins << ',';
 
                 // new/changed record data
-                ssins << '(' << GetPlayer()->GetGUIDLow() << ',' << iter->first << ',' << iter->second.counter << ',' << iter->second.date << ')';
+                if (account)
+                    ssins << '(' << GetPlayer()->GetSession()->GetAccountId() << ',' << iter->first << ',' << iter->second.counter << ',' << iter->second.date << ')';
+                else
+                    ssins << '(' << GetPlayer()->GetGUIDLow() << ',' << iter->first << ',' << iter->second.counter << ',' << iter->second.date << ')';
             }
 
             /// mark as updated in db
@@ -612,7 +645,7 @@ void AchievementMgr::SaveToDB(SQLTransaction& trans)
     }
 }
 
-void AchievementMgr::LoadFromDB(PreparedQueryResult achievementResult, PreparedQueryResult criteriaResult)
+void AchievementMgr::LoadFromDB(PreparedQueryResult achievementResult, PreparedQueryResult criteriaResult, bool account)
 {
     if (achievementResult)
     {
@@ -652,10 +685,21 @@ void AchievementMgr::LoadFromDB(PreparedQueryResult achievementResult, PreparedQ
             AchievementCriteriaEntry const* criteria = sAchievementCriteriaStore.LookupEntry(id);
             if (!criteria)
             {
+                PreparedStatement* stmt;
+                
                 // we will remove not existed criteria for all characters
-                sLog->outError("Non-existing achievement criteria %u data removed from table `character_achievement_progress`.", id);
+                if (account)
+                {
+                    sLog->outError("Non-existing achievement criteria %u data removed from table `account_achievement_progress`.", id);
 
-                PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_INVALID_ACHIEV_PROGRESS_CRITERIA);
+                    stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_INVALID_ACHIEV_PROGRESS_CRITERIA_ACC);
+                }
+                else
+                {
+                    sLog->outError("Non-existing achievement criteria %u data removed from table `character_achievement_progress`.", id);
+
+                    stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_INVALID_ACHIEV_PROGRESS_CRITERIA);
+                }
 
                 stmt->setUInt16(0, uint16(id));
 
@@ -2426,9 +2470,21 @@ void AchievementGlobalMgr::LoadCompletedAchievements()
         if (!achievement)
         {
             // Remove non existent achievements from all characters
-            sLog->outError("Non-existing achievement %u data removed from table `character_achievement`.", achievementId);
+            PreparedStatement* stmt;
+            
+            if (sWorld->getBoolConfig(CONFIG_ACCOUNT_ACHIEVEMENTS))
+            {
+                sLog->outError("Non-existing achievement %u data removed from table `account_achievement`.", achievementId);
 
-            PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_INVALID_ACHIEVMENT);
+                PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_INVALID_ACHIEVMENT_ACC);
+            }
+            else
+            {
+                sLog->outError("Non-existing achievement %u data removed from table `character_achievement`.", achievementId);
+
+                PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_INVALID_ACHIEVMENT);
+            }
+
 
             stmt->setUInt16(0, uint16(achievementId));
 
