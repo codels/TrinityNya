@@ -53,7 +53,7 @@ class Mod_MailHistory_MailScript : public MailScript
         if (!mailHistoryEnable || needDelete)
             return;
 
-        if (!(uint8(pow(sender.GetMailMessageType(), 2.0)) & mailHistoryMask))
+        if (!(uint8(pow(sender.GetMailMessageType(), 2.0f)) & mailHistoryMask))
             return;
 
         CharacterDatabase.PExecute(SQL_HISTORY,
