@@ -5032,22 +5032,16 @@ void Player::DeleteFromDB(uint64 playerguid, uint32 accountId, bool updateRealmC
             stmt->setUInt32(0, guid);
             trans->Append(stmt);
             
-            if (sWorld->getBoolConfig(CONFIG_ACCOUNT_ACHIEVEMENTS))
-            {
-                stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CHAR_ACHIEVEMENTS_ACC);
-                stmt->setUInt32(0, accountId);
-                trans->Append(stmt);
-            }
-            else
+            if (!sWorld->getBoolConfig(CONFIG_ACCOUNT_ACHIEVEMENTS))
             {
                 stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CHAR_ACHIEVEMENTS);
                 stmt->setUInt32(0, guid);
                 trans->Append(stmt);
+                
+                stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CHAR_ACHIEVEMENT_PROGRESS);
+                stmt->setUInt32(0, guid);
+                trans->Append(stmt);
             }
-
-            stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CHAR_ACHIEVEMENT_PROGRESS);
-            stmt->setUInt32(0, guid);
-            trans->Append(stmt);
 
             stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CHAR_EQUIPMENTSETS);
             stmt->setUInt32(0, guid);

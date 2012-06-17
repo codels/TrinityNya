@@ -455,7 +455,7 @@ void AchievementMgr::Reset()
 
     m_completedAchievements.clear();
     m_criteriaProgress.clear();
-    DeleteFromDB(m_player->GetGUIDLow(), m_player->GetSession()->GetAccountId());
+    DeleteFromDB(m_player->GetGUIDLow());
 
     // re-fill data
     CheckAllAchievementCriteria();
@@ -493,30 +493,20 @@ void AchievementMgr::ResetAchievementCriteria(AchievementCriteriaTypes type, uin
     }
 }
 
-void AchievementMgr::DeleteFromDB(uint32 lowguid, uint32 accountId)
+void AchievementMgr::DeleteFromDB(uint32 lowguid)
 {
+    if (sWorld->getBoolConfig(CONFIG_ACCOUNT_ACHIEVEMENTS))
+        return;
+        
     SQLTransaction trans = CharacterDatabase.BeginTransaction();
 
-    if (sWorld->getBoolConfig(CONFIG_ACCOUNT_ACHIEVEMENTS))
-    {
-        PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CHAR_ACHIEVEMENT_ACC);
-        stmt->setUInt32(0, accountId);
-        trans->Append(stmt);
+    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CHAR_ACHIEVEMENT);
+    stmt->setUInt32(0, lowguid);
+    trans->Append(stmt);
 
-        stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CHAR_ACHIEVEMENT_PROGRESS_ACC);
-        stmt->setUInt32(0, accountId);
-        trans->Append(stmt);
-    }
-    else
-    {
-        PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CHAR_ACHIEVEMENT);
-        stmt->setUInt32(0, lowguid);
-        trans->Append(stmt);
-
-        stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CHAR_ACHIEVEMENT_PROGRESS);
-        stmt->setUInt32(0, lowguid);
-        trans->Append(stmt);
-    }
+    stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CHAR_ACHIEVEMENT_PROGRESS);
+    stmt->setUInt32(0, lowguid);
+    trans->Append(stmt);
 
     CharacterDatabase.CommitTransaction(trans);
 }
