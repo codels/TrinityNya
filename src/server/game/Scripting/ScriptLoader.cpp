@@ -25,6 +25,7 @@ void AddSC_Mod_AutoLearn(); // by Codels
 void AddSC_Mod_BattlegroundHistory(); // by Codels
 void AddSC_Mod_BossHistory(); // by Codels
 void AddSC_Mod_CharacterHistory(); // by Codels
+void AddSC_Mod_CharacterModel(); // by Codels
 void AddSC_Mod_DynamicInstance(); // by Codels
 void AddSC_Mod_DynamicRate(); // by Codels
 void AddSC_Mod_ExternalMail(); // searching author...
@@ -1266,6 +1267,7 @@ void AddCustomScripts()
     AddSC_Mod_BattlegroundHistory();
     AddSC_Mod_BossHistory();
     AddSC_Mod_CharacterHistory();
+    AddSC_Mod_CharacterModel();
     AddSC_Mod_DynamicInstance();
     AddSC_Mod_DynamicRate();
     AddSC_Mod_ExternalMail();

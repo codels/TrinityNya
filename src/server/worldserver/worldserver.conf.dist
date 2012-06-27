@@ -3325,3 +3325,6 @@ GuildDefault.Rank = 0
 
 // Achievements for account
 Account.Achievements = 0
+
+//
+CharacterModel.Enable = 0
