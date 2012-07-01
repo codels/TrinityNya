@@ -30,6 +30,7 @@ void AddSC_Mod_DynamicInstance(); // by Codels
 void AddSC_Mod_DynamicRate(); // by Codels
 void AddSC_Mod_ExternalMail(); // searching author...
 void AddSC_Mod_FriendChat(); // by Codels
+void AddSC_Mod_Gladiators(); // by Codels
 void AddSC_Mod_GuildDefault(); // by s@m
 void AddSC_Mod_HonorRank(); // by Codels
 void AddSC_Mod_MailHistory(); // by Codels
@@ -1272,6 +1273,7 @@ void AddCustomScripts()
     AddSC_Mod_DynamicRate();
     AddSC_Mod_ExternalMail();
     AddSC_Mod_FriendChat();
+    AddSC_Mod_Gladiators();
     AddSC_Mod_GuildDefault();
     AddSC_Mod_HonorRank();
     AddSC_Mod_MailHistory();

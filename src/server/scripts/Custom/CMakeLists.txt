@@ -21,6 +21,7 @@ set(scripts_STAT_SRCS
   Custom/mod_DynamicRate.cpp
   Custom/mod_ExternalMail.cpp
   Custom/mod_FriendChat.cpp
+  Custom/mod_Gladiators.cpp
   Custom/mod_GuildDefault.cpp
   Custom/mod_HonorRank.cpp
   Custom/mod_MailHistory.cpp
