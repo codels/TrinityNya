@@ -34,6 +34,7 @@ class mod_CharacterModel_PlayerScript : public PlayerScript
             
         player->SetNativeDisplayId((*result)[0].GetUInt32());
         player->SetObjectScale((*result)[1].GetFloat());
+        player->SetDisplayId(player->GetNativeDisplayId());
     }
 };
 
