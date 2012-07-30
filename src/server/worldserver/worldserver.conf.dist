@@ -3259,6 +3259,39 @@ MultiKill.Time.Between = 15
 #
 ###################################################################################################
 
+###################################################################################################
+# TOURNAMENTS SYSTEM
+#
+#    Tournaments.Enable
+#        Description: Enable Disable Tournaments System.
+#        Default:     0 - (Disabled)
+#                     1 - (Enabled)
+
+Tournaments.Enable = 0
+
+#    Tournaments.Debug
+#        Description: Debug mode for Tournaments System.
+#        Default:     0 - (Disabled)
+#                     1 - (Enabled)
+
+Tournaments.Debug = 0
+
+#    Tournaments.Ladder
+#        Description: Enable/Disable Ladder system for Tournaments. (1..2..3..levels, die: reset)
+#        Default:     0 - (Disabled)
+#                     1 - (Enabled)
+
+Tournaments.Ladder = 0
+
+#    Tournaments.LadderText
+#        Description: Trinity string for organizer gossip menu (default: "[%u] Next level").
+#        Default:     0
+
+Tournaments.LadderText = 0
+
+#
+###################################################################################################
+
 #on/off special code
 SpecialCode.Enable = 0
 
