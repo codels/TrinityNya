@@ -459,7 +459,7 @@ class BattlegroundSA : public Battleground
         /// Called when a player deal damage to building (door)
         virtual void EventPlayerDamagedGO(Player* player, GameObject* go, uint32 eventType);
         /// Called when a player kill a unit in bg
-        virtual void HandleKillUnit(Creature* unit, Player* killer);
+        virtual void HandleKillUnit(Creature* creature, Player* killer);
         /// Return the nearest graveyard where player can respawn
         virtual WorldSafeLocsEntry const* GetClosestGraveYard(Player* player);
         /// Called when a player click on flag (graveyard flag)
@@ -534,8 +534,11 @@ class BattlegroundSA : public Battleground
         /// Update score board
         void UpdatePlayerScore(Player* Source, uint32 type, uint32 value, bool doAddHonor = true);
 
-        // Achievement Defense of the Ancients
+        // Achievement: Defense of the Ancients
         bool gateDestroyed;
+
+        // Achievement: Not Even a Scratch
+        bool notEvenAScratch(uint32 team) const { return _notEvenAScratch[GetTeamIndexByTeamId(team)]; }
 
         /// Id of attacker team
         TeamId Attackers;
@@ -618,5 +621,7 @@ class BattlegroundSA : public Battleground
         bool InitSecondRound;
         std::map<uint32/*id*/, uint32/*timer*/> DemoliserRespawnList;
 
+        // Achievement: Not Even a Scratch
+        bool _notEvenAScratch[BG_TEAMS_COUNT];
 };
 #endif

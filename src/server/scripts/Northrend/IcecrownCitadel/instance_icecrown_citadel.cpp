@@ -89,13 +89,6 @@ WeeklyQuest const WeeklyQuestData[WeeklyNPCs] =
     {NPC_VALITHRIA_DREAMWALKER_QUEST, {QUEST_RESPITE_FOR_A_TORNMENTED_SOUL_10, QUEST_RESPITE_FOR_A_TORNMENTED_SOUL_25}}, // Respite for a Tormented Soul
 };
 
-enum FrostwyrmFlags
-{
-    FLAG_SPINESTALKER_SUMMONED  = 0x01,
-    FLAG_RIMEFANG_SUMMONED      = 0x02,
-    FLAG_SINDRAGOSA_SUMMONED    = 0x04,
-};
-
 class instance_icecrown_citadel : public InstanceMapScript
 {
     public:
@@ -137,6 +130,7 @@ class instance_icecrown_citadel : public InstanceMapScript
                 SindragosaGUID = 0;
                 SpinestalkerGUID = 0;
                 RimefangGUID = 0;
+                TheLichKingTeleportGUID = 0;
                 TheLichKingGUID = 0;
                 HighlordTirionFordringGUID = 0;
                 TerenasMenethilGUID = 0;
@@ -152,7 +146,6 @@ class instance_icecrown_citadel : public InstanceMapScript
                 ColdflameJetsState = NOT_STARTED;
                 BloodQuickeningState = NOT_STARTED;
                 BloodQuickeningMinutes = 0;
-                FrostwyrmFlags = 0;
             }
 
             void FillInitialWorldStates(WorldPacket& data)
@@ -284,13 +277,14 @@ class instance_icecrown_citadel : public InstanceMapScript
                         break;
                     case NPC_SPINESTALKER:
                         SpinestalkerGUID = creature->GetGUID();
-                        if (!creature->isAlive())
-                            FrostwyrmFlags |= FLAG_SPINESTALKER_SUMMONED;
                         break;
                     case NPC_RIMEFANG:
                         RimefangGUID = creature->GetGUID();
-                        if (!creature->isAlive())
-                            FrostwyrmFlags |= FLAG_RIMEFANG_SUMMONED;
+                        break;
+                    case NPC_INVISIBLE_STALKER:
+                        // Teleporter visual at center
+                        if (creature->GetExactDist2d(4357.052f, 2769.421f) < 10.0f)
+                            creature->CastSpell(creature, SPELL_ARTHAS_TELEPORTER_CEREMONY, false);
                         break;
                     case NPC_THE_LICH_KING:
                         TheLichKingGUID = creature->GetGUID();
@@ -302,9 +296,20 @@ class instance_icecrown_citadel : public InstanceMapScript
                     case NPC_TERENAS_MENETHIL_FROSTMOURNE_H:
                         TerenasMenethilGUID = creature->GetGUID();
                         break;
+                    case NPC_WICKED_SPIRIT:
+                        // Remove corpse as soon as it dies (and respawn 10 seconds later)
+                        creature->SetCorpseDelay(0);
+                        creature->SetReactState(REACT_PASSIVE);
+                        break;
                     default:
                         break;
                 }
+            }
+
+            void OnCreatureRemove(Creature* creature)
+            {
+                if (creature->GetEntry() == NPC_SINDRAGOSA)
+                    SindragosaGUID = 0;
             }
 
             // Weekly quest spawn prevention
@@ -357,49 +362,36 @@ class instance_icecrown_citadel : public InstanceMapScript
                             crok->AI()->SetGUID(creature->GetGUID(), ACTION_VRYKUL_DEATH);
                         break;
                     case NPC_FROSTWING_WHELP:
+                        if (FrostwyrmGUIDs.empty())
+                            return;
+
                         if (creature->AI()->GetData(1/*DATA_FROSTWYRM_OWNER*/) == DATA_SPINESTALKER)
                         {
-                            if (FrostwyrmFlags & FLAG_SPINESTALKER_SUMMONED)
-                                return;
-
-                            SpinestalkerTrash.erase(creature->GetGUID());
+                            SpinestalkerTrash.erase(creature->GetDBTableGUIDLow());
                             if (SpinestalkerTrash.empty())
-                            {
-                                FrostwyrmFlags |= FLAG_SPINESTALKER_SUMMONED;
                                 if (Creature* spinestalk = instance->GetCreature(SpinestalkerGUID))
                                     spinestalk->AI()->DoAction(ACTION_START_FROSTWYRM);
-                            }
                         }
                         else
                         {
-                            if (FrostwyrmFlags & FLAG_RIMEFANG_SUMMONED)
-                                return;
-
-                            RimefangTrash.erase(creature->GetGUID());
+                            RimefangTrash.erase(creature->GetDBTableGUIDLow());
                             if (RimefangTrash.empty())
-                            {
-                                FrostwyrmFlags |= FLAG_RIMEFANG_SUMMONED;
                                 if (Creature* spinestalk = instance->GetCreature(RimefangGUID))
                                     spinestalk->AI()->DoAction(ACTION_START_FROSTWYRM);
-                            }
                         }
                         break;
                     case NPC_RIMEFANG:
                     case NPC_SPINESTALKER:
                     {
-                        if (FrostwyrmFlags & FLAG_SINDRAGOSA_SUMMONED)
-                            return;
-
                         if (instance->IsHeroic() && !HeroicAttempts)
                             return;
 
                         if (GetBossState(DATA_SINDRAGOSA) == DONE)
                             return;
 
-                        FrostwyrmGUIDs.erase(creature->GetGUID());
+                        FrostwyrmGUIDs.erase(creature->GetDBTableGUIDLow());
                         if (FrostwyrmGUIDs.empty())
                         {
-                            FrostwyrmFlags |= FLAG_SINDRAGOSA_SUMMONED;
                             instance->LoadGrid(SindragosaSpawnPos.GetPositionX(), SindragosaSpawnPos.GetPositionY());
                             if (Creature* boss = instance->SummonCreature(NPC_SINDRAGOSA, SindragosaSpawnPos))
                                 boss->AI()->DoAction(ACTION_START_FROSTWYRM);
@@ -519,6 +511,11 @@ class instance_icecrown_citadel : public InstanceMapScript
                             go->SetLootRecipient(valithria->GetLootRecipient());
                         go->RemoveFlag(GAMEOBJECT_FLAGS, GO_FLAG_LOCKED | GO_FLAG_NOT_SELECTABLE | GO_FLAG_NODESPAWN);
                         break;
+                    case GO_SCOURGE_TRANSPORTER_LK:
+                        TheLichKingTeleportGUID = go->GetGUID();
+                        if (GetBossState(DATA_PROFESSOR_PUTRICIDE) == DONE && GetBossState(DATA_BLOOD_QUEEN_LANA_THEL) == DONE && GetBossState(DATA_SINDRAGOSA) == DONE)
+                            go->SetGoState(GO_STATE_ACTIVE);
+                        break;
                     case GO_ARTHAS_PLATFORM:
                         // this enables movement at The Frozen Throne, when printed this value is 0.000000f
                         // however, when represented as integer client will accept only this value
@@ -597,16 +594,10 @@ class instance_icecrown_citadel : public InstanceMapScript
                 switch (type)
                 {
                     case DATA_SINDRAGOSA_FROSTWYRMS:
-                        if (FrostwyrmFlags & FLAG_SINDRAGOSA_SUMMONED)
-                            return 255;
                         return FrostwyrmGUIDs.size();
                     case DATA_SPINESTALKER:
-                        if (FrostwyrmFlags & FLAG_SPINESTALKER_SUMMONED)
-                            return 255;
                         return SpinestalkerTrash.size();
                     case DATA_RIMEFANG:
-                        if (FrostwyrmFlags & FLAG_RIMEFANG_SUMMONED)
-                            return 255;
                         return RimefangTrash.size();
                     case DATA_COLDFLAME_JETS:
                         return ColdflameJetsState;
@@ -763,6 +754,8 @@ class instance_icecrown_citadel : public InstanceMapScript
                         break;
                     case DATA_PROFESSOR_PUTRICIDE:
                         HandleGameObject(PlagueSigilGUID, state != DONE);
+                        if (state == DONE)
+                            CheckLichKingAvailability();
                         if (instance->IsHeroic())
                         {
                             if (state == FAIL && HeroicAttempts)
@@ -777,6 +770,8 @@ class instance_icecrown_citadel : public InstanceMapScript
                         break;
                     case DATA_BLOOD_QUEEN_LANA_THEL:
                         HandleGameObject(BloodwingSigilGUID, state != DONE);
+                        if (state == DONE)
+                            CheckLichKingAvailability();
                         if (instance->IsHeroic())
                         {
                             if (state == FAIL && HeroicAttempts)
@@ -795,6 +790,8 @@ class instance_icecrown_citadel : public InstanceMapScript
                         break;
                     case DATA_SINDRAGOSA:
                         HandleGameObject(FrostwingSigilGUID, state != DONE);
+                        if (state == DONE)
+                            CheckLichKingAvailability();
                         if (instance->IsHeroic())
                         {
                             if (state == FAIL && HeroicAttempts)
@@ -806,9 +803,6 @@ class instance_icecrown_citadel : public InstanceMapScript
                                         sindra->DespawnOrUnsummon();
                             }
                         }
-                        // Reached when loading from DB
-                        if (state == DONE)
-                            FrostwyrmFlags |= FLAG_SINDRAGOSA_SUMMONED;
                         break;
                     case DATA_THE_LICH_KING:
                     {
@@ -866,16 +860,13 @@ class instance_icecrown_citadel : public InstanceMapScript
                         IsOrbWhispererEligible = data ? true : false;
                         break;
                     case DATA_SINDRAGOSA_FROSTWYRMS:
-                        if (data == 255)
-                            FrostwyrmFlags |= FLAG_SINDRAGOSA_SUMMONED;
+                        FrostwyrmGUIDs.insert(data);
                         break;
                     case DATA_SPINESTALKER:
-                        if (data == 255)
-                            FrostwyrmFlags |= FLAG_SPINESTALKER_SUMMONED;
+                        SpinestalkerTrash.insert(data);
                         break;
                     case DATA_RIMEFANG:
-                        if (data == 255)
-                            FrostwyrmFlags |= FLAG_RIMEFANG_SUMMONED;
+                        RimefangTrash.insert(data);
                         break;
                     case DATA_COLDFLAME_JETS:
                         ColdflameJetsState = data;
@@ -914,22 +905,6 @@ class instance_icecrown_citadel : public InstanceMapScript
                         break;
                     }
                     default:
-                        break;
-                }
-            }
-
-            void SetData64(uint32 id, uint64 data)
-            {
-                switch (id)
-                {
-                    case DATA_SINDRAGOSA_FROSTWYRMS:
-                        FrostwyrmGUIDs.insert(data);
-                        break;
-                    case DATA_SPINESTALKER:
-                        SpinestalkerTrash.insert(data);
-                        break;
-                    case DATA_RIMEFANG:
-                        RimefangTrash.insert(data);
                         break;
                 }
             }
@@ -1105,6 +1080,28 @@ class instance_icecrown_citadel : public InstanceMapScript
                 }
 
                 return true;
+            }
+
+            void CheckLichKingAvailability()
+            {
+                if (GetBossState(DATA_PROFESSOR_PUTRICIDE) == DONE && GetBossState(DATA_BLOOD_QUEEN_LANA_THEL) == DONE && GetBossState(DATA_SINDRAGOSA) == DONE)
+                {
+                    if (GameObject* teleporter = instance->GetGameObject(TheLichKingTeleportGUID))
+                    {
+                        teleporter->SetGoState(GO_STATE_ACTIVE);
+
+                        std::list<Creature*> stalkers;
+                        GetCreatureListWithEntryInGrid(stalkers, teleporter, NPC_INVISIBLE_STALKER, 100.0f);
+                        if (stalkers.empty())
+                            return;
+
+                        stalkers.sort(Trinity::ObjectDistanceOrderPred(teleporter));
+                        stalkers.front()->CastSpell((Unit*)NULL, SPELL_ARTHAS_TELEPORTER_CEREMONY, false);
+                        stalkers.pop_front();
+                        for (std::list<Creature*>::iterator itr = stalkers.begin(); itr != stalkers.end(); ++itr)
+                            (*itr)->AI()->Reset();
+                    }
+                }
             }
 
             std::string GetSaveData()
@@ -1288,6 +1285,7 @@ class instance_icecrown_citadel : public InstanceMapScript
             uint64 SindragosaGUID;
             uint64 SpinestalkerGUID;
             uint64 RimefangGUID;
+            uint64 TheLichKingTeleportGUID;
             uint64 TheLichKingGUID;
             uint64 HighlordTirionFordringGUID;
             uint64 TerenasMenethilGUID;
@@ -1301,13 +1299,12 @@ class instance_icecrown_citadel : public InstanceMapScript
             uint64 PillarsUnchainedGUID;
             uint32 TeamInInstance;
             uint32 ColdflameJetsState;
-            std::set<uint64> FrostwyrmGUIDs;
-            std::set<uint64> SpinestalkerTrash;
-            std::set<uint64> RimefangTrash;
+            std::set<uint32> FrostwyrmGUIDs;
+            std::set<uint32> SpinestalkerTrash;
+            std::set<uint32> RimefangTrash;
             uint32 BloodQuickeningState;
             uint32 HeroicAttempts;
             uint16 BloodQuickeningMinutes;
-            uint16 FrostwyrmFlags;
             bool IsBonedEligible;
             bool IsOozeDanceEligible;
             bool IsNauseaEligible;

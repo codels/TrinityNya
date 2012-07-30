@@ -121,7 +121,7 @@ void WardenCheckMgr::LoadWardenChecks()
 
         if (checkType == MPQ_CHECK || checkType == MEM_CHECK)
         {
-            WardenCheckResult *wr = new WardenCheckResult();
+            WardenCheckResult* wr = new WardenCheckResult();
             wr->Result.SetHexStr(checkResult.c_str());
             int len = checkResult.size() / 2;
             if (wr->Result.GetNumBytes() < len)
@@ -151,6 +151,14 @@ void WardenCheckMgr::LoadWardenChecks()
 
 void WardenCheckMgr::LoadWardenOverrides()
 {
+    // Check if Warden is enabled by config before loading anything
+    if (!sWorld->getBoolConfig(CONFIG_WARDEN_ENABLED))
+    {
+        sLog->outString(">> Warden disabled, loading check overrides skipped.");
+        sLog->outString();
+        return;
+    }
+
     //                                                      0        1
     QueryResult result = CharacterDatabase.Query("SELECT wardenId, action FROM warden_action");
 
