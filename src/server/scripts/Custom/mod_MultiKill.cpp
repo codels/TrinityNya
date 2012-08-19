@@ -46,8 +46,7 @@ void LoadDataFromDataBase()
     MultiKillLoaded = true;
     MultiKillInfo.clear();
 
-    sLog->outString();
-    sLog->outString("Loading MultiKill...");
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading MultiKill...");
     uint32 oldMSTime = getMSTime();
 
     QueryResult result = WorldDatabase.PQuery("SELECT `Count`, `BuffFirst`, `Gold`, `Sound`, `TrinityStringId`, `Honor`, `Type`, `KillCredit`, `BuffSecond` FROM `world_multikill`");
@@ -77,25 +76,25 @@ void LoadDataFromDataBase()
 
         if (MultiKillTemp.Type > KILL_TYPE_FIRST)
         {
-            sLog->outErrorDb("MultiKill: KillType (Type: %u) non-existing", MultiKillTemp.Type);
+            sLog->outError(LOG_FILTER_SQL, "MultiKill: KillType (Type: %u) non-existing", MultiKillTemp.Type);
             continue;
         }
 
         if (MultiKillTemp.Type == KILL_TYPE_FIRST && MultiKillTemp.Count != 0)
         {
-            sLog->outErrorDb("MultiKill: FirstKill (Type: %u) need count = 0", MultiKillTemp.Type);
+            sLog->outError(LOG_FILTER_SQL, "MultiKill: FirstKill (Type: %u) need count = 0", MultiKillTemp.Type);
             continue;
         }
 
         if (MultiKillTemp.BuffFirst != 0 && !sSpellMgr->GetSpellInfo(MultiKillTemp.BuffFirst))
         {
-            sLog->outErrorDb("MultiKill: BuffFirst spell (ID: %u) non-existing", MultiKillTemp.BuffFirst);
+            sLog->outError(LOG_FILTER_SQL, "MultiKill: BuffFirst spell (ID: %u) non-existing", MultiKillTemp.BuffFirst);
             MultiKillTemp.BuffFirst = 0;
         }
 
         if (MultiKillTemp.BuffSecond != 0 && !sSpellMgr->GetSpellInfo(MultiKillTemp.BuffSecond))
         {
-            sLog->outErrorDb("MultiKill: BuffSecond spell (ID: %u) non-existing", MultiKillTemp.BuffSecond);
+            sLog->outError(LOG_FILTER_SQL, "MultiKill: BuffSecond spell (ID: %u) non-existing", MultiKillTemp.BuffSecond);
             MultiKillTemp.BuffSecond = 0;
         }
 
@@ -110,8 +109,7 @@ void LoadDataFromDataBase()
     }
     while (result->NextRow());
 
-    sLog->outString(">> Loaded %u count for MultiKill in %u ms", count, GetMSTimeDiffToNow(oldMSTime));
-    sLog->outString();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, ">> Loaded %u count for MultiKill in %u ms", count, GetMSTimeDiffToNow(oldMSTime));
 }
 
 class Mod_MultiKill_WorldScript : public WorldScript

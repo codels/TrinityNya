@@ -47,8 +47,7 @@ void DILoadDataFromDB()
 
     CharacterDatabase.PExecute(DI_SQL_CLEANUP);
 
-    sLog->outString();
-    sLog->outString("Loading DynamicInstance...");
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading DynamicInstance...");
     uint32 oldMSTime = getMSTime();
 
     QueryResult result = CharacterDatabase.PQuery(DI_SQL_GET);
@@ -57,8 +56,7 @@ void DILoadDataFromDB()
 
     if (!result)
     {
-        sLog->outString(">> `world_instance` is empty");
-        sLog->outString();
+        sLog->outInfo(LOG_FILTER_SERVER_LOADING, ">> `world_instance` is empty");
         return;
     }
     do
@@ -69,8 +67,7 @@ void DILoadDataFromDB()
     }
     while (result->NextRow());
 
-    sLog->outString(">> Loaded %u instances for DynamicInstance in %u ms", count, GetMSTimeDiffToNow(oldMSTime));
-    sLog->outString();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, ">> Loaded %u instances for DynamicInstance in %u ms", count, GetMSTimeDiffToNow(oldMSTime));
 }
 
 bool DICreateOrExisted(Map* map)

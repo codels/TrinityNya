@@ -49,14 +49,9 @@ class Mod_ExternalMail_WorldScript : public WorldScript
 
     void SendExternalMails()
     {
-        sLog->outDetail("EXTERNAL MAIL> Sending mails in queue...");
-
         QueryResult result = CharacterDatabase.PQuery(CHAR_GET_EXTERNAL_MAIL);
         if (!result)
-        {
-            sLog->outDetail("EXTERNAL MAIL> No mails in queue...");
             return;
-        }
 
         SQLTransaction trans = CharacterDatabase.BeginTransaction();
 
@@ -78,36 +73,29 @@ class Mod_ExternalMail_WorldScript : public WorldScript
             mail = new MailDraft(subject, body);
 
             if (money)
-            {
-                sLog->outDetail("EXTERNAL MAIL> Adding money");
                 mail->AddMoney(money);
-            }
 
             if (itemId)
             {
                 ItemTemplate const* pProto = sObjectMgr->GetItemTemplate(itemId);
                 if (pProto)
                 {
-                    sLog->outDetail("EXTERNAL MAIL> Adding %u of item with id %u", itemCount, itemId);
                     Item* mailItem = Item::CreateItem(itemId, itemCount);
                     mailItem->SaveToDB(trans);
                     mail->AddItem(mailItem);
                 }
                 else
-                    sLog->outError("EXTERNAL MAIL> Tried to add non-existing item with id %u, aborted", itemId);
+                    sLog->outError(LOG_FILTER_GENERAL, "EXTERNAL MAIL> Tried to add non-existing item with id %u, aborted", itemId);
             }
 
             mail->SendMailTo(trans, receiver ? receiver : MailReceiver(receiver_guid), MailSender(MAIL_NORMAL, 0, MAIL_STATIONERY_GM), MAIL_CHECK_MASK_RETURNED);
             delete mail;
 
             CharacterDatabase.PExecute(CHAR_DEL_EXTERNAL_MAIL, id);
-
-            sLog->outDetail("EXTERNAL MAIL> Mail sent");
         }
         while (result->NextRow());
 
         CharacterDatabase.CommitTransaction(trans);
-        sLog->outDetail("EXTERNAL MAIL> All Mails Sent...");
     }
 };
 

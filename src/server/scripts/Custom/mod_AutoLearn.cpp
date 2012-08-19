@@ -78,8 +78,7 @@ class Mod_AutoLearn_WorldScript : public WorldScript
         if (spellMask == 0)
             return;
 
-        sLog->outString();
-        sLog->outString("Loading AutoLearn...");
+        sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading AutoLearn...");
         uint32 oldMSTime = getMSTime();
 
         QueryResult result = WorldDatabase.PQuery("SELECT SpellId, SpellMask, RequiredClassMask, RequiredRaceMask, RequiredLevel, RequiredSpellId, RequiredSkillId, RequiredSkillValue FROM `world_autolearn`");
@@ -106,7 +105,7 @@ class Mod_AutoLearn_WorldScript : public WorldScript
 
             if (!sSpellMgr->GetSpellInfo(Spell.SpellId))
             {
-                sLog->outErrorDb("AutoLearn: Spell (ID: %u) non-existing", Spell.SpellId);
+                sLog->outError(LOG_FILTER_SQL, "AutoLearn: Spell (ID: %u) non-existing", Spell.SpellId);
                 continue;
             }
 
@@ -116,19 +115,19 @@ class Mod_AutoLearn_WorldScript : public WorldScript
 
             if (Spell.RequiredClassMask != 0 && !(Spell.RequiredClassMask & CLASSMASK_ALL_PLAYABLE))
             {
-                sLog->outErrorDb("AutoLearn: Spell (ID: %u) RequiredClassMask (Mask: %u) non-existing", Spell.SpellId, Spell.RequiredClassMask);
+                sLog->outError(LOG_FILTER_SQL, "AutoLearn: Spell (ID: %u) RequiredClassMask (Mask: %u) non-existing", Spell.SpellId, Spell.RequiredClassMask);
                 continue;
             }
 
             if (Spell.RequiredRaceMask != 0 && !(Spell.RequiredRaceMask & RACEMASK_ALL_PLAYABLE))
             {
-                sLog->outErrorDb("AutoLearn: Spell (ID: %u) RequiredRaceMask (Mask: %u) non-existing", Spell.SpellId, Spell.RequiredRaceMask);
+                sLog->outError(LOG_FILTER_SQL, "AutoLearn: Spell (ID: %u) RequiredRaceMask (Mask: %u) non-existing", Spell.SpellId, Spell.RequiredRaceMask);
                 continue;
             }
 
             if (Spell.RequiredSpellId != 0 && !sSpellMgr->GetSpellInfo(Spell.RequiredSpellId))
             {
-                sLog->outErrorDb("AutoLearn: Spell (ID: %u) RequiredSpellId (ID: %u) non-existing", Spell.SpellId, Spell.RequiredSpellId);
+                sLog->outError(LOG_FILTER_SQL, "AutoLearn: Spell (ID: %u) RequiredSpellId (ID: %u) non-existing", Spell.SpellId, Spell.RequiredSpellId);
                 continue;
             }
 
@@ -137,8 +136,7 @@ class Mod_AutoLearn_WorldScript : public WorldScript
         }
         while (result->NextRow());
 
-        sLog->outString(">> Loaded %u spells for AutoLearn in %u ms", count, GetMSTimeDiffToNow(oldMSTime));
-        sLog->outString();
+        sLog->outInfo(LOG_FILTER_SERVER_LOADING, ">> Loaded %u spells for AutoLearn in %u ms", count, GetMSTimeDiffToNow(oldMSTime));
     }
 };
 

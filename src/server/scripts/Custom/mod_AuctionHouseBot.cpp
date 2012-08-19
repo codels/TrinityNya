@@ -35,8 +35,7 @@ void AHLoadFromDB()
 {
     AHItems.clear();
 
-    sLog->outString();
-    sLog->outString("Loading AuctionBot...");
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading AuctionBot...");
     uint32 oldMSTime = getMSTime();
 
     QueryResult result = CharacterDatabase.PQuery("SELECT `i`.`itemEntry`, COUNT(*) FROM `auctionhouse` `a`, `item_instance` `i` WHERE `a`.`itemguid` = `i`.`guid` GROUP BY `i`.`itemEntry`");
@@ -67,19 +66,19 @@ void AHLoadFromDB()
         ItemTemplate const* itemTemplate = sObjectMgr->GetItemTemplate(info.id);
         if (!itemTemplate)
         {
-            sLog->outError("MOD: AHBot item proto not found for item %u", info.id);
+            sLog->outError(LOG_FILTER_GENERAL, "MOD: AHBot item proto not found for item %u", info.id);
             continue;
         }
 
         if (info.stack > itemTemplate->GetMaxStackSize())
         {
-            sLog->outError("MOD: AHBot item stack %u > max stack %u for item %u", info.stack, itemTemplate->GetMaxStackSize(), info.id);
+            sLog->outError(LOG_FILTER_GENERAL, "MOD: AHBot item stack %u > max stack %u for item %u", info.stack, itemTemplate->GetMaxStackSize(), info.id);
             info.stack = itemTemplate->GetMaxStackSize();
         }
 
         if (info.stack == 0)
         {
-            sLog->outError("MOD: AHBot item stack 0 for item %u", info.id);
+            sLog->outError(LOG_FILTER_GENERAL, "MOD: AHBot item stack 0 for item %u", info.id);
             continue;
         }
 
@@ -88,8 +87,7 @@ void AHLoadFromDB()
     }
     while (result->NextRow());
 
-    sLog->outString(">> Loaded %u items for AuctionBot in %u ms", count, GetMSTimeDiffToNow(oldMSTime));
-    sLog->outString();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, ">> Loaded %u items for AuctionBot in %u ms", count, GetMSTimeDiffToNow(oldMSTime));
 }
 
 void AHAddItem(AHItemInfo& info)
@@ -101,7 +99,7 @@ void AHAddItem(AHItemInfo& info)
 
     if (!item)
     {
-        sLog->outError("MOD: AHAddItem() returned NULL");
+        sLog->outError(LOG_FILTER_GENERAL, "MOD: AHAddItem() returned NULL");
         return;
     }
 

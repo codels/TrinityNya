@@ -128,7 +128,7 @@ bool OutdoorPvPWG::SetupOutdoorPvP()
         CRE_ENG_A, CRE_ENG_H, CRE_SPI_A, CRE_SPI_H, 31101, 31051, 31102, 31052,
         31107, 31109, 31151, 31153, 31106, 31108, 31053, 31054, 31091, 31036);
     if (!result)
-        sLog->outError("Cannot find siege workshop master or spirit guides in creature!");
+        sLog->outError(LOG_FILTER_GENERAL, "Cannot find siege workshop master or spirit guides in creature!");
     else
     {
         do
@@ -325,7 +325,7 @@ bool OutdoorPvPWG::SetupOutdoorPvP()
 
             if (!engGuid)
             {
-                sLog->outError("Cannot find nearby siege workshop master!");
+                sLog->outError(LOG_FILTER_GENERAL, "Cannot find nearby siege workshop master!");
                 continue;
             }
             else
@@ -351,7 +351,7 @@ bool OutdoorPvPWG::SetupOutdoorPvP()
             if (goData->posX < POS_X_CENTER && !workshop->SetCapturePointData(capturePointEntry, goData->mapid, goData->posX + 40 * cos(goData->orientation + M_PI / 2), goData->posY + 40 * sin(goData->orientation + M_PI / 2), goData->posZ))
             {
                 delete workshop;
-                sLog->outError("Cannot add capture point!");
+                sLog->outError(LOG_FILTER_GENERAL, "Cannot add capture point!");
                 continue;
             }
             // West fortress Workshop fix
@@ -393,7 +393,7 @@ bool OutdoorPvPWG::SetupOutdoorPvP()
 
     if (!m_gate)
     {
-        sLog->outError("Cannot find wintergrasp fortress gate!");
+        sLog->outError(LOG_FILTER_GENERAL, "Cannot find wintergrasp fortress gate!");
         return false;
     }
 
@@ -679,7 +679,7 @@ void OutdoorPvPWG::ModifyWorkshopCount(TeamId team, bool add)
     else if (m_workshopCount[team])
         --m_workshopCount[team];
     else
-        sLog->outError("OutdoorPvPWG::ModifyWorkshopCount: negative workshop count!");
+        sLog->outError(LOG_FILTER_GENERAL, "OutdoorPvPWG::ModifyWorkshopCount: negative workshop count!");
 
     SendUpdateWorldState(MaxVehNumWorldState[team], m_workshopCount[team] * MAX_VEHICLE_PER_WORKSHOP);
 }
@@ -1933,7 +1933,7 @@ void OutdoorPvPWG::RewardMarkOfHonor(Player *plr, uint8 count)
 
     if (msg == EQUIP_ERR_ITEM_NOT_FOUND)
     {
-        sLog->outErrorDb("Wintergrasp reward item (Entry %u) not exist in `item_template`.", WG_MARK_OF_HONOR);
+        sLog->outError(LOG_FILTER_SQL, "Wintergrasp reward item (Entry %u) not exist in `item_template`.", WG_MARK_OF_HONOR);
         return;
     }
 
