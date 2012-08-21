@@ -45,9 +45,6 @@
 #include "AccountMgr.h"
 #include "LFGMgr.h"
 
-#include "OutdoorPvPMgr.h"
-#include "OutdoorPvPWG.h"
-
 class LoginQueryHolder : public SQLQueryHolder
 {
     private:
@@ -1023,20 +1020,6 @@ void WorldSession::HandlePlayerLogin(LoginQueryHolder* holder)
         pCurrChar->SetStandState(UNIT_STAND_STATE_STAND);
 
     m_playerLoading = false;
-
-    if (OutdoorPvPWG *pvpWG = (OutdoorPvPWG*)sOutdoorPvPMgr->GetOutdoorPvPToZoneId(4197))
-    {
-        
-        if (pvpWG->isWarTime())
-            pCurrChar->SendUpdateWorldState(ClockWorldState[1], uint32(time(NULL)));
-        else {
-            pvpWG->SendInitWorldStatesTo(pCurrChar);
-            pCurrChar->SendUpdateWorldState(ClockWorldState[1], uint32(time(NULL) + pvpWG->GetTimer()));
-        }
-        uint32 zone, area;
-        pCurrChar->GetZoneAndAreaId(zone, area);
-        pCurrChar->SendInitWorldStates(zone, area);
-    }
 
     sScriptMgr->OnPlayerLogin(pCurrChar);
     delete holder;

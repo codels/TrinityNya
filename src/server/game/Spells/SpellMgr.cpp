@@ -30,8 +30,8 @@
 #include "CreatureAI.h"
 #include "MapManager.h"
 #include "BattlegroundIC.h"
-#include "OutdoorPvPMgr.h"
-#include "OutdoorPvPWG.h"
+#include "BattlefieldWG.h"
+#include "BattlefieldMgr.h"
 
 bool IsPrimaryProfessionSkill(uint32 skill)
 {
@@ -1083,8 +1083,6 @@ SpellAreaForAreaMapBounds SpellMgr::GetSpellAreaForAreaMapBounds(uint32 area_id)
 
 bool SpellArea::IsFitToRequirements(Player const* player, uint32 newZone, uint32 newArea) const
 {
-    OutdoorPvPWG *pvpWG = (OutdoorPvPWG*)sOutdoorPvPMgr->GetOutdoorPvPToZoneId(4197);
-
     if (gender != GENDER_NONE)                   // not in expected gender
         if (!player || gender != player->getGender())
             return false;
@@ -1125,18 +1123,15 @@ bool SpellArea::IsFitToRequirements(Player const* player, uint32 newZone, uint32
             break;
         }
         case 58730: // No fly Zone - Wintergrasp
-            {
-                if (sWorld->getBoolConfig(CONFIG_OUTDOORPVP_WINTERGRASP_ENABLED))
-                {
-                  if ((pvpWG->isWarTime()==false) || !player || (!player->HasAuraType(SPELL_AURA_MOD_INCREASE_MOUNTED_FLIGHT_SPEED) && !player->HasAuraType(SPELL_AURA_FLY)) || player->HasAura(45472) || player->HasAura(44795) || player->GetPositionZ() > 619.2f || player->isInFlight())
-                    return false;
-                }
-            }
+        {
+            if (!player)
+                return false;
+
+            Battlefield* Bf = sBattlefieldMgr->GetBattlefieldToZoneId(player->GetZoneId());
+            if (!Bf || Bf->CanFlyIn() || (!player->HasAuraType(SPELL_AURA_MOD_INCREASE_MOUNTED_FLIGHT_SPEED) && !player->HasAuraType(SPELL_AURA_FLY)))
+                return false;
             break;
-        case 58045: // Essence of Wintergrasp - Wintergrasp
-        case 57940: // Essence of Wintergrasp - Northrend
-             if (!player || uint64(player->GetTeamId()) != sWorld->getWorldState(WORLDSTATE_WINTERGRASP_CONTROLING_FACTION))
-             return false;
+        }
         case 68719: // Oil Refinery - Isle of Conquest.
         case 68720: // Quarry - Isle of Conquest.
         {
@@ -1152,6 +1147,26 @@ bool SpellArea::IsFitToRequirements(Player const* player, uint32 newZone, uint32
 
             return false;
         }
+        case 56618: // Horde Controls Factory Phase Shift
+        case 56617: // Alliance Controls Factory Phase Shift
+            {
+                if (!player)
+                    return false;
+
+                Battlefield* bf = sBattlefieldMgr->GetBattlefieldToZoneId(player->GetZoneId());
+
+                if (!bf || bf->GetTypeId() != BATTLEFIELD_WG)
+                    return false;
+
+                // team that controls the workshop in the specified area
+                uint32 team = bf->GetData(newArea);
+                
+                if (team == TEAM_HORDE)
+                    return spellId == 56618;
+                else if (team == TEAM_ALLIANCE)
+                    return spellId == 56617;
+            }
+            break;
     }
 
     return true;
