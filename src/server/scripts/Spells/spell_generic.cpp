@@ -3027,12 +3027,13 @@ class spell_gen_mount : public SpellScriptLoader
                             break;
                         case 300:
                             if (canFly)
-                            {
-                                if (_mount310 && target->Has310Flyer(false))
-                                    mount = _mount310;
-                                else
-                                    mount = _mount280;
-                            }
+                                mount = _mount280;
+                            else
+                                mount = _mount100;
+                            break;
+                        case 375:
+                            if (canFly)
+                                mount = _mount310;
                             else
                                 mount = _mount100;
                             break;

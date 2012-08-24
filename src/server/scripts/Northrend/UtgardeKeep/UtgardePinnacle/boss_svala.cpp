@@ -339,6 +339,8 @@ public:
                             me->GetMotionMaster()->MoveLand(0, pos);
                             me->SetDisableGravity(false, true);
                             me->SetHover(true);
+                            me->SetDisableGravity(false, true);
+                            me->SetHover(true);
                             ++introPhase;
                             introTimer = 3000;
                             break;

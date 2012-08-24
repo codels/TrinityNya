@@ -59,6 +59,17 @@ Guild* GuildMgr::GetGuildById(uint32 guildId) const
     return NULL;
 }
 
+Guild* GuildMgr::GetGuildByGuid(uint64 guid) const
+{
+    // Full guids are only used when receiving/sending data to client
+    // everywhere else guild id is used
+    if (IS_GUILD(guid))
+        if (uint32 guildId = GUID_LOPART(guid))
+            return GetGuildById(guildId);
+
+    return NULL;
+}
+
 Guild* GuildMgr::GetGuildByName(const std::string& guildName) const
 {
     std::string search = guildName;
@@ -174,12 +185,14 @@ void GuildMgr::LoadGuilds()
         CharacterDatabase.DirectExecute("DELETE gm FROM guild_member gm LEFT JOIN guild g ON gm.guildId = g.guildId WHERE g.guildId IS NULL");
 
                                                      //          0        1        2     3      4        5                   6
-        QueryResult result = CharacterDatabase.Query("SELECT guildid, gm.guid, rank, pnote, offnote, BankResetTimeMoney, BankRemMoney, "
+        QueryResult result = CharacterDatabase.Query("SELECT gm.guildid, gm.guid, rank, pnote, offnote, BankResetTimeMoney, BankRemMoney, "
                                                      //   7                  8                 9                  10                11                 12
                                                      "BankResetTimeTab0, BankRemSlotsTab0, BankResetTimeTab1, BankRemSlotsTab1, BankResetTimeTab2, BankRemSlotsTab2, "
                                                      //   13                 14                15                 16                17                 18
                                                      "BankResetTimeTab3, BankRemSlotsTab3, BankResetTimeTab4, BankRemSlotsTab4, BankResetTimeTab5, BankRemSlotsTab5, "
-                                                     //   19      20       21       22      23         24
+                                                     //   19                 20                21                 22
+                                                     "BankResetTimeTab6, BankRemSlotsTab6, BankResetTimeTab7, BankRemSlotsTab7, "
+                                                     //   23      24       25       26      27         28
                                                      "c.name, c.level, c.class, c.zone, c.account, c.logout_time "
                                                      "FROM guild_member gm LEFT JOIN characters c ON c.guid = gm.guid ORDER BY guildid ASC");
 
@@ -378,8 +391,25 @@ void GuildMgr::LoadGuilds()
         }
     }
 
-    // 9. Validate loaded guild data
-    sLog->outInfo(LOG_FILTER_GUILD, "Validating data of loaded guilds...");
+    // 9. Load guild achievements
+    {
+        PreparedQueryResult achievementResult;
+        PreparedQueryResult criteriaResult;
+        for (GuildContainer::const_iterator itr = GuildStore.begin(); itr != GuildStore.end(); ++itr)
+        {
+            PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_GUILD_ACHIEVEMENT);
+            stmt->setUInt32(0, itr->first);
+            achievementResult = CharacterDatabase.Query(stmt);
+            stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_GUILD_ACHIEVEMENT_CRITERIA);
+            stmt->setUInt32(0, itr->first);
+            criteriaResult = CharacterDatabase.Query(stmt);
+
+            itr->second->GetAchievementMgr().LoadFromDB(achievementResult, criteriaResult);
+        }
+    }
+
+    // 10. Validate loaded guild data
+    sLog->outInfo(LOG_FILTER_GENERAL, "Validating data of loaded guilds...");
     {
         uint32 oldMSTime = getMSTime();
 

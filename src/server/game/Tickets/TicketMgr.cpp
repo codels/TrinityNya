@@ -31,34 +31,34 @@ inline float GetAge(uint64 t) { return float(time(NULL) - t) / DAY; }
 // GM ticket
 GmTicket::GmTicket() { }
 
-GmTicket::GmTicket(Player* player, WorldPacket& recv_data) : _createTime(time(NULL)), _lastModifiedTime(time(NULL)), _closedBy(0), _assignedTo(0), _completed(false), _escalatedStatus(TICKET_UNASSIGNED)
+GmTicket::GmTicket(Player* player, WorldPacket& recvData) : _createTime(time(NULL)), _lastModifiedTime(time(NULL)), _closedBy(0), _assignedTo(0), _completed(false), _escalatedStatus(TICKET_UNASSIGNED)
 {
     _id = sTicketMgr->GenerateTicketId();
     _playerName = player->GetName();
     _playerGuid = player->GetGUID();
 
     uint32 mapId;
-    recv_data >> mapId; // Map is sent as UInt32!
+    recvData >> mapId; // Map is sent as UInt32!
     _mapId = mapId;
 
-    recv_data >> _posX;
-    recv_data >> _posY;
-    recv_data >> _posZ;
-    recv_data >> _message;
+    recvData >> _posX;
+    recvData >> _posY;
+    recvData >> _posZ;
+    recvData >> _message;
     uint32 needResponse;
-    recv_data >> needResponse;
+    recvData >> needResponse;
     _needResponse = (needResponse == 17); // Requires GM response. 17 = true, 1 = false (17 is default)
     uint8 unk1;
-    recv_data >> unk1; // Requests further GM interaction on a ticket to which a GM has already responded
+    recvData >> unk1; // Requests further GM interaction on a ticket to which a GM has already responded
 
-    recv_data.rfinish();
+    recvData.rfinish();
     /*
-    recv_data >> uint32(count); // text lines
+    recvData >> count; // text lines
     for (int i = 0; i < count; i++)
-        recv_data >> uint32();
+        recvData >> uint32();
 
     if (something)
-        recv_data >> uint32();
+        recvData >> uint32();
     else
         compressed uint32 + string;
     */
@@ -373,12 +373,12 @@ void TicketMgr::SendTicket(WorldSession* session, GmTicket* ticket) const
         status = GMTICKET_STATUS_HASTEXT;
     }
 
-    WorldPacket data(SMSG_GMTICKET_GETTICKET, (4 + 4 + (ticket ? message.length() + 1 + 4 + 4 + 4 + 1 + 1 : 0)));
+    WorldPacket data(SMSG_GMTICKET_GETTICKET, (4 + (ticket ? 4 + message.length() + 1 + 4 + 4 + 4 + 1 + 1 : 0)));
     data << uint32(status);                         // standard 0x0A, 0x06 if text present
-    data << uint32(ticket ? ticket->GetId() : 0);   // ticketID
 
     if (ticket)
     {
+        data << uint32(ticket->GetId());            // ticketID
         data << message.c_str();                    // ticket text
         data << uint8(0x7);                         // ticket category; why is this hardcoded? does it make a diff re: client?
 
@@ -386,5 +386,6 @@ void TicketMgr::SendTicket(WorldSession* session, GmTicket* ticket) const
         // Now we need to go through the client logic for displaying various levels of ticket load
         ticket->WritePacket(data);
     }
+
     session->SendPacket(&data);
 }

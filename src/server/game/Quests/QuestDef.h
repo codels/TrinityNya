@@ -22,6 +22,7 @@
 #include "Define.h"
 #include "DatabaseEnv.h"
 #include "SharedDefines.h"
+#include "WorldPacket.h"
 
 #include <string>
 #include <vector>
@@ -41,6 +42,8 @@ class ObjectMgr;
 #define QUEST_REPUTATIONS_COUNT 5
 #define QUEST_EMOTE_COUNT 4
 #define QUEST_PVP_KILL_SLOT 0
+#define QUEST_REWARD_CURRENCY_COUNT 4
+#define QUEST_REQUIRED_CURRENCY_COUNT 4
 
 enum QuestFailedReasons
 {
@@ -107,17 +110,18 @@ enum QuestStatus
 
 enum __QuestGiverStatus
 {
-    DIALOG_STATUS_NONE                     = 0,
-    DIALOG_STATUS_UNAVAILABLE              = 1,
-    DIALOG_STATUS_LOW_LEVEL_AVAILABLE      = 2,
-    DIALOG_STATUS_LOW_LEVEL_REWARD_REP     = 3,
-    DIALOG_STATUS_LOW_LEVEL_AVAILABLE_REP  = 4,
-    DIALOG_STATUS_INCOMPLETE               = 5,
-    DIALOG_STATUS_REWARD_REP               = 6,
-    DIALOG_STATUS_AVAILABLE_REP            = 7,
-    DIALOG_STATUS_AVAILABLE                = 8,
-    DIALOG_STATUS_REWARD2                  = 9,             // no yellow dot on minimap
-    DIALOG_STATUS_REWARD                   = 10             // yellow dot on minimap
+    DIALOG_STATUS_NONE                     = 0x000,
+    DIALOG_STATUS_UNK                      = 0x001,
+    DIALOG_STATUS_UNAVAILABLE              = 0x002,
+    DIALOG_STATUS_LOW_LEVEL_AVAILABLE      = 0x004,
+    DIALOG_STATUS_LOW_LEVEL_REWARD_REP     = 0x008,
+    DIALOG_STATUS_LOW_LEVEL_AVAILABLE_REP  = 0x010,
+    DIALOG_STATUS_INCOMPLETE               = 0x020,
+    DIALOG_STATUS_REWARD_REP               = 0x040,
+    DIALOG_STATUS_AVAILABLE_REP            = 0x080,
+    DIALOG_STATUS_AVAILABLE                = 0x100,
+    DIALOG_STATUS_REWARD2                  = 0x200,         // no yellow dot on minimap
+    DIALOG_STATUS_REWARD                   = 0x400          // yellow dot on minimap
 };
 
 enum __QuestFlags
@@ -145,20 +149,27 @@ enum __QuestFlags
     QUEST_FLAGS_OBJ_TEXT       = 0x00040000,                // use Objective text as Complete text
     QUEST_FLAGS_AUTO_ACCEPT    = 0x00080000,                // The client recognizes this flag as auto-accept. However, NONE of the current quests (3.3.5a) have this flag. Maybe blizz used to use it, or will use it in the future.
 
+    // ... 4.x added flags up to 0x80000000 - all unknown for now
+};
+
+enum __QuestSpecialFlags
+{
+    QUEST_SPECIAL_FLAGS_NONE                 = 0x000,
     // Trinity flags for set SpecialFlags in DB if required but used only at server
-    QUEST_TRINITY_FLAGS_REPEATABLE           = 0x00100000,   // Set by 1 in SpecialFlags from DB
-    QUEST_TRINITY_FLAGS_EXPLORATION_OR_EVENT = 0x00200000,   // Set by 2 in SpecialFlags from DB (if reequired area explore, spell SPELL_EFFECT_QUEST_COMPLETE casting, table `*_script` command SCRIPT_COMMAND_QUEST_EXPLORED use, set from script)
-    QUEST_TRINITY_FLAGS_AUTO_ACCEPT          = 0x00400000,  // Set by 4 in SpecialFlags in DB if the quest is to be auto-accepted.
-    QUEST_TRINITY_FLAGS_DF_QUEST             = 0x00800000,  // Set by 8 in SpecialFlags in DB if the quest is used by Dungeon Finder.
+    QUEST_SPECIAL_FLAGS_REPEATABLE           = 0x001,
+    QUEST_SPECIAL_FLAGS_EXPLORATION_OR_EVENT = 0x002, // if required area explore, spell SPELL_EFFECT_QUEST_COMPLETE casting, table `*_script` command SCRIPT_COMMAND_QUEST_EXPLORED use, set from script)
+    QUEST_SPECIAL_FLAGS_AUTO_ACCEPT          = 0x004, // quest is to be auto-accepted.
+    QUEST_SPECIAL_FLAGS_DF_QUEST             = 0x008, // quest is used by Dungeon Finder.
 
-    QUEST_TRINITY_FLAGS_DB_ALLOWED = 0xFFFFF | QUEST_TRINITY_FLAGS_REPEATABLE | QUEST_TRINITY_FLAGS_EXPLORATION_OR_EVENT | QUEST_TRINITY_FLAGS_AUTO_ACCEPT | QUEST_TRINITY_FLAGS_DF_QUEST,
+    // room for more custom flags
 
-    // Trinity flags for internal use only
-    QUEST_TRINITY_FLAGS_DELIVER              = 0x04000000,   // Internal flag computed only
-    QUEST_TRINITY_FLAGS_SPEAKTO              = 0x08000000,   // Internal flag computed only
-    QUEST_TRINITY_FLAGS_KILL_OR_CAST         = 0x10000000,   // Internal flag computed only
-    QUEST_TRINITY_FLAGS_TIMED                = 0x20000000,   // Internal flag computed only
-    QUEST_TRINITY_FLAGS_PLAYER_KILL          = 0x40000000,   // Internal flag computed only
+    QUEST_SPECIAL_FLAGS_DB_ALLOWED = QUEST_SPECIAL_FLAGS_REPEATABLE | QUEST_SPECIAL_FLAGS_EXPLORATION_OR_EVENT | QUEST_SPECIAL_FLAGS_AUTO_ACCEPT | QUEST_SPECIAL_FLAGS_DF_QUEST,
+
+    QUEST_SPECIAL_FLAGS_DELIVER              = 0x080,   // Internal flag computed only
+    QUEST_SPECIAL_FLAGS_SPEAKTO              = 0x100,   // Internal flag computed only
+    QUEST_SPECIAL_FLAGS_KILL_OR_CAST         = 0x200,   // Internal flag computed only
+    QUEST_SPECIAL_FLAGS_TIMED                = 0x400,   // Internal flag computed only
+    QUEST_SPECIAL_FLAGS_PLAYER_KILL          = 0x800,   // Internal flag computed only
 };
 
 struct QuestLocale
@@ -173,6 +184,11 @@ struct QuestLocale
     StringVector EndText;
     StringVector CompletedText;
     std::vector< StringVector > ObjectiveText;
+    // new on 4.x
+    StringVector QuestGiverTextWindow;
+    StringVector QuestGiverTargetName;
+    StringVector QuestTurnTextWindow;
+    StringVector QuestTurnTargetName;
 };
 
 // This Quest class provides a convenient way to access a few pretotaled (cached) quest details,
@@ -187,6 +203,9 @@ class Quest
 
         bool HasFlag(uint32 flag) const { return (Flags & flag) != 0; }
         void SetFlag(uint32 flag) { Flags |= flag; }
+
+        bool HasSpecialFlag(uint32 flag) const { return (SpecialFlags & flag) != 0; }
+        void SetSpecialFlag(uint32 flag) { SpecialFlags |= flag; }
 
         // table data accessors:
         uint32 GetQuestId() const { return Id; }
@@ -229,11 +248,14 @@ class Quest
         std::string GetRequestItemsText() const { return RequestItemsText; }
         std::string GetEndText() const { return EndText; }
         std::string GetCompletedText() const { return CompletedText; }
+        std::string GetQuestGiverTextWindow() const { return QuestGiverTextWindow; }
+        std::string GetQuestGiverTargetName() const { return QuestGiverTargetName; }
+        std::string GetQuestTurnTextWindow() const { return QuestTurnTextWindow; }
+        std::string GetQuestTurnTargetName() const { return QuestTurnTargetName; }
         int32  GetRewOrReqMoney() const;
         uint32 GetRewHonorAddition() const { return RewardHonor; }
         float GetRewHonorMultiplier() const { return RewardHonorMultiplier; }
-        uint32 GetRewMoneyMaxLevel() const { return RewardMoneyMaxLevel; }
-                                                            // use in XP calculation at client
+        uint32 GetRewMoneyMaxLevel() const { return RewardMoneyMaxLevel; } // use in XP calculation at client
         uint32 GetRewSpell() const { return RewardSpell; }
         int32  GetRewSpellCast() const { return RewardSpellCast; }
         uint32 GetRewMailTemplateId() const { return RewardMailTemplateId; }
@@ -242,21 +264,31 @@ class Quest
         float  GetPointX() const { return PointX; }
         float  GetPointY() const { return PointY; }
         uint32 GetPointOpt() const { return PointOption; }
+        uint32 GetRequiredSpell() const { return RequiredSpell; }
+        uint32 GetSoundAccept() const { return SoundAccept; }
+        uint32 GetSoundTurnIn() const { return SoundTurnIn; }
         uint32 GetIncompleteEmote() const { return EmoteOnIncomplete; }
         uint32 GetCompleteEmote() const { return EmoteOnComplete; }
         uint32 GetQuestStartScript() const { return StartScript; }
         uint32 GetQuestCompleteScript() const { return CompleteScript; }
-        bool   IsRepeatable() const { return Flags & QUEST_TRINITY_FLAGS_REPEATABLE; }
+        bool   IsRepeatable() const { return SpecialFlags & QUEST_SPECIAL_FLAGS_REPEATABLE; }
         bool   IsAutoAccept() const;
         bool   IsAutoComplete() const;
         uint32 GetFlags() const { return Flags; }
+        uint32 GetSpecialFlags() const { return SpecialFlags; }
+        uint32 GetMinimapTargetMark() const { return MinimapTargetMark; }
+        uint32 GetRewardSkillId() const { return RewardSkillId; }
+        uint32 GetRewardSkillPoints() const { return RewardSkillPoints; }
+        uint32 GetRewardReputationMask() const { return RewardReputationMask; }
+        uint32 GetQuestGiverPortrait() const { return QuestGiverPortrait; }
+        uint32 GetQuestTurnInPortrait() const { return QuestTurnInPortrait; }
         bool   IsDaily() const { return Flags & QUEST_FLAGS_DAILY; }
         bool   IsWeekly() const { return Flags & QUEST_FLAGS_WEEKLY; }
         bool   IsSeasonal() const { return (ZoneOrSort == -QUEST_SORT_SEASONAL || ZoneOrSort == -QUEST_SORT_SPECIAL || ZoneOrSort == -QUEST_SORT_LUNAR_FESTIVAL || ZoneOrSort == -QUEST_SORT_MIDSUMMER || ZoneOrSort == -QUEST_SORT_BREWFEST || ZoneOrSort == -QUEST_SORT_LOVE_IS_IN_THE_AIR || ZoneOrSort == -QUEST_SORT_NOBLEGARDEN) && !IsRepeatable(); }
         bool   IsDailyOrWeekly() const { return Flags & (QUEST_FLAGS_DAILY | QUEST_FLAGS_WEEKLY); }
         bool   IsRaidQuest() const { return Type == QUEST_TYPE_RAID || Type == QUEST_TYPE_RAID_10 || Type == QUEST_TYPE_RAID_25; }
         bool   IsAllowedInRaid() const;
-        bool   IsDFQuest() const { return Flags & QUEST_TRINITY_FLAGS_DF_QUEST; }
+        bool   IsDFQuest() const { return SpecialFlags & QUEST_SPECIAL_FLAGS_DF_QUEST; }
         uint32 CalculateHonorGain(uint8 level) const;
 
         // multiple values
@@ -279,11 +311,20 @@ class Quest
         uint32 DetailsEmoteDelay[QUEST_EMOTE_COUNT];
         uint32 OfferRewardEmote[QUEST_EMOTE_COUNT];
         uint32 OfferRewardEmoteDelay[QUEST_EMOTE_COUNT];
+        // 4.x
+        uint32 RewardCurrencyId[QUEST_REWARD_CURRENCY_COUNT];
+        uint32 RewardCurrencyCount[QUEST_REWARD_CURRENCY_COUNT];
+        uint32 RequiredCurrencyId[QUEST_REQUIRED_CURRENCY_COUNT];
+        uint32 RequiredCurrencyCount[QUEST_REQUIRED_CURRENCY_COUNT];
 
-        uint32 GetReqItemsCount() const { return m_reqitemscount; }
-        uint32 GetReqCreatureOrGOcount() const { return m_reqCreatureOrGOcount; }
-        uint32 GetRewChoiceItemsCount() const { return m_rewchoiceitemscount; }
-        uint32 GetRewItemsCount() const { return m_rewitemscount; }
+        uint32 GetReqItemsCount() const { return m_reqItemsCount; }
+        uint32 GetReqCreatureOrGOcount() const { return m_reqNpcOrGoCount; }
+        uint32 GetRewChoiceItemsCount() const { return m_rewChoiceItemsCount; }
+        uint32 GetRewItemsCount() const { return m_rewItemsCount; }
+        uint32 GetRewCurrencyCount() const { return m_rewCurrencyCount; }
+        uint32 GetReqCurrencyCount() const { return m_reqCurrencyCount; }
+
+        void BuildExtraQuestInfo(WorldPacket& data, Player* player) const;
 
         typedef std::vector<int32> PrevQuests;
         PrevQuests prevQuests;
@@ -292,10 +333,12 @@ class Quest
 
         // cached data
     private:
-        uint32 m_reqitemscount;
-        uint32 m_reqCreatureOrGOcount;
-        uint32 m_rewchoiceitemscount;
-        uint32 m_rewitemscount;
+        uint32 m_reqItemsCount;
+        uint32 m_reqNpcOrGoCount;
+        uint32 m_rewChoiceItemsCount;
+        uint32 m_rewItemsCount;
+        uint32 m_rewCurrencyCount;
+        uint32 m_reqCurrencyCount;
 
         // table data
     protected:
@@ -356,6 +399,22 @@ class Quest
         uint32 EmoteOnComplete;
         uint32 StartScript;
         uint32 CompleteScript;
+        // new in 4.x
+        uint32 MinimapTargetMark;
+        uint32 RewardSkillId;
+        uint32 RewardSkillPoints;
+        uint32 RewardReputationMask;
+        uint32 QuestGiverPortrait;
+        uint32 QuestTurnInPortrait;
+        uint32 RequiredSpell;
+        std::string QuestGiverTextWindow;
+        std::string QuestGiverTargetName;
+        std::string QuestTurnTextWindow;
+        std::string QuestTurnTargetName;
+        uint32 SoundAccept;
+        uint32 SoundTurnIn;
+
+        uint32 SpecialFlags; // custom flags, not sniffed/WDB
 };
 
 struct QuestStatusData

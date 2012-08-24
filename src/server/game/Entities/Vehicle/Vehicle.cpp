@@ -342,12 +342,11 @@ bool Vehicle::AddPassenger(Unit* unit, int8 seatId)
     if (seat->second.SeatInfo->m_flags && !(seat->second.SeatInfo->m_flags & VEHICLE_SEAT_FLAG_ALLOW_TURNING))
         unit->AddUnitState(UNIT_STATE_ONVEHICLE);
 
-    unit->AddUnitMovementFlag(MOVEMENTFLAG_ONTRANSPORT);
     VehicleSeatEntry const* veSeat = seat->second.SeatInfo;
     unit->m_movementInfo.t_pos.m_positionX = veSeat->m_attachmentOffsetX;
     unit->m_movementInfo.t_pos.m_positionY = veSeat->m_attachmentOffsetY;
     unit->m_movementInfo.t_pos.m_positionZ = veSeat->m_attachmentOffsetZ;
-    unit->m_movementInfo.t_pos.m_orientation = 0;
+    unit->m_movementInfo.t_pos.SetOrientation(0);
     unit->m_movementInfo.t_time = 0; // 1 for player
     unit->m_movementInfo.t_seat = seat->first;
     unit->m_movementInfo.t_guid = _me->GetGUID();
@@ -362,9 +361,9 @@ bool Vehicle::AddPassenger(Unit* unit, int8 seatId)
 
     if (_me->IsInWorld())
     {
-        unit->SendClearTarget();                                // SMSG_BREAK_TARGET
+        unit->SendClearTarget();                                 // SMSG_BREAK_TARGET
         unit->SetControlled(true, UNIT_STATE_ROOT);              // SMSG_FORCE_ROOT - In some cases we send SMSG_SPLINE_MOVE_ROOT here (for creatures)
-                                                                // also adds MOVEMENTFLAG_ROOT
+                                                                 // also adds MOVEMENTFLAG_ROOT
         Movement::MoveSplineInit init(*unit);
         init.DisableTransportPathTransformations();
         init.MoveTo(veSeat->m_attachmentOffsetX, veSeat->m_attachmentOffsetY, veSeat->m_attachmentOffsetZ);
@@ -419,7 +418,6 @@ void Vehicle::RemovePassenger(Unit* unit)
 
     if (_me->IsInWorld())
     {
-        unit->RemoveUnitMovementFlag(MOVEMENTFLAG_ONTRANSPORT);
         unit->m_movementInfo.t_pos.Relocate(0, 0, 0, 0);
         unit->m_movementInfo.t_time = 0;
         unit->m_movementInfo.t_seat = 0;
@@ -450,7 +448,7 @@ void Vehicle::RelocatePassengers(float x, float y, float z, float ang)
             float px = x + passenger->m_movementInfo.t_pos.m_positionX;
             float py = y + passenger->m_movementInfo.t_pos.m_positionY;
             float pz = z + passenger->m_movementInfo.t_pos.m_positionZ;
-            float po = ang + passenger->m_movementInfo.t_pos.m_orientation;
+            float po = ang + passenger->m_movementInfo.t_pos.GetOrientation();
 
             passenger->UpdatePosition(px, py, pz, po);
         }

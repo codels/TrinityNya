@@ -32,6 +32,8 @@ void BuildPlayerLockDungeonBlock(WorldPacket& data, const LfgLockMap& lock)
     {
         data << uint32(it->first);                         // Dungeon entry (id + type)
         data << uint32(it->second);                        // Lock status
+        data << uint32(0);                                 // Unknown 4.2.2
+        data << uint32(0);                                 // Unknown 4.2.2
     }
 }
 
@@ -45,13 +47,13 @@ void BuildPartyLockDungeonBlock(WorldPacket& data, const LfgLockPartyMap& lockMa
     }
 }
 
-void WorldSession::HandleLfgJoinOpcode(WorldPacket& recv_data)
+void WorldSession::HandleLfgJoinOpcode(WorldPacket& recvData)
 {
     if (!sWorld->getBoolConfig(CONFIG_DUNGEON_FINDER_ENABLE) ||
         (GetPlayer()->GetGroup() && GetPlayer()->GetGroup()->GetLeaderGUID() != GetPlayer()->GetGUID() &&
         (GetPlayer()->GetGroup()->GetMembersCount() == MAXGROUPSIZE || !GetPlayer()->GetGroup()->isLFGGroup())))
     {
-        recv_data.rfinish();
+        recvData.rfinish();
         return;
     }
 
@@ -59,32 +61,32 @@ void WorldSession::HandleLfgJoinOpcode(WorldPacket& recv_data)
     uint32 dungeon;
     uint32 roles;
 
-    recv_data >> roles;
-    recv_data.read_skip<uint16>();                        // uint8 (always 0) - uint8 (always 0)
-    recv_data >> numDungeons;
+    recvData >> roles;
+    recvData.read_skip<uint16>();                        // uint8 (always 0) - uint8 (always 0)
+    recvData >> numDungeons;
     if (!numDungeons)
     {
         sLog->outDebug(LOG_FILTER_NETWORKIO, "CMSG_LFG_JOIN [" UI64FMTD "] no dungeons selected", GetPlayer()->GetGUID());
-        recv_data.rfinish();
+        recvData.rfinish();
         return;
     }
 
     LfgDungeonSet newDungeons;
     for (int8 i = 0; i < numDungeons; ++i)
     {
-        recv_data >> dungeon;
+        recvData >> dungeon;
         newDungeons.insert((dungeon & 0x00FFFFFF));       // remove the type from the dungeon entry
     }
 
-    recv_data.read_skip<uint32>();                        // for 0..uint8 (always 3) { uint8 (always 0) }
+    recvData.read_skip<uint32>();                        // for 0..uint8 (always 3) { uint8 (always 0) }
 
     std::string comment;
-    recv_data >> comment;
+    recvData >> comment;
     sLog->outDebug(LOG_FILTER_NETWORKIO, "CMSG_LFG_JOIN [" UI64FMTD "] roles: %u, Dungeons: %u, Comment: %s", GetPlayer()->GetGUID(), roles, uint8(newDungeons.size()), comment.c_str());
     sLFGMgr->Join(GetPlayer(), uint8(roles), newDungeons, comment);
 }
 
-void WorldSession::HandleLfgLeaveOpcode(WorldPacket&  /*recv_data*/)
+void WorldSession::HandleLfgLeaveOpcode(WorldPacket&  /*recvData*/)
 {
     Group* grp = GetPlayer()->GetGroup();
 
@@ -95,21 +97,21 @@ void WorldSession::HandleLfgLeaveOpcode(WorldPacket&  /*recv_data*/)
         sLFGMgr->Leave(GetPlayer(), grp);
 }
 
-void WorldSession::HandleLfgProposalResultOpcode(WorldPacket& recv_data)
+void WorldSession::HandleLfgProposalResultOpcode(WorldPacket& recvData)
 {
     uint32 lfgGroupID;                                     // Internal lfgGroupID
     bool accept;                                           // Accept to join?
-    recv_data >> lfgGroupID;
-    recv_data >> accept;
+    recvData >> lfgGroupID;
+    recvData >> accept;
 
     sLog->outDebug(LOG_FILTER_NETWORKIO, "CMSG_LFG_PROPOSAL_RESULT [" UI64FMTD "] proposal: %u accept: %u", GetPlayer()->GetGUID(), lfgGroupID, accept ? 1 : 0);
     sLFGMgr->UpdateProposal(lfgGroupID, GetPlayer()->GetGUID(), accept);
 }
 
-void WorldSession::HandleLfgSetRolesOpcode(WorldPacket& recv_data)
+void WorldSession::HandleLfgSetRolesOpcode(WorldPacket& recvData)
 {
     uint8 roles;
-    recv_data >> roles;                                    // Player Group Roles
+    recvData >> roles;                                    // Player Group Roles
     uint64 guid = GetPlayer()->GetGUID();
     Group* grp = GetPlayer()->GetGroup();
     if (!grp)
@@ -122,35 +124,35 @@ void WorldSession::HandleLfgSetRolesOpcode(WorldPacket& recv_data)
     sLFGMgr->UpdateRoleCheck(gguid, guid, roles);
 }
 
-void WorldSession::HandleLfgSetCommentOpcode(WorldPacket&  recv_data)
+void WorldSession::HandleLfgSetCommentOpcode(WorldPacket&  recvData)
 {
     std::string comment;
-    recv_data >> comment;
+    recvData >> comment;
     uint64 guid = GetPlayer()->GetGUID();
     sLog->outDebug(LOG_FILTER_NETWORKIO, "CMSG_SET_LFG_COMMENT [" UI64FMTD "] comment: %s", guid, comment.c_str());
 
     sLFGMgr->SetComment(guid, comment);
 }
 
-void WorldSession::HandleLfgSetBootVoteOpcode(WorldPacket& recv_data)
+void WorldSession::HandleLfgSetBootVoteOpcode(WorldPacket& recvData)
 {
     bool agree;                                            // Agree to kick player
-    recv_data >> agree;
+    recvData >> agree;
 
     sLog->outDebug(LOG_FILTER_NETWORKIO, "CMSG_LFG_SET_BOOT_VOTE [" UI64FMTD "] agree: %u", GetPlayer()->GetGUID(), agree ? 1 : 0);
     sLFGMgr->UpdateBoot(GetPlayer(), agree);
 }
 
-void WorldSession::HandleLfgTeleportOpcode(WorldPacket& recv_data)
+void WorldSession::HandleLfgTeleportOpcode(WorldPacket& recvData)
 {
     bool out;
-    recv_data >> out;
+    recvData >> out;
 
     sLog->outDebug(LOG_FILTER_NETWORKIO, "CMSG_LFG_TELEPORT [" UI64FMTD "] out: %u", GetPlayer()->GetGUID(), out ? 1 : 0);
     sLFGMgr->TeleportPlayer(GetPlayer(), out, true);
 }
 
-void WorldSession::HandleLfgPlayerLockInfoRequestOpcode(WorldPacket& /*recv_data*/)
+void WorldSession::HandleLfgPlayerLockInfoRequestOpcode(WorldPacket& /*recvData*/)
 {
     uint64 guid = GetPlayer()->GetGUID();
     sLog->outDebug(LOG_FILTER_NETWORKIO, "CMSG_LFD_PLAYER_LOCK_INFO_REQUEST [" UI64FMTD "]", guid);
@@ -231,7 +233,7 @@ void WorldSession::HandleLfgPlayerLockInfoRequestOpcode(WorldPacket& /*recv_data
     SendPacket(&data);
 }
 
-void WorldSession::HandleLfgPartyLockInfoRequestOpcode(WorldPacket&  /*recv_data*/)
+void WorldSession::HandleLfgPartyLockInfoRequestOpcode(WorldPacket&  /*recvData*/)
 {
     uint64 guid = GetPlayer()->GetGUID();
     sLog->outDebug(LOG_FILTER_NETWORKIO, "CMSG_LFD_PARTY_LOCK_INFO_REQUEST [" UI64FMTD "]", guid);
@@ -257,7 +259,7 @@ void WorldSession::HandleLfgPartyLockInfoRequestOpcode(WorldPacket&  /*recv_data
 
     uint32 size = 0;
     for (LfgLockPartyMap::const_iterator it = lockMap.begin(); it != lockMap.end(); ++it)
-        size += 8 + 4 + uint32(it->second.size()) * (4 + 4);
+        size += 8 + 4 + uint32(it->second.size()) * (4 + 4 + 4 + 4);
 
     sLog->outDebug(LOG_FILTER_NETWORKIO, "SMSG_LFG_PARTY_INFO [" UI64FMTD "]", guid);
     WorldPacket data(SMSG_LFG_PARTY_INFO, 1 + size);
@@ -265,18 +267,18 @@ void WorldSession::HandleLfgPartyLockInfoRequestOpcode(WorldPacket&  /*recv_data
     SendPacket(&data);
 }
 
-void WorldSession::HandleLfrSearchOpcode(WorldPacket& recv_data)
+void WorldSession::HandleLfrSearchOpcode(WorldPacket& recvData)
 {
     uint32 entry;                                          // Raid id to search
-    recv_data >> entry;
+    recvData >> entry;
     sLog->outDebug(LOG_FILTER_NETWORKIO, "CMSG_SEARCH_LFG_JOIN [" UI64FMTD "] dungeon entry: %u", GetPlayer()->GetGUID(), entry);
     //SendLfrUpdateListOpcode(entry);
 }
 
-void WorldSession::HandleLfrLeaveOpcode(WorldPacket& recv_data)
+void WorldSession::HandleLfrLeaveOpcode(WorldPacket& recvData)
 {
     uint32 dungeonId;                                      // Raid id queue to leave
-    recv_data >> dungeonId;
+    recvData >> dungeonId;
     sLog->outDebug(LOG_FILTER_NETWORKIO, "CMSG_SEARCH_LFG_LEAVE [" UI64FMTD "] dungeonId: %u", GetPlayer()->GetGUID(), dungeonId);
     //sLFGMgr->LeaveLfr(GetPlayer(), dungeonId);
 }
@@ -444,7 +446,7 @@ void WorldSession::SendLfgJoinResult(const LfgJoinResultData& joinData)
 {
     uint32 size = 0;
     for (LfgLockPartyMap::const_iterator it = joinData.lockmap.begin(); it != joinData.lockmap.end(); ++it)
-        size += 8 + 4 + uint32(it->second.size()) * (4 + 4);
+        size += 8 + 4 + uint32(it->second.size()) * (4 + 4 + 4 + 4);
 
     sLog->outDebug(LOG_FILTER_NETWORKIO, "SMSG_LFG_JOIN_RESULT [" UI64FMTD "] checkResult: %u checkValue: %u", GetPlayer()->GetGUID(), joinData.result, joinData.state);
     WorldPacket data(SMSG_LFG_JOIN_RESULT, 4 + 4 + size);
@@ -531,6 +533,7 @@ void WorldSession::SendLfgBootPlayer(const LfgPlayerBoot* pBoot)
     data << uint8(pBoot->inProgress);                      // Vote in progress
     data << uint8(playerVote != LFG_ANSWER_PENDING);       // Did Vote
     data << uint8(playerVote == LFG_ANSWER_AGREE);         // Agree
+    data << uint8(0);                                      // Unknown 4.2.2
     data << uint64(pBoot->victim);                         // Victim GUID
     data << uint32(votesNum);                              // Total Votes
     data << uint32(agreeNum);                              // Agree Count
@@ -657,8 +660,8 @@ void WorldSession::SendLfgTeleportError(uint8 err)
 /*
 void WorldSession::SendLfrUpdateListOpcode(uint32 dungeonEntry)
 {
-    sLog->outDebug(LOG_FILTER_PACKETIO, "SMSG_UPDATE_LFG_LIST [" UI64FMTD "] dungeon entry: %u", GetPlayer()->GetGUID(), dungeonEntry);
-    WorldPacket data(SMSG_UPDATE_LFG_LIST);
+    sLog->outDebug(LOG_FILTER_PACKETIO, "SMSG_LFG_UPDATE_LIST [" UI64FMTD "] dungeon entry: %u", GetPlayer()->GetGUID(), dungeonEntry);
+    WorldPacket data(SMSG_LFG_UPDATE_LIST);
     SendPacket(&data);
 }
 */

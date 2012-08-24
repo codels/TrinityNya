@@ -62,7 +62,7 @@ public:
         if (target)
             target->GetAchievementMgr().Reset();
         else
-            AchievementMgr::DeleteFromDB(GUID_LOPART(targetGuid));
+            AchievementMgr<Player>::DeleteFromDB(GUID_LOPART(targetGuid));
 
         return true;
     }
@@ -73,11 +73,8 @@ public:
         if (!handler->extractPlayerTarget((char*)args, &target))
             return false;
 
-        target->SetHonorPoints(0);
         target->SetUInt32Value(PLAYER_FIELD_KILLS, 0);
         target->SetUInt32Value(PLAYER_FIELD_LIFETIME_HONORABLE_KILLS, 0);
-        target->SetUInt32Value(PLAYER_FIELD_TODAY_CONTRIBUTION, 0);
-        target->SetUInt32Value(PLAYER_FIELD_YESTERDAY_CONTRIBUTION, 0);
         target->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_EARN_HONORABLE_KILL);
 
         return true;
@@ -234,7 +231,7 @@ public:
 
         if (target)
         {
-            target->resetTalents(true);
+            target->ResetTalents(true);
             target->SendTalentsInfoData(false);
             ChatHandler(target).SendSysMessage(LANG_RESET_TALENTS);
             if (!handler->GetSession() || handler->GetSession()->GetPlayer() != target)

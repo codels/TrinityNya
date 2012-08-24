@@ -152,7 +152,7 @@ void WorldSession::HandleArenaTeamInviteOpcode(WorldPacket & recvData)
     sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: Sent SMSG_ARENA_TEAM_INVITE");
 }
 
-void WorldSession::HandleArenaTeamAcceptOpcode(WorldPacket & /*recv_data*/)
+void WorldSession::HandleArenaTeamAcceptOpcode(WorldPacket & /*recvData*/)
 {
     sLog->outDebug(LOG_FILTER_NETWORKIO, "CMSG_ARENA_TEAM_ACCEPT");                // empty opcode
 
@@ -185,7 +185,7 @@ void WorldSession::HandleArenaTeamAcceptOpcode(WorldPacket & /*recv_data*/)
     arenaTeam->BroadcastEvent(ERR_ARENA_TEAM_JOIN_SS, _player->GetGUID(), 2, _player->GetName(), arenaTeam->GetName(), "");
 }
 
-void WorldSession::HandleArenaTeamDeclineOpcode(WorldPacket & /*recv_data*/)
+void WorldSession::HandleArenaTeamDeclineOpcode(WorldPacket & /*recvData*/)
 {
     sLog->outDebug(LOG_FILTER_NETWORKIO, "CMSG_ARENA_TEAM_DECLINE");               // empty opcode
 
@@ -348,20 +348,25 @@ void WorldSession::HandleArenaTeamLeaderOpcode(WorldPacket & recvData)
 
 void WorldSession::SendArenaTeamCommandResult(uint32 teamAction, const std::string& team, const std::string& player, uint32 errorId)
 {
-    WorldPacket data(SMSG_ARENA_TEAM_COMMAND_RESULT, 4+team.length()+1+player.length()+1+4);
+    WorldPacket data(SMSG_ARENA_TEAM_COMMAND_RESULT, 2 + team.length() + player.length() + 4 + 4);
+
+    data.WriteBits(player.length(), 7);
+    data.WriteBits(team.length(), 8);
+    data.FlushBits();
+
+    data.WriteString(player);
     data << uint32(teamAction);
-    data << team;
-    data << player;
     data << uint32(errorId);
+    data.WriteString(team);
     SendPacket(&data);
 }
 
 void WorldSession::SendNotInArenaTeamPacket(uint8 type)
 {
-    WorldPacket data(SMSG_ARENA_ERROR, 4+1);                // 886 - You are not in a %uv%u arena team
-    uint32 unk = 0;
-    data << uint32(unk);                                    // unk(0)
-    if (!unk)
+    WorldPacket data(SMSG_ARENA_ERROR, 4+1);
+    uint32 error = 0;
+    data << uint32(error);                                  // 0 = ERR_ARENA_NO_TEAM_II, 1 = ERR_ARENA_EXPIRED_CAIS, 2 = ERR_LFG_CANT_USE_BATTLEGROUND
+    if (!error)
         data << uint8(type);                                // team type (2=2v2, 3=3v3, 5=5v5), can be used for custom types...
     SendPacket(&data);
 }

@@ -20,7 +20,7 @@
 #define DBCSTORE_H
 
 #include "DBCFileLoader.h"
-#include "Logging/Log.h"
+#include "Log.h"
 #include "Field.h"
 #include "DatabaseWorkerPool.h"
 #include "Implementation/WorldDatabase.h"
@@ -41,7 +41,7 @@ struct SqlDbc
         for (uint32 i = 0; i< sqlTableName.size(); ++i)
         {
             if (isalpha(sqlTableName[i]))
-                sqlTableName[i] = tolower(sqlTableName[i]);
+                sqlTableName[i] = char(tolower(sqlTableName[i]));
             else if (sqlTableName[i] == '.')
                 sqlTableName[i] = '_';
         }

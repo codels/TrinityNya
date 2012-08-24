@@ -70,7 +70,6 @@ private:
     std::string _localizationName;
     std::string _os;
     uint16 _build;
-    uint8 _expversion;
     AccountTypes _accountSecurityLevel;
 };
 
