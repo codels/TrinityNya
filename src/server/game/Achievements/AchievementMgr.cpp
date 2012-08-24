@@ -555,12 +555,12 @@ void AchievementMgr<Player>::SaveToDB(SQLTransaction& trans, bool account)
             {
                 if (account)
                 {
-                    ssdel << "DELETE FROM account_achievement WHERE id = " << GetPlayer()->GetSession()->GetAccountId() << " AND achievement IN (";
+                    ssdel << "DELETE FROM account_achievement WHERE id = " << GetOwner()->GetSession()->GetAccountId() << " AND achievement IN (";
                     ssins << "INSERT INTO account_achievement (id, achievement, date) VALUES ";
                 }
                 else
                 {
-                    ssdel << "DELETE FROM character_achievement WHERE guid = " << GetPlayer()->GetGUIDLow() << " AND achievement IN (";
+                    ssdel << "DELETE FROM character_achievement WHERE guid = " << GetOwner()->GetGUIDLow() << " AND achievement IN (";
                     ssins << "INSERT INTO character_achievement (guid, achievement, date) VALUES ";
                 }
 
@@ -576,9 +576,9 @@ void AchievementMgr<Player>::SaveToDB(SQLTransaction& trans, bool account)
             // new/changed record data
             ssdel << iter->first;
             if (account)
-                ssins << '(' << GetPlayer()->GetSession()->GetAccountId() << ',' << iter->first << ',' << uint64(iter->second.date) << ')';
+                ssins << '(' << GetOwner()->GetSession()->GetAccountId() << ',' << iter->first << ',' << uint64(iter->second.date) << ')';
             else
-                ssins << '(' << GetPlayer()->GetGUIDLow() << ',' << iter->first << ',' << uint64(iter->second.date) << ')';
+                ssins << '(' << GetOwner()->GetGUIDLow() << ',' << iter->first << ',' << uint64(iter->second.date) << ')';
 
             /// mark as saved in db
             iter->second.changed = false;
@@ -610,9 +610,9 @@ void AchievementMgr<Player>::SaveToDB(SQLTransaction& trans, bool account)
                 if (!need_execute_del)
                 {
                     if (account)
-                        ssdel << "DELETE FROM account_achievement_progress WHERE id = " << GetPlayer()->GetSession()->GetAccountId()  << " AND criteria IN (";
+                        ssdel << "DELETE FROM account_achievement_progress WHERE id = " << GetOwner()->GetSession()->GetAccountId()  << " AND criteria IN (";
                     else
-                        ssdel << "DELETE FROM character_achievement_progress WHERE guid = " << GetPlayer()->GetGUIDLow() << " AND criteria IN (";
+                        ssdel << "DELETE FROM character_achievement_progress WHERE guid = " << GetOwner()->GetGUIDLow() << " AND criteria IN (";
                     need_execute_del = true;
                 }
                 /// next new/changed record prefix
@@ -641,9 +641,9 @@ void AchievementMgr<Player>::SaveToDB(SQLTransaction& trans, bool account)
 
                 // new/changed record data
                 if (account)
-                    ssins << '(' << GetPlayer()->GetSession()->GetAccountId() << ',' << iter->first << ',' << iter->second.counter << ',' << iter->second.date << ')';
+                    ssins << '(' << GetOwner()->GetSession()->GetAccountId() << ',' << iter->first << ',' << iter->second.counter << ',' << iter->second.date << ')';
                 else
-                    ssins << '(' << GetPlayer()->GetGUIDLow() << ',' << iter->first << ',' << iter->second.counter << ',' << iter->second.date << ')';
+                    ssins << '(' << GetOwner()->GetGUIDLow() << ',' << iter->first << ',' << iter->second.counter << ',' << iter->second.date << ')';
             }
 
             /// mark as updated in db
@@ -664,7 +664,7 @@ void AchievementMgr<Player>::SaveToDB(SQLTransaction& trans, bool account)
 }
 
 template<>
-void AchievementMgr<Guild>::SaveToDB(SQLTransaction& trans)
+void AchievementMgr<Guild>::SaveToDB(SQLTransaction& trans, bool)
 {
     PreparedStatement* stmt;
     std::ostringstream guidstr;
@@ -790,7 +790,7 @@ void AchievementMgr<Player>::LoadFromDB(PreparedQueryResult achievementResult, P
 }
 
 template<>
-void AchievementMgr<Guild>::LoadFromDB(PreparedQueryResult achievementResult, PreparedQueryResult criteriaResult)
+void AchievementMgr<Guild>::LoadFromDB(PreparedQueryResult achievementResult, PreparedQueryResult criteriaResult, bool)
 {
     if (achievementResult)
     {
@@ -1532,7 +1532,7 @@ void AchievementMgr<T>::UpdateAchievementCriteria(AchievementCriteriaTypes type,
             case ACHIEVEMENT_CRITERIA_TYPE_OWN_RANK:
                 if (!miscValue1 || miscValue1 > TITLE_PVP_RANK_MAX)
                     continue;
-                SetCriteriaProgress(achievementCriteria, miscValue1);
+                SetCriteriaProgress(achievementCriteria, miscValue1, referencePlayer);
                 break;
             case ACHIEVEMENT_CRITERIA_TYPE_BUY_BANK_SLOT:
                 SetCriteriaProgress(achievementCriteria, referencePlayer->GetBankBagSlotCount(), referencePlayer);

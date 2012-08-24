@@ -2971,14 +2971,6 @@ void SpellMgr::LoadDbcDataCorrections()
 				spellInfo->DmgClass = SPELL_DAMAGE_CLASS_MAGIC;
 				spellInfo->SchoolMask = SPELL_SCHOOL_MASK_HOLY;
 				break;
-			/*
-			case 23881: // Bloodthirst
-				//spellInfo->EffectImplicitTargetA[1] = TARGET_UNIT_CASTER;
-				break;
-			case 23885: // Bloodthirst
-				//spellInfo->EffectApplyAuraName[0] = SPELL_AURA_PROC_TRIGGER_SPELL_WITH_VALUE;
-				break;
-			*/
             case 40244: // Simon Game Visual
             case 40245: // Simon Game Visual
             case 40246: // Simon Game Visual

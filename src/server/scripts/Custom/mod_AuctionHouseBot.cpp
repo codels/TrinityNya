@@ -114,8 +114,8 @@ void AHAddItem(AHItemInfo& info)
     AuctionEntry* auctionEntry = new AuctionEntry;
     auctionEntry->Id = sObjectMgr->GenerateAuctionID();
     auctionEntry->auctioneer = AUCTIONEER_GUID;
-    auctionEntry->item_guidlow = item->GetGUIDLow();
-    auctionEntry->item_template = item->GetEntry();
+    auctionEntry->itemGUIDLow = item->GetGUIDLow();
+    auctionEntry->itemEntry = item->GetEntry();
     auctionEntry->owner = AHPlayerGuid;
     auctionEntry->startbid = info.bind;
     auctionEntry->buyout = info.buy;
@@ -163,7 +163,7 @@ class Mod_AuctionHouseBot_AuctionHouseScript : public AuctionHouseScript
                 return;
 
             for (uint32 i = 0; i < AHItems.size(); ++i)
-                if (AHItems[i].id == entry->item_template)
+                if (AHItems[i].id == entry->itemEntry)
                 {
                     ++AHItems[i].count;
                     return;
@@ -177,7 +177,7 @@ class Mod_AuctionHouseBot_AuctionHouseScript : public AuctionHouseScript
                 return;
 
             for (uint32 i = 0; i < AHItems.size(); ++i)
-                if (AHItems[i].id == entry->item_template)
+                if (AHItems[i].id == entry->itemEntry)
                 {
                     if (AHItems[i].count > 0)
                         --AHItems[i].count;

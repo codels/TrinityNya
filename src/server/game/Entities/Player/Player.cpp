@@ -6231,7 +6231,7 @@ bool Player::UpdateSkillPro(uint16 SkillId, int32 Chance, uint32 step)
             uint32 bsl = bonusSkillLevels[i];
             if (value < bsl && new_value >= bsl)
             {
-                learnSkillRewardedSpells(SkillId, SkillNewValue);
+                learnSkillRewardedSpells(SkillId, new_value);
                 break;
             }
         }
@@ -6240,7 +6240,7 @@ bool Player::UpdateSkillPro(uint16 SkillId, int32 Chance, uint32 step)
         UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_REACH_SKILL_LEVEL, SkillId);
         sLog->outDebug(LOG_FILTER_PLAYER_SKILLS, "Player::UpdateSkillPro Chance=%3.1f%% taken", Chance / 10.0f);
         //TRINITY_NYA
-        sScriptMgr->OnPlayerSkillUpdate(this, SkillId, SkillValue, SkillNewValue);
+        sScriptMgr->OnPlayerSkillUpdate(this, SkillId, value, new_value);
         return true;
     }
 

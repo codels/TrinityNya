@@ -72,8 +72,8 @@ void ArenaWatcherStart(Player* player)
 
 void ArenaWatcherAfterTeleport(Player* player)
 {
-    player->SetMovement(MOVE_WATER_WALK);
-    player->SetMovement(MOVE_UNROOT);
+    player->SendMovementWaterWalking();
+    //player->SetMovement(MOVE_UNROOT);
     
     if (ArenaWatcherSilence)
         player->GetSession()->m_muteTime = time(NULL) + 120 * MINUTE;

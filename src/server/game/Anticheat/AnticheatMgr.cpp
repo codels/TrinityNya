@@ -161,7 +161,7 @@ void AnticheatMgr::ClimbHackDetection(Player *player, MovementInfo movementInfo,
     float deltaZ = fabs(playerPos.GetPositionZ() - movementInfo.pos.GetPositionZ());
     float deltaXY = movementInfo.pos.GetExactDist2d(&playerPos);
 
-    float angle = MapManager::NormalizeOrientation(tan(deltaZ/deltaXY));
+    float angle = Position::NormalizeOrientation(tan(deltaZ/deltaXY));
 
     if (angle > CLIMB_ANGLE)
     {
@@ -180,7 +180,7 @@ void AnticheatMgr::SpeedHackDetection(Player* player,MovementInfo movementInfo)
     // We also must check the map because the movementFlag can be modified by the client.
     // If we just check the flag, they could always add that flag and always skip the speed hacking detection.
     // 369 == DEEPRUN TRAM
-    if (m_Players[key].GetLastMovementInfo().HasMovementFlag(MOVEMENTFLAG_ONTRANSPORT) && player->GetMapId() == 369)
+    if (player->GetTransGUID() && player->GetMapId() == 369)
         return;
 
     uint32 distance2D = (uint32)movementInfo.pos.GetExactDist2d(&m_Players[key].GetLastMovementInfo().pos);

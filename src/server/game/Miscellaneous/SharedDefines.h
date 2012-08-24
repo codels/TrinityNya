@@ -3818,10 +3818,10 @@ enum VoidTransferError
     VOID_TRANSFER_ERROR_TRANSFER_UNKNOWN  = 9,
 };
 
-#endif
-
 enum TitlePvPRank
 {
     TITLE_PVP_RANK_MAX  = 14,
     TITLE_PVP_MAX       = 28
 };
+
+#endif
