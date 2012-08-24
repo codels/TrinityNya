@@ -5511,7 +5511,12 @@ void Player::RepopAtGraveyard()
         if (sBattlefieldMgr->GetBattlefieldToZoneId(GetZoneId()))
             ClosestGrave = sBattlefieldMgr->GetBattlefieldToZoneId(GetZoneId())->GetClosestGraveYard(this);
         else
-            ClosestGrave = sObjectMgr->GetClosestGraveYard(GetPositionX(), GetPositionY(), GetPositionZ(), GetMapId(), GetTeam());
+        {
+            if (sBattlefieldMgr->GetBattlefieldToZoneId(GetZoneId()))
+                ClosestGrave = sBattlefieldMgr->GetBattlefieldToZoneId(GetZoneId())->GetClosestGraveYard(this);
+            else
+                ClosestGrave = sObjectMgr->GetClosestGraveYard(GetPositionX(), GetPositionY(), GetPositionZ(), GetMapId(), GetTeam());
+        }
     }
 
     // stop countdown until repop
@@ -7604,7 +7609,7 @@ void Player::CheckDuelDistance(time_t currTime)
 
 bool Player::IsOutdoorPvPActive()
 {
-    return isAlive() && !HasInvisibilityAura() && !HasStealthAura() && (IsPvP() || sWorld->IsPvPRealm())  && !HasUnitMovementFlag(MOVEMENTFLAG_FLYING) && !isInFlight();
+    return isAlive() && !HasInvisibilityAura() && !HasStealthAura() && IsPvP() && !HasUnitMovementFlag(MOVEMENTFLAG_FLYING) && !isInFlight();
 }
 
 void Player::DuelComplete(DuelCompleteType type)
@@ -23412,7 +23417,7 @@ bool Player::isUsingLfg()
     return sLFGMgr->GetState(guid) != LFG_STATE_NONE;
 }
 
-void Player::SetBattlegroundRaid(Group* group, int8 subgroup)
+void Player::SetBattlegroundOrBattlefieldRaid(Group* group, int8 subgroup)
 {
     //we must move references from m_group to m_originalGroup
     SetOriginalGroup(GetGroup(), GetSubGroup());
@@ -23422,7 +23427,7 @@ void Player::SetBattlegroundRaid(Group* group, int8 subgroup)
     m_group.setSubGroup((uint8)subgroup);
 }
 
-void Player::RemoveFromBattlegroundRaid()
+void Player::RemoveFromBattlegroundOrBattlefieldRaid()
 {
     //remove existing reference
     m_group.unlink();

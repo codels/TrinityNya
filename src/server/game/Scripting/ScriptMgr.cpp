@@ -752,14 +752,6 @@ bool ScriptMgr::OnDummyEffect(Unit* caster, uint32 spellId, SpellEffIndex effInd
     return tmpscript->OnDummyEffect(caster, spellId, effIndex, target);
 }
 
-GameObjectAI* ScriptMgr::GetGameObjectAI(GameObject* go)
-{
-    ASSERT(go);
-
-    GET_SCRIPT_RET(GameObjectScript, go->GetScriptId(), tmpscript, NULL);
-    return tmpscript->GetAI(go);
-}
-
 bool ScriptMgr::OnQuestAccept(Player* player, Item* item, Quest const* quest)
 {
     ASSERT(player);
@@ -888,6 +880,14 @@ CreatureAI* ScriptMgr::GetCreatureAI(Creature* creature)
 
     GET_SCRIPT_RET(CreatureScript, creature->GetScriptId(), tmpscript, NULL);
     return tmpscript->GetAI(creature);
+}
+
+GameObjectAI* ScriptMgr::GetGameObjectAI(GameObject* gameobject)
+{
+    ASSERT(gameobject);
+
+    GET_SCRIPT_RET(GameObjectScript, gameobject->GetScriptId(), tmpscript, NULL);
+    return tmpscript->GetAI(gameobject);
 }
 
 void ScriptMgr::OnCreatureUpdate(Creature* creature, uint32 diff)

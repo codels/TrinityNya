@@ -6199,15 +6199,13 @@ void Spell::EffectPlayerNotification(SpellEffIndex effIndex)
     if (!unitTarget || unitTarget->GetTypeId() != TYPEID_PLAYER)
         return;
 
-    if (!unitTarget->HasAura(55164))
+    switch (m_spellInfo->Id)
     {
-        switch (m_spellInfo->Id)
-        {
-            case 58730: // Restricted Flight Area
-            case 58600: // Restricted Flight Area
-                unitTarget->ToPlayer()->GetSession()->SendNotification(LANG_ZONE_NOFLYZONE);
-                break;
-        }
+        case 58730: // Restricted Flight Area
+        case 58600: // Restricted Flight Area
+            unitTarget->ToPlayer()->GetSession()->SendNotification(LANG_ZONE_NOFLYZONE);
+            unitTarget->PlayDirectSound(9417); // Fel Reaver sound
+            break;
     }
 
     uint32 soundid = m_spellInfo->Effects[effIndex].MiscValue;
