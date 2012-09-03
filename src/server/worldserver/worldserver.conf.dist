@@ -26,6 +26,7 @@
 #    CONSOLE AND REMOTE ACCESS
 #    CHARACTER DELETE OPTIONS
 #    CUSTOM SERVER OPTIONS
+#    LOGGING SYSTEM SETTINGS
 #
 ###################################################################################################
 
@@ -49,7 +50,7 @@
 #
 #    RealmID
 #        Description: ID of the Realm using this config.
-#        Important:   RealmID must match the realmlist inside the realmd database.
+#        Important:   RealmID must match the realmlist inside the auth database.
 #        Default:     1
 
 RealmID = 1
@@ -174,7 +175,7 @@ Compression = 1
 #    PlayerLimit
 #        Description: Maximum number of players in the world. Excluding Mods, GMs and Admins.
 #          Important: If you want to block players and only allow Mods, GMs or Admins to join the
-#                     server, use the DB field "realmd.realmlist.allowedSecurityLevel".
+#                     server, use the DB field "auth.realmlist.allowedSecurityLevel".
 #            Default: 100 - (Enabled)
 #                     1+  - (Enabled)
 #                     0   - (Disabled, No limit)
@@ -2679,7 +2680,7 @@ PlayerDump.DisallowOverwrite = 1
 
 ###################################################################################################
 #
-#  Logging system options.
+#  LOGGING SYSTEM SETTINGS
 #
 #  Appender config values: Given a appender "name"
 #    Appender.name
@@ -2822,7 +2823,7 @@ Appenders=Console Server GM DBErrors Char RA Warden Chat
 #
 
 Logger.Root=0,5,Console Server
-Logger.Chat=22,3,Chat
+Logger.Chat=22,2,Chat
 Logger.DBErrors=26,5,Console Server DBErrors
 Logger.GM=27,3,Console Server GM
 Logger.RA=28,3,RA
@@ -3188,8 +3189,8 @@ GuildDefault.ID = 0
 #guild rank
 GuildDefault.Rank = 0
 
-// Achievements for account
+# Achievements for account
 Account.Achievements = 0
 
-//
+#
 CharacterModel.Enable = 0

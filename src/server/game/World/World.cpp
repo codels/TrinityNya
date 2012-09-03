@@ -1741,7 +1741,7 @@ void World::SetInitialWorldSettings()
     ///- Initialize Battlefield
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Starting Battlefield System");
     sBattlefieldMgr->InitBattlefield();
-    
+
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Transports...");
     sMapMgr->LoadTransports();
 
@@ -2953,7 +2953,7 @@ void World::LoadCharacterNameData()
     QueryResult result = CharacterDatabase.Query("SELECT guid, name, race, gender, class FROM characters WHERE deleteDate IS NULL");
     if (!result)
     {
-        sLog->outError(LOG_FILTER_SQL, "No character name data loaded, empty query");
+        sLog->outInfo(LOG_FILTER_SERVER_LOADING, "No character name data loaded, empty query");
         return;
     }
 
