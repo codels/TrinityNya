@@ -481,7 +481,7 @@ void WorldSession::HandleGuildBankWithdrawMoney(WorldPacket & recvData)
     uint64 GoGuid;
     recvData >> GoGuid;
 
-    uint32 money;
+    uint64 money;
     recvData >> money;
 
     if (money)
@@ -645,32 +645,33 @@ void WorldSession::HandleSetGuildBankTabText(WorldPacket& recvData)
         guild->SetBankTabText(tabId, text);
 }
 
-void WorldSession::HandleGuildQueryXPOpcode(WorldPacket& recvData)
+void WorldSession::HandleGuildQueryXPOpcode(WorldPacket& recvPacket)
 {
     sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: Received CMSG_QUERY_GUILD_XP");
 
     ObjectGuid guildGuid;
 
-    guildGuid[2] = recvData.ReadBit();
-    guildGuid[1] = recvData.ReadBit();
-    guildGuid[0] = recvData.ReadBit();
-    guildGuid[5] = recvData.ReadBit();
-    guildGuid[4] = recvData.ReadBit();
-    guildGuid[7] = recvData.ReadBit();
-    guildGuid[6] = recvData.ReadBit();
-    guildGuid[3] = recvData.ReadBit();
+    guildGuid[2] = recvPacket.ReadBit();
+    guildGuid[1] = recvPacket.ReadBit();
+    guildGuid[0] = recvPacket.ReadBit();
+    guildGuid[5] = recvPacket.ReadBit();
+    guildGuid[4] = recvPacket.ReadBit();
+    guildGuid[7] = recvPacket.ReadBit();
+    guildGuid[6] = recvPacket.ReadBit();
+    guildGuid[3] = recvPacket.ReadBit();
 
-    recvData.ReadByteSeq(guildGuid[7]);
-    recvData.ReadByteSeq(guildGuid[2]);
-    recvData.ReadByteSeq(guildGuid[3]);
-    recvData.ReadByteSeq(guildGuid[6]);
-    recvData.ReadByteSeq(guildGuid[1]);
-    recvData.ReadByteSeq(guildGuid[5]);
-    recvData.ReadByteSeq(guildGuid[0]);
-    recvData.ReadByteSeq(guildGuid[4]);
+    recvPacket.ReadByteSeq(guildGuid[7]);
+    recvPacket.ReadByteSeq(guildGuid[2]);
+    recvPacket.ReadByteSeq(guildGuid[3]);
+    recvPacket.ReadByteSeq(guildGuid[6]);
+    recvPacket.ReadByteSeq(guildGuid[1]);
+    recvPacket.ReadByteSeq(guildGuid[5]);
+    recvPacket.ReadByteSeq(guildGuid[0]);
+    recvPacket.ReadByteSeq(guildGuid[4]);
 
-    //if (Guild* guild = sGuildMgr->GetGuildByGuid(guildGuid))
-        // guild->Send SMSG_GUILD_XP
+    if (Guild* guild = sGuildMgr->GetGuildByGuid(guildGuid))
+        if (guild->IsMember(_player->GetGUID()))
+            guild->SendGuildXP(this);
 }
 
 void WorldSession::HandleGuildSetRankPermissionsOpcode(WorldPacket& recvPacket)
@@ -740,4 +741,125 @@ void WorldSession::HandleGuildRequestPartyState(WorldPacket& recvData)
 
     if (Guild* guild = sGuildMgr->GetGuildByGuid(guildGuid))
         guild->HandleGuildPartyRequest(this);
+}
+
+void WorldSession::HandleGuildRequestMaxDailyXP(WorldPacket& recvPacket)
+{
+    ObjectGuid guid;
+    guid[0] = recvPacket.ReadBit();
+    guid[3] = recvPacket.ReadBit();
+    guid[5] = recvPacket.ReadBit();
+    guid[1] = recvPacket.ReadBit();
+    guid[4] = recvPacket.ReadBit();
+    guid[6] = recvPacket.ReadBit();
+    guid[7] = recvPacket.ReadBit();
+    guid[2] = recvPacket.ReadBit();
+
+    recvPacket.ReadByteSeq(guid[7]);
+    recvPacket.ReadByteSeq(guid[4]);
+    recvPacket.ReadByteSeq(guid[3]);
+    recvPacket.ReadByteSeq(guid[5]);
+    recvPacket.ReadByteSeq(guid[1]);
+    recvPacket.ReadByteSeq(guid[2]);
+    recvPacket.ReadByteSeq(guid[6]);
+    recvPacket.ReadByteSeq(guid[0]);
+
+    if (Guild* guild = sGuildMgr->GetGuildByGuid(guid))
+    {
+        if (guild->IsMember(_player->GetGUID()))
+        {
+            WorldPacket data(SMSG_GUILD_MAX_DAILY_XP, 8);
+            data << uint64(sWorld->getIntConfig(CONFIG_GUILD_DAILY_XP_CAP));
+            SendPacket(&data);
+        }
+    }
+}
+
+void WorldSession::HandleAutoDeclineGuildInvites(WorldPacket& recvPacket)
+{
+    uint8 enable;
+    recvPacket >> enable;
+
+    GetPlayer()->ApplyModFlag(PLAYER_FLAGS, PLAYER_FLAGS_AUTO_DECLINE_GUILD, enable);
+}
+
+void WorldSession::HandleGuildRewardsQueryOpcode(WorldPacket& recvPacket)
+{
+    recvPacket.read_skip<uint32>(); // Unk
+
+    if (sGuildMgr->GetGuildById(_player->GetGuildId()))
+    {
+        std::vector<GuildReward> const& rewards = sGuildMgr->GetGuildRewards();
+
+        WorldPacket data(SMSG_GUILD_REWARDS_LIST, 3 + rewards.size() * (4 + 4 + 4 + 8 + 4 + 4));
+        data.WriteBits(rewards.size(), 21);
+        data.FlushBits();
+
+        for (uint32 i = 0; i < rewards.size(); i++)
+        {
+            data << uint32(rewards[i].Standing);
+            data << int32(rewards[i].Racemask);
+            data << uint32(rewards[i].Entry);
+            data << uint64(rewards[i].Price);
+            data << uint32(0); // Unused
+            data << uint32(rewards[i].AchievementId);
+        }
+        data << uint32(time(NULL));
+        SendPacket(&data);
+    }
+}
+
+void WorldSession::HandleGuildQueryNewsOpcode(WorldPacket& recvPacket)
+{
+    recvPacket.read_skip<uint32>();
+
+    if (Guild* guild = sGuildMgr->GetGuildById(_player->GetGuildId()))
+    {
+        WorldPacket data;
+        guild->GetNewsLog().BuildNewsData(data);
+        SendPacket(&data);
+    }
+}
+
+void WorldSession::HandleGuildNewsUpdateStickyOpcode(WorldPacket& recvPacket)
+{
+    uint32 newsId;
+    bool sticky;
+    ObjectGuid guid;
+
+    recvPacket >> newsId;
+
+    guid[2] = recvPacket.ReadBit();
+    guid[4] = recvPacket.ReadBit();
+    guid[3] = recvPacket.ReadBit();
+    guid[0] = recvPacket.ReadBit();
+    sticky = recvPacket.ReadBit();
+    guid[6] = recvPacket.ReadBit();
+    guid[7] = recvPacket.ReadBit();
+    guid[1] = recvPacket.ReadBit();
+    guid[5] = recvPacket.ReadBit();
+
+    recvPacket.ReadByteSeq(guid[6]);
+    recvPacket.ReadByteSeq(guid[2]);
+    recvPacket.ReadByteSeq(guid[1]);
+    recvPacket.ReadByteSeq(guid[0]);
+    recvPacket.ReadByteSeq(guid[5]);
+    recvPacket.ReadByteSeq(guid[3]);
+    recvPacket.ReadByteSeq(guid[7]);
+    recvPacket.ReadByteSeq(guid[4]);
+
+    if (Guild* guild = sGuildMgr->GetGuildById(_player->GetGuildId()))
+    {
+        if (GuildNewsEntry* newsEntry = guild->GetNewsLog().GetNewsById(newsId))
+        {
+            if (sticky)
+                newsEntry->Flags |= 1;
+            else
+                newsEntry->Flags &= ~1;
+
+            WorldPacket data;
+            guild->GetNewsLog().BuildNewsData(newsId, *newsEntry, data);
+            SendPacket(&data);
+        }
+    }
 }

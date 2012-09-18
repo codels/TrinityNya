@@ -27,7 +27,7 @@ enum PetType
 {
     SUMMON_PET              = 0,
     HUNTER_PET              = 1,
-    MAX_PET_TYPE            = 4,
+    MAX_PET_TYPE            = 4
 };
 
 #define MAX_PET_STABLES         4
@@ -54,7 +54,7 @@ enum PetSpellType
 {
     PETSPELL_NORMAL = 0,
     PETSPELL_FAMILY = 1,
-    PETSPELL_TALENT = 2,
+    PETSPELL_TALENT = 2
 };
 
 struct PetSpell
@@ -189,6 +189,7 @@ class Pet : public Guardian
         bool unlearnSpell(uint32 spell_id, bool learn_prev, bool clear_ab = true);
         bool removeSpell(uint32 spell_id, bool learn_prev, bool clear_ab = true);
         void CleanupActionBar();
+        virtual void ProhibitSpellSchool(SpellSchoolMask idSchoolMask, uint32 unTimeMs);
 
         PetSpellMap     m_spells;
         AutoSpellList   m_autospells;

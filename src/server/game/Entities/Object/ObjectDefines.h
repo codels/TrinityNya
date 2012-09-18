@@ -46,7 +46,7 @@ enum HighGuid
     HIGHGUID_TYPE_BATTLEGROUND = 0x1F1,                    // new 4.x
     HIGHGUID_MO_TRANSPORT   = 0x1FC,                       // blizz 1FC0 (for GAMEOBJECT_TYPE_MO_TRANSPORT)
     HIGHGUID_GROUP          = 0x1F5,
-    HIGHGUID_GUILD          = 0x1FF5,                      // new 4.x
+    HIGHGUID_GUILD          = 0x1FF5                       // new 4.x
 };
 
 #define IS_EMPTY_GUID(Guid)          (Guid == 0)
@@ -57,6 +57,7 @@ enum HighGuid
 #define IS_CRE_OR_VEH_GUID(Guid)     (IS_CREATURE_GUID(Guid) || IS_VEHICLE_GUID(Guid))
 #define IS_CRE_OR_VEH_OR_PET_GUID(Guid)(IS_CRE_OR_VEH_GUID(Guid) || IS_PET_GUID(Guid))
 #define IS_PLAYER_GUID(Guid)         (GUID_HIPART(Guid) == HIGHGUID_PLAYER && Guid != 0)
+#define IS_GUILD_GUID(Guid)          (GUID_HIPART(Guid) == HIGHGUID_GUILD && Guid != 0)
 #define IS_UNIT_GUID(Guid)           (IS_CRE_OR_VEH_OR_PET_GUID(Guid) || IS_PLAYER_GUID(Guid))
                                                             // special case for empty guid need check
 #define IS_ITEM_GUID(Guid)           (GUID_HIPART(Guid) == HIGHGUID_ITEM)

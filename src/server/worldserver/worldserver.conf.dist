@@ -26,6 +26,7 @@
 #    CONSOLE AND REMOTE ACCESS
 #    CHARACTER DELETE OPTIONS
 #    CUSTOM SERVER OPTIONS
+#    LOGGING SYSTEM SETTINGS
 #
 ###################################################################################################
 
@@ -392,14 +393,6 @@ CleanCharacterDB = 0
 PersistentCharacterCleanFlags = 0
 
 #
-#    GuildSaveInterval
-#        Description: Time (in minutes) between guild experience saves
-#        Default:     15
-#
-
-GuildSaveInterval = 15
-
-#
 ###################################################################################################
 
 ###################################################################################################
@@ -407,8 +400,8 @@ GuildSaveInterval = 15
 #
 #    PidFile
 #        Description: World daemon PID file
-#        Example:     "./worldd.pid" - (Enabled)
-#        Default:     ""             - (Disabled)
+#        Example:     "./world.pid" - (Enabled)
+#        Default:     ""            - (Disabled)
 
 PidFile = ""
 
@@ -870,15 +863,6 @@ AllFlightPaths = 0
 InstantFlightPaths = 0
 
 #
-#    AlwaysMaxSkillForLevel
-#        Description: Players will automatically gain max skill level when logging in or leveling
-#                     up.
-#        Default:     0 - (Disabled)
-#                     1 - (Enabled)
-
-AlwaysMaxSkillForLevel = 0
-
-#
 #    ActivateWeather
 #        Description: Activate the weather system.
 #        Default:     1 - (Enabled)
@@ -1215,6 +1199,14 @@ Warden.BanDuration = 86400
 #                     0 - (Disabled)
 
 AllowTwoSide.Accounts = 1
+
+#
+#    AllowTwoSide.Interaction.Calendar
+#        Description: Allow calendar invites between factions.
+#        Default:     0 - (Disabled)
+#                     1 - (Enabled)
+
+AllowTwoSide.Interaction.Calendar = 0
 
 #
 #    AllowTwoSide.Interaction.Chat
@@ -1959,19 +1951,13 @@ Rate.InstanceResetTime = 1
 
 #
 #    SkillGain.Crafting
-#    SkillGain.Defense
 #    SkillGain.Gathering
-#    SkillGain.Weapon
 #        Description: Crafting/defense/gathering/weapon skills gain rate.
 #        Default:     1 - (SkillGain.Crafting)
-#                     1 - (SkillGain.Defense)
 #                     1 - (SkillGain.Gathering)
-#                     1 - (SkillGain.Weapon)
 
 SkillGain.Crafting  = 1
-SkillGain.Defense   = 1
 SkillGain.Gathering = 1
-SkillGain.Weapon    = 1
 
 #
 #    SkillChance.Orange
@@ -2687,7 +2673,7 @@ PlayerDump.DisallowOverwrite = 1
 
 ###################################################################################################
 #
-#  Logging system options.
+#  LOGGING SYSTEM SETTINGS
 #
 #  Appender config values: Given a appender "name"
 #    Appender.name
@@ -2830,7 +2816,7 @@ Appenders=Console Server GM DBErrors Char RA Warden Chat
 #
 
 Logger.Root=0,5,Console Server
-Logger.Chat=22,3,Chat
+Logger.Chat=22,2,Chat
 Logger.DBErrors=26,5,Console Server DBErrors
 Logger.GM=27,3,Console Server GM
 Logger.RA=28,3,RA
@@ -2851,6 +2837,68 @@ Logger.Opcodes=41,6,Console Server
 #        Default:     "Root Chat DBErrors GM RA Warden Character Load"
 
 Loggers=Root Chat DBErrors GM RA Warden Character Load WorldServer Opcodes
+
+###################################################################################################
+#
+#  GUILD LEVELING SETTINGS
+#
+#    Guild.LevelingEnabled
+#        Description: Controls whether guild can gain levels
+#        Default:     1
+#
+
+Guild.LevelingEnabled = 1
+
+#
+#    Guild.SaveInterval
+#        Description: Time (in minutes) between guild experience saves
+#        Default:     15
+#
+
+Guild.SaveInterval = 15
+
+#
+#    Guild.MaxLevel
+#        Description: Defines max level a guild can reach
+#        Default:     25
+#
+
+Guild.MaxLevel = 25
+
+#
+#    Guild.UndeletableLevel
+#        Description: Guild reaching this level (and higher) cannot be disbanded anymore
+#        Default:     4
+#
+
+Guild.UndeletableLevel = 4
+
+#
+#    Guild.XPModifier
+#        Description: Multiplier for guild experience gained from quests
+#        Default:     0.25
+#
+
+Guild.XPModifier = 0.25
+
+#
+#    Guild.DailyXPCap
+#        Description: Maximum experience points a guild can earn each day
+#        Default:     7807500
+#
+
+Guild.DailyXPCap = 7807500
+
+#
+#    Guild.WeeklyReputationCap
+#        Description: Maximum guild reputation a player can earn every week
+#        Default:     4375
+#
+
+Guild.WeeklyReputationCap = 4375
+
+#
+###################################################################################################
 
 ###################################################################################################
 # MODIFICATION (THIS IS NOT BLIZZLIKE)
@@ -3201,3 +3249,6 @@ Account.Achievements = 0
 
 #
 CharacterModel.Enable = 0
+=======
+#
+###################################################################################################

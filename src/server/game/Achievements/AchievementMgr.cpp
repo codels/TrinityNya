@@ -16,6 +16,7 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "AchievementMgr.h"
 #include "Common.h"
 #include "DBCEnums.h"
 #include "ObjectMgr.h"
@@ -24,7 +25,6 @@
 #include "World.h"
 #include "WorldPacket.h"
 #include "DatabaseEnv.h"
-#include "AchievementMgr.h"
 #include "ArenaTeam.h"
 #include "CellImpl.h"
 #include "GameEventMgr.h"
@@ -37,7 +37,6 @@
 #include "ScriptMgr.h"
 #include "MapManager.h"
 #include "Battleground.h"
-#include "BattlegroundAB.h"
 #include "Map.h"
 #include "InstanceScript.h"
 #include "Group.h"
@@ -378,10 +377,7 @@ bool AchievementCriteriaDataSet::Meets(Player const* source, Unit const* target,
 }
 
 template<class T>
-AchievementMgr<T>::AchievementMgr(T* owner)
-{
-    _owner = owner;
-}
+AchievementMgr<T>::AchievementMgr(T* owner): _owner(owner), _achievementPoints(0) {}
 
 template<class T>
 AchievementMgr<T>::~AchievementMgr()
@@ -456,7 +452,7 @@ void AchievementMgr<Guild>::RemoveCriteriaProgress(const AchievementCriteriaEntr
 template<class T>
 void AchievementMgr<T>::ResetAchievementCriteria(AchievementCriteriaTypes type, uint32 miscValue1, uint32 miscValue2, bool evenIfCriteriaComplete)
 {
-    sLog->outDebug(LOG_FILTER_ACHIEVEMENTSYS, "AchievementMgr::ResetAchievementCriteria(%u, %u, %u)", type, miscValue1, miscValue2);
+    sLog->outDebug(LOG_FILTER_ACHIEVEMENTSYS, "ResetAchievementCriteria(%u, %u, %u)", type, miscValue1, miscValue2);
 
     // disable for gamemasters with GM-mode enabled
     if (GetOwner()->isGameMaster())
@@ -735,12 +731,13 @@ void AchievementMgr<Player>::LoadFromDB(PreparedQueryResult achievementResult, P
             ca.date = time_t(fields[1].GetUInt32());
             ca.changed = false;
 
+            _achievementPoints += achievement->points;
+
             // title achievement rewards are retroactive
             if (AchievementReward const* reward = sAchievementMgr->GetAchievementReward(achievement))
                 if (uint32 titleId = reward->titleId[Player::TeamForRace(GetOwner()->getRace()) == ALLIANCE ? 0 : 1])
                     if (CharTitlesEntry const* titleEntry = sCharTitlesStore.LookupEntry(titleId))
-                        if (!GetOwner()->HasTitle(titleEntry))
-                            GetOwner()->SetTitle(titleEntry);
+                        GetOwner()->SetTitle(titleEntry);
 
         }
         while (achievementResult->NextRow());
@@ -814,6 +811,8 @@ void AchievementMgr<Guild>::LoadFromDB(PreparedQueryResult achievementResult, Pr
                 ca.guids.insert(MAKE_NEW_GUID(atol(guids[i]), 0, HIGHGUID_PLAYER));
 
             ca.changed = false;
+
+            _achievementPoints += achievement->points;
         }
         while (achievementResult->NextRow());
     }
@@ -876,6 +875,7 @@ void AchievementMgr<Player>::Reset()
     }
 
     m_completedAchievements.clear();
+    _achievementPoints = 0;
     m_criteriaProgress.clear();
     DeleteFromDB(GetOwner()->GetGUIDLow());
 
@@ -905,7 +905,7 @@ void AchievementMgr<Guild>::Reset()
         data.WriteByteSeq(guid[6]);
         data.WriteByteSeq(guid[0]);
         data.WriteByteSeq(guid[7]);
-        data << uint32(secsToTimeBitFields(iter->second.date));
+        data.AppendPackedTime(iter->second.date);
         data.WriteByteSeq(guid[4]);
         data.WriteByteSeq(guid[2]);
         SendPacket(&data);
@@ -915,6 +915,7 @@ void AchievementMgr<Guild>::Reset()
         if (AchievementCriteriaEntry const* criteria = sAchievementMgr->GetAchievementCriteria(m_criteriaProgress.begin()->first))
             RemoveCriteriaProgress(criteria);
 
+    _achievementPoints = 0;
     m_completedAchievements.clear();
     DeleteFromDB(GetOwner()->GetId());
 }
@@ -963,7 +964,7 @@ void AchievementMgr<T>::SendAchievementEarned(AchievementEntry const* achievemen
     WorldPacket data(SMSG_ACHIEVEMENT_EARNED, 8+4+8);
     data.append(GetOwner()->GetPackGUID());
     data << uint32(achievement->ID);
-    data << uint32(secsToTimeBitFields(time(NULL)));
+    data.AppendPackedTime(time(NULL));
     data << uint32(0);  // does not notify player ingame
     GetOwner()->SendMessageToSetInRange(&data, sWorld->getFloatConfig(CONFIG_LISTEN_RANGE_SAY), true);
 }
@@ -984,7 +985,7 @@ void AchievementMgr<Guild>::SendAchievementEarned(AchievementEntry const* achiev
     data.WriteBit(guid[5]);
 
     data.WriteByteSeq(guid[2]);
-    data << uint32(secsToTimeBitFields(time(NULL)));
+    data.AppendPackedTime(time(NULL));
     data.WriteByteSeq(guid[0]);
     data.WriteByteSeq(guid[4]);
     data.WriteByteSeq(guid[1]);
@@ -1016,7 +1017,7 @@ void AchievementMgr<Player>::SendCriteriaUpdate(AchievementCriteriaEntry const* 
         data << uint32(0);
     else
         data << uint32(timedCompleted ? 0 : 1); // this are some flags, 1 is for keeping the counter at 0 in client
-    data << uint32(secsToTimeBitFields(progress->date));
+    data.AppendPackedTime(progress->date);
     data << uint32(timeElapsed);    // time elapsed in seconds
     data << uint32(0);              // unk
     SendPacket(&data);
@@ -1113,6 +1114,10 @@ void AchievementMgr<T>::UpdateAchievementCriteria(AchievementCriteriaTypes type,
 
     // disable for gamemasters with GM-mode enabled
     if (referencePlayer->isGameMaster())
+        return;
+
+    // Lua_GetGuildLevelEnabled() is checked in achievement UI to display guild tab
+    if (IsGuild<T>() && !sWorld->getBoolConfig(CONFIG_GUILD_LEVELING_ENABLED))
         return;
 
     AchievementCriteriaEntryList const& achievementCriteriaList = sAchievementMgr->GetAchievementCriteriaByType(type, IsGuild<T>());
@@ -1342,19 +1347,11 @@ void AchievementMgr<T>::UpdateAchievementCriteria(AchievementCriteriaTypes type,
                 SetCriteriaProgress(achievementCriteria, referencePlayer->GetMoney(), referencePlayer, PROGRESS_HIGHEST);
                 break;
             case ACHIEVEMENT_CRITERIA_TYPE_EARN_ACHIEVEMENT_POINTS:
-            {
                 if (!miscValue1)
-                {
-                    uint32 points = 0;
-                    for (CompletedAchievementMap::iterator itr = m_completedAchievements.begin(); itr != m_completedAchievements.end(); ++itr)
-                        if (AchievementEntry const* pAchievement = sAchievementMgr->GetAchievement(itr->first))
-                            points += pAchievement->points;
-                    SetCriteriaProgress(achievementCriteria, points, referencePlayer, PROGRESS_SET);
-                }
+                    SetCriteriaProgress(achievementCriteria, _achievementPoints, referencePlayer, PROGRESS_SET);
                 else
                     SetCriteriaProgress(achievementCriteria, miscValue1, referencePlayer, PROGRESS_ACCUMULATE);
                 break;
-            }
             case ACHIEVEMENT_CRITERIA_TYPE_HIGHEST_TEAM_RATING:
             {
                 uint32 reqTeamType = achievementCriteria->highest_team_rating.teamtype;
@@ -1423,6 +1420,9 @@ void AchievementMgr<T>::UpdateAchievementCriteria(AchievementCriteriaTypes type,
 
                 break;
             }
+            case ACHIEVEMENT_CRITERIA_TYPE_REACH_GUILD_LEVEL:
+                SetCriteriaProgress(achievementCriteria, miscValue1, referencePlayer);
+                break;
             // FIXME: not triggered in code as result, need to implement
             case ACHIEVEMENT_CRITERIA_TYPE_COMPLETE_RAID:
             case ACHIEVEMENT_CRITERIA_TYPE_WIN_ARENA:
@@ -1430,7 +1430,6 @@ void AchievementMgr<T>::UpdateAchievementCriteria(AchievementCriteriaTypes type,
             case ACHIEVEMENT_CRITERIA_TYPE_EARNED_PVP_TITLE:
             case ACHIEVEMENT_CRITERIA_TYPE_KILL_CREATURE_TYPE:
             case ACHIEVEMENT_CRITERIA_TYPE_SPENT_GOLD_GUILD_REPAIRS:
-            case ACHIEVEMENT_CRITERIA_TYPE_REACH_GUILD_LEVEL:
             case ACHIEVEMENT_CRITERIA_TYPE_CRAFT_ITEMS_GUILD:
             case ACHIEVEMENT_CRITERIA_TYPE_CATCH_FROM_POOL:
             case ACHIEVEMENT_CRITERIA_TYPE_BUY_GUILD_BANK_SLOTS:
@@ -1498,13 +1497,14 @@ bool AchievementMgr<T>::IsCompletedCriteria(AchievementCriteriaEntry const* achi
     if (!progress)
         return false;
 
-    switch (achievementCriteria->type)
+    switch (AchievementCriteriaTypes(achievementCriteria->type))
     {
         case ACHIEVEMENT_CRITERIA_TYPE_WIN_BG:
             return progress->counter >= achievementCriteria->win_bg.winCount;
         case ACHIEVEMENT_CRITERIA_TYPE_KILL_CREATURE:
             return progress->counter >= achievementCriteria->kill_creature.creatureCount;
         case ACHIEVEMENT_CRITERIA_TYPE_REACH_LEVEL:
+        case ACHIEVEMENT_CRITERIA_TYPE_REACH_GUILD_LEVEL:
             return progress->counter >= achievementCriteria->reach_level.level;
         case ACHIEVEMENT_CRITERIA_TYPE_REACH_SKILL_LEVEL:
             return progress->counter >= achievementCriteria->reach_skill_level.skillLevel;
@@ -1637,6 +1637,7 @@ bool AchievementMgr<T>::IsCompletedCriteria(AchievementCriteriaEntry const* achi
         default:
             break;
     }
+
     return false;
 }
 
@@ -1737,7 +1738,8 @@ void AchievementMgr<T>::SetCriteriaProgress(AchievementCriteriaEntry const* entr
     if (entry->timeLimit && timedIter == m_timedAchievements.end())
         return;
 
-    sLog->outDebug(LOG_FILTER_ACHIEVEMENTSYS, "AchievementMgr::SetCriteriaProgress(%u, %u) for (%s GUID: "UI64FMTD")", entry->ID, changeValue, GetLogNameForGuid(GetOwner()->GetGUID()), GetOwner()->GetGUID());
+    sLog->outDebug(LOG_FILTER_ACHIEVEMENTSYS, "SetCriteriaProgress(%u, %u) for (%s GUID: %u)",
+                   entry->ID, changeValue, GetLogNameForGuid(GetOwner()->GetGUID()), GUID_LOPART(GetOwner()->GetGUID()));
 
     CriteriaProgress* progress = GetCriteriaProgress(entry);
     if (!progress)
@@ -1874,8 +1876,8 @@ void AchievementMgr<T>::RemoveTimedAchievement(AchievementCriteriaTimedTypes typ
     }
 }
 
-template<class T>
-void AchievementMgr<T>::CompletedAchievement(AchievementEntry const* achievement, Player* referencePlayer)
+template<>
+void AchievementMgr<Player>::CompletedAchievement(AchievementEntry const* achievement, Player* referencePlayer)
 {
     sLog->outInfo(LOG_FILTER_ACHIEVEMENTSYS, "AchievementMgr::CompletedAchievement(%u)", achievement->ID);
 
@@ -1885,6 +1887,10 @@ void AchievementMgr<T>::CompletedAchievement(AchievementEntry const* achievement
 
     if (achievement->flags & ACHIEVEMENT_FLAG_COUNTER || HasAchieved(achievement->ID))
         return;
+
+    if (achievement->flags & ACHIEVEMENT_FLAG_SHOW_IN_GUILD_NEWS)
+        if (Guild* guild = sGuildMgr->GetGuildById(referencePlayer->GetGuildId()))
+            guild->GetNewsLog().AddNewEvent(GUILD_NEWS_PLAYER_ACHIEVEMENT, time(NULL), referencePlayer->GetGUID(), achievement->flags & ACHIEVEMENT_FLAG_SHOW_IN_GUILD_HEADER, achievement->ID);
 
     if (!GetOwner()->GetSession()->PlayerLoading())
         SendAchievementEarned(achievement);
@@ -1897,6 +1903,8 @@ void AchievementMgr<T>::CompletedAchievement(AchievementEntry const* achievement
     // TODO: where do set this instead?
     if (!(achievement->flags & ACHIEVEMENT_FLAG_REALM_FIRST_KILL))
         sAchievementMgr->SetRealmCompleted(achievement);
+
+    _achievementPoints += achievement->points;
 
     UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_COMPLETE_ACHIEVEMENT, 0, 0, NULL, referencePlayer);
     UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_EARN_ACHIEVEMENT_POINTS, achievement->points, 0, NULL, referencePlayer);
@@ -1961,6 +1969,10 @@ void AchievementMgr<Guild>::CompletedAchievement(AchievementEntry const* achieve
     if (achievement->flags & ACHIEVEMENT_FLAG_COUNTER || HasAchieved(achievement->ID))
         return;
 
+    if (achievement->flags & ACHIEVEMENT_FLAG_SHOW_IN_GUILD_NEWS)
+        if (Guild* guild = sGuildMgr->GetGuildById(referencePlayer->GetGuildId()))
+            guild->GetNewsLog().AddNewEvent(GUILD_NEWS_GUILD_ACHIEVEMENT, time(NULL), 0, achievement->flags & ACHIEVEMENT_FLAG_SHOW_IN_GUILD_HEADER, achievement->ID);
+
     SendAchievementEarned(achievement);
     CompletedAchievementData& ca = m_completedAchievements[achievement->ID];
     ca.date = time(NULL);
@@ -1979,6 +1991,8 @@ void AchievementMgr<Guild>::CompletedAchievement(AchievementEntry const* achieve
     }
 
     sAchievementMgr->SetRealmCompleted(achievement);
+
+    _achievementPoints += achievement->points;
 
     UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_COMPLETE_ACHIEVEMENT, 0, 0, NULL, referencePlayer);
     UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_EARN_ACHIEVEMENT_POINTS, achievement->points, 0, NULL, referencePlayer);
@@ -2045,7 +2059,7 @@ void AchievementMgr<T>::SendAllAchievementData(Player* /*receiver*/) const
         criteriaData.WriteByteSeq(guid[7]);
         criteriaData.WriteByteSeq(counter[7]);
         criteriaData << uint32(0); // timer 1
-        criteriaData << uint32(secsToTimeBitFields(itr->second.date));  // criteria date
+        criteriaData.AppendPackedTime(itr->second.date);  // criteria date
         criteriaData.WriteByteSeq(guid[1]);
     }
 
@@ -2059,7 +2073,7 @@ void AchievementMgr<T>::SendAllAchievementData(Player* /*receiver*/) const
             continue;
 
         data << uint32(itr->first);
-        data << uint32(secsToTimeBitFields(itr->second.date));
+        data.AppendPackedTime(itr->second.date);
     }
 
     SendPacket(&data);
@@ -2072,16 +2086,11 @@ void AchievementMgr<Guild>::SendAllAchievementData(Player* receiver) const
     data.WriteBits(m_completedAchievements.size(), 23);
     for (CompletedAchievementMap::const_iterator itr = m_completedAchievements.begin(); itr != m_completedAchievements.end(); ++itr)
     {
-        data << uint32(secsToTimeBitFields(itr->second.date));
+        data.AppendPackedTime(itr->second.date);
         data << uint32(itr->first);
     }
 
     receiver->GetSession()->SendPacket(&data);
-}
-
-template<class T>
-void AchievementMgr<T>::SendAchievementInfo(Player* receiver, uint32 achievementId /*= 0*/) const
-{
 }
 
 template<>
@@ -2130,7 +2139,7 @@ void AchievementMgr<Player>::SendAchievementInfo(Player* receiver, uint32 /*achi
         criteriaData.WriteByteSeq(counter[4]);
         criteriaData << uint32(0);      // timer 1
         criteriaData.WriteByteSeq(guid[1]);
-        criteriaData << uint32(secsToTimeBitFields(itr->second.date));
+        criteriaData.AppendPackedTime(itr->second.date);
         criteriaData.WriteByteSeq(counter[3]);
         criteriaData.WriteByteSeq(counter[7]);
         criteriaData.WriteByteSeq(guid[5]);
@@ -2164,7 +2173,7 @@ void AchievementMgr<Player>::SendAchievementInfo(Player* receiver, uint32 /*achi
             continue;
 
         data << uint32(itr->first);
-        data << uint32(secsToTimeBitFields(itr->second.date));
+        data.AppendPackedTime(itr->second.date);
     }
 
     data.WriteByteSeq(guid[7]);
@@ -2380,6 +2389,7 @@ bool AchievementMgr<T>::RequirementsSatisfied(AchievementCriteriaEntry const *ac
         case ACHIEVEMENT_CRITERIA_TYPE_MONEY_FROM_VENDORS:
         case ACHIEVEMENT_CRITERIA_TYPE_NUMBER_OF_TALENT_RESETS:
         case ACHIEVEMENT_CRITERIA_TYPE_QUEST_ABANDONED:
+        case ACHIEVEMENT_CRITERIA_TYPE_REACH_GUILD_LEVEL:
         case ACHIEVEMENT_CRITERIA_TYPE_ROLL_GREED:
         case ACHIEVEMENT_CRITERIA_TYPE_ROLL_NEED:
         case ACHIEVEMENT_CRITERIA_TYPE_SPECIAL_PVP_KILL:

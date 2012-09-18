@@ -62,6 +62,13 @@ Battlefield::Battlefield()
 
 Battlefield::~Battlefield()
 {
+    for (BfCapturePointMap::iterator itr = m_capturePoints.begin(); itr != m_capturePoints.end(); ++itr)
+        delete itr->second;
+
+    for (GraveyardVect::const_iterator itr = m_GraveyardList.begin(); itr != m_GraveyardList.end(); ++itr)
+        delete *itr;
+
+    m_capturePoints.clear();
 }
 
 // Called when a player enters the zone
@@ -446,8 +453,8 @@ WorldPacket Battlefield::BuildWarningAnnPacket(std::string msg)
     data << uint32(1);
     data << uint8(0);
     data << uint64(0);
-    data << uint32(strlen(msg.c_str()) + 1);
-    data << msg.c_str();
+    data << uint32(msg.length() + 1);
+    data << msg;
     data << uint8(0);
 
     return data;
@@ -458,7 +465,7 @@ void Battlefield::SendWarningToAllInZone(uint32 entry)
     if (Unit* unit = sObjectAccessor->FindUnit(StalkerGuid))
         if (Creature* stalker = unit->ToCreature())
             // FIXME: replaced CHAT_TYPE_END with CHAT_MSG_BG_SYSTEM_NEUTRAL to fix compile, it's a guessed change :/
-            sCreatureTextMgr->SendChat(stalker, (uint8) entry, NULL, CHAT_MSG_BG_SYSTEM_NEUTRAL, LANG_ADDON, TEXT_RANGE_ZONE);
+            sCreatureTextMgr->SendChat(stalker, (uint8) entry, 0, CHAT_MSG_BG_SYSTEM_NEUTRAL, LANG_ADDON, TEXT_RANGE_ZONE);
 }
 
 /*void Battlefield::SendWarningToAllInWar(int32 entry,...)
@@ -671,8 +678,8 @@ BfGraveyard::BfGraveyard(Battlefield* battlefield)
     m_Bf = battlefield;
     m_GraveyardId = 0;
     m_ControlTeam = TEAM_NEUTRAL;
-    m_SpiritGuide[0] = NULL;
-    m_SpiritGuide[1] = NULL;
+    m_SpiritGuide[0] = 0;
+    m_SpiritGuide[1] = 0;
     m_ResurrectQueue.clear();
 }
 
