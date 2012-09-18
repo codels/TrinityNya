@@ -1076,7 +1076,7 @@ enum TrinityStrings
 
     // Use for custom patches             11000-11999
     LANG_AUTO_BROADCAST                 = 11000,
-    LANG_INVALID_REALMID                = 11001
+    LANG_INVALID_REALMID                = 11001,
 
     LANG_RATE_WAIT                            = 11002, // "Подождите 5 минут после смены множителя опыта, чтобы изменить его повторно."
     LANG_RATE_BETWEEN                        = 11003, // "Множитель не может быть меньше 0 и больше 100."
