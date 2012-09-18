@@ -7358,7 +7358,6 @@ bool Player::HasCurrency(uint32 id, uint32 count) const
     PlayerCurrenciesMap::const_iterator itr = m_currencies.find(id);
     return itr != m_currencies.end() && itr->second.totalCount >= count;
 }
-
 void Player::ModifyCurrency(uint32 id, int32 count, bool printLog/* = true*/)
 {
     if (!count)
@@ -7400,7 +7399,6 @@ void Player::ModifyCurrency(uint32 id, int32 count, bool printLog/* = true*/)
         newTotalCount = int32(currency->TotalCap);
         newWeekCount -= delta;
     }
-
     // TODO: fix conquest points
     uint32 weekCap = _GetCurrencyWeekCap(currency);
     if (weekCap && int32(weekCap) < newTotalCount)
@@ -7630,13 +7628,9 @@ void Player::UpdateZone(bool ressurect)
     {
         SetGroupUpdateFlag(GROUP_UPDATE_FULL);
         if (GetSession() && group->isLFGGroup() && sLFGMgr->IsTeleported(GetGUID()))
-        {
             for (GroupReference* itr = group->GetFirstMember(); itr != NULL; itr = itr->next())
-            {
                 if (Player* member = itr->getSource())
                     GetSession()->SendNameQueryOpcode(member->GetGUID());
-            }
-        }
     }
 
     m_zoneUpdateId    = newZone;
@@ -7704,8 +7698,7 @@ void Player::UpdateZone(bool ressurect)
             if (GetRestType() == REST_TYPE_IN_TAVERN)        // Still inside a tavern or has recently left
             {
                 // Remove rest state if we have recently left a tavern.
-                // Why is 40 yd hardcoded?
-                if (GetMapId() != GetInnPosMapId() || GetExactDist(GetInnPosX(), GetInnPosY(), GetInnPosZ()) > 40.0f)
+                if (GetMapId() != GetInnPosMapId() || GetExactDist(GetInnPosX(), GetInnPosY(), GetInnPosZ()) > 1.0f)
                 {
                     RemoveFlag(PLAYER_FLAGS, PLAYER_FLAGS_RESTING);
                     SetRestType(REST_TYPE_NO);
@@ -9173,9 +9166,6 @@ void Player::SendInitWorldStates(uint32 zoneid, uint32 areaid)
         case 2918:
             NumberOfFields = 8;
             break;
-        case 139:
-            NumberOfFields = 41;
-            break;
         case 1377:
             NumberOfFields = 15;
             break;
@@ -9262,46 +9252,6 @@ void Player::SendInitWorldStates(uint32 zoneid, uint32 areaid)
         case 1537:                                          // Ironforge
         case 2257:                                          // Deeprun Tram
         case 3703:                                          // Shattrath City
-            break;
-        case 139:                                           // Eastern Plaguelands
-            if (pvp && pvp->GetTypeId() == OUTDOOR_PVP_EP)
-                pvp->FillInitialWorldStates(data);
-            else
-            {
-                data << uint32(0x97a) << uint32(0x0); // 10 2426
-                data << uint32(0x917) << uint32(0x0); // 11 2327
-                data << uint32(0x918) << uint32(0x0); // 12 2328
-                data << uint32(0x97b) << uint32(0x32); // 13 2427
-                data << uint32(0x97c) << uint32(0x32); // 14 2428
-                data << uint32(0x933) << uint32(0x1); // 15 2355
-                data << uint32(0x946) << uint32(0x0); // 16 2374
-                data << uint32(0x947) << uint32(0x0); // 17 2375
-                data << uint32(0x948) << uint32(0x0); // 18 2376
-                data << uint32(0x949) << uint32(0x0); // 19 2377
-                data << uint32(0x94a) << uint32(0x0); // 20 2378
-                data << uint32(0x94b) << uint32(0x0); // 21 2379
-                data << uint32(0x932) << uint32(0x0); // 22 2354
-                data << uint32(0x934) << uint32(0x0); // 23 2356
-                data << uint32(0x935) << uint32(0x0); // 24 2357
-                data << uint32(0x936) << uint32(0x0); // 25 2358
-                data << uint32(0x937) << uint32(0x0); // 26 2359
-                data << uint32(0x938) << uint32(0x0); // 27 2360
-                data << uint32(0x939) << uint32(0x1); // 28 2361
-                data << uint32(0x930) << uint32(0x1); // 29 2352
-                data << uint32(0x93a) << uint32(0x0); // 30 2362
-                data << uint32(0x93b) << uint32(0x0); // 31 2363
-                data << uint32(0x93c) << uint32(0x0); // 32 2364
-                data << uint32(0x93d) << uint32(0x0); // 33 2365
-                data << uint32(0x944) << uint32(0x0); // 34 2372
-                data << uint32(0x945) << uint32(0x0); // 35 2373
-                data << uint32(0x931) << uint32(0x1); // 36 2353
-                data << uint32(0x93e) << uint32(0x0); // 37 2366
-                data << uint32(0x931) << uint32(0x1); // 38 2367 ??  grey horde not in dbc! send for consistency's sake, and to match field count
-                data << uint32(0x940) << uint32(0x0); // 39 2368
-                data << uint32(0x941) << uint32(0x0); // 7 2369
-                data << uint32(0x942) << uint32(0x0); // 8 2370
-                data << uint32(0x943) << uint32(0x0); // 9 2371
-            }
             break;
         case 1377:                                          // Silithus
             if (pvp && pvp->GetTypeId() == OUTDOOR_PVP_SI)
@@ -15684,7 +15634,6 @@ bool Player::TakeQuestSourceItem(uint32 questId, bool msg)
     {
         uint32 srcItemId = quest->GetSrcItemId();
         ItemTemplate const* item = sObjectMgr->GetItemTemplate(srcItemId);
-        bool destroyItem = true;
 
         if (srcItemId > 0)
         {
@@ -15704,6 +15653,7 @@ bool Player::TakeQuestSourceItem(uint32 questId, bool msg)
                 return false;
             }
 
+            bool destroyItem = true;
             for (uint8 n = 0; n < QUEST_ITEM_OBJECTIVES_COUNT; ++n)
                 if (item->StartQuest == questId && srcItemId == quest->RequiredItemId[n])
                     destroyItem = false;
@@ -17127,7 +17077,7 @@ bool Player::LoadFromDB(uint32 guid, SQLQueryHolder *holder)
     SetUInt64Value(PLAYER_FARSIGHT, 0);
     SetCreatorGUID(0);
 
-    RemoveFlag(UNIT_FIELD_FLAGS_2, UNIT_FLAG2_FORCE_MOVE);
+    RemoveFlag(UNIT_FIELD_FLAGS_2, UNIT_FLAG2_FORCE_MOVEMENT);
 
     // reset some aura modifiers before aura apply
     SetUInt32Value(PLAYER_TRACK_CREATURES, 0);
@@ -17553,8 +17503,8 @@ void Player::_LoadInventory(PreparedQueryResult result, uint32 timeDiff)
     {
         uint32 zoneId = GetZoneId();
 
-        std::map<uint64, Bag*> bagMap;                                  // fast guid lookup for bags
-        std::map<uint64, Item*> invalidBagMap;                                  // fast guid lookup for bags
+        std::map<uint32, Bag*> bagMap;                               // fast guid lookup for bags
+        std::map<uint32, Item*> invalidBagMap;                       // fast guid lookup for bags
         std::list<Item*> problematicItems;
         SQLTransaction trans = CharacterDatabase.BeginTransaction();
 
@@ -17613,7 +17563,7 @@ void Player::_LoadInventory(PreparedQueryResult result, uint32 timeDiff)
                 {
                     item->SetSlot(NULL_SLOT);
                     // Item is in the bag, find the bag
-                    std::map<uint64, Bag*>::iterator itr = bagMap.find(bagGuid);
+                    std::map<uint32, Bag*>::iterator itr = bagMap.find(bagGuid);
                     if (itr != bagMap.end())
                     {
                         ItemPosCountVec dest;
@@ -17623,8 +17573,8 @@ void Player::_LoadInventory(PreparedQueryResult result, uint32 timeDiff)
                     }
                     else if (invalidBagMap.find(bagGuid) != invalidBagMap.end())
                     {
-                        std::map<uint64, Item*>::iterator itr = invalidBagMap.find(bagGuid);
-                        if (std::find(problematicItems.begin(),problematicItems.end(),itr->second) != problematicItems.end())
+                        std::map<uint32, Item*>::iterator itr = invalidBagMap.find(bagGuid);
+                        if (std::find(problematicItems.begin(), problematicItems.end(), itr->second) != problematicItems.end())
                             err = EQUIP_ERR_INTERNAL_BAG_ERROR;
                     }
                     else
@@ -17720,7 +17670,6 @@ void Player::_LoadVoidStorage(PreparedQueryResult result)
 
 Item* Player::_LoadItem(SQLTransaction& trans, uint32 zoneId, uint32 timeDiff, Field* fields)
 {
-    PreparedStatement* stmt = NULL;
     Item* item = NULL;
     uint32 itemGuid  = fields[13].GetUInt32();
     uint32 itemEntry = fields[14].GetUInt32();
@@ -17730,6 +17679,8 @@ Item* Player::_LoadItem(SQLTransaction& trans, uint32 zoneId, uint32 timeDiff, F
         item = NewItemOrBag(proto);
         if (item->LoadFromDB(itemGuid, GetGUID(), fields, itemEntry))
         {
+            PreparedStatement* stmt = NULL;
+
             // Do not allow to have item limited to another map/zone in alive state
             if (isAlive() && item->IsLimitedToAnotherMapOrZone(GetMapId(), zoneId))
             {

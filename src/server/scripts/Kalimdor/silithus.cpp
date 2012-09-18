@@ -224,7 +224,6 @@ public:
 
 };
 
-
 /*###
 ## go_wind_stone
 ###*/

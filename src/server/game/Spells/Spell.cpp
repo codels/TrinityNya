@@ -88,7 +88,7 @@ SpellDestination::SpellDestination(WorldObject const& wObj)
 }
 
 
-SpellCastTargets::SpellCastTargets() : m_elevation(0), m_speed(0)
+SpellCastTargets::SpellCastTargets() : m_elevation(0), m_speed(0), m_strTarget()
 {
     m_objectTarget = NULL;
     m_itemTarget = NULL;
@@ -97,7 +97,6 @@ SpellCastTargets::SpellCastTargets() : m_elevation(0), m_speed(0)
     m_itemTargetGUID   = 0;
     m_itemTargetEntry  = 0;
 
-    m_strTarget = "";
     m_targetMask = 0;
 }
 
@@ -6788,9 +6787,9 @@ SpellCastResult Spell::CanOpenLock(uint32 effIndex, uint32 lockId, SkillType& sk
                         0 : m_caster->ToPlayer()->GetSkillValue(skillId);
 
                     // skill bonus provided by casting spell (mostly item spells)
-                    // add the damage modifier from the spell casted (cheat lock / skeleton key etc.)
+                    // add the effect base points modifier from the spell casted (cheat lock / skeleton key etc.)
                     if (m_spellInfo->Effects[effIndex].TargetA.GetTarget() == TARGET_GAMEOBJECT_ITEM_TARGET || m_spellInfo->Effects[effIndex].TargetB.GetTarget() == TARGET_GAMEOBJECT_ITEM_TARGET)
-                        skillValue += uint32(CalculateDamage(effIndex, NULL));
+                        skillValue += m_spellInfo->Effects[effIndex].CalcValue();
 
                     if (skillValue < reqSkillValue)
                         return SPELL_FAILED_LOW_CASTLEVEL;

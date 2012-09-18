@@ -34,6 +34,8 @@
 
 Battlefield::Battlefield()
 {
+    m_Guid = MAKE_NEW_GUID(m_TypeId, 0, HIGHGUID_TYPE_BATTLEGROUND);
+
     m_Timer = 0;
     m_IsEnabled = true;
     m_isActive = false;
@@ -100,7 +102,7 @@ void Battlefield::HandlePlayerLeaveZone(Player* player, uint32 /*zone*/)
         if (m_PlayersInWar[player->GetTeamId()].find(player->GetGUID()) != m_PlayersInWar[player->GetTeamId()].end())
         {
             m_PlayersInWar[player->GetTeamId()].erase(player->GetGUID());
-            player->GetSession()->SendBfLeaveMessage(m_BattleId);
+            player->GetSession()->SendBfLeaveMessage(m_Guid);
             if (Group* group = player->GetGroup()) // Remove the player from the raid group
                 group->RemoveMember(player->GetGUID());
 
@@ -133,7 +135,7 @@ bool Battlefield::Update(uint32 diff)
         m_Timer -= diff;
 
     // Invite players a few minutes before the battle's beginning
-    if (!m_StartGrouping && m_Timer <= m_StartGroupingTimer)
+    if (!IsWarTime() && !m_StartGrouping && m_Timer <= m_StartGroupingTimer)
     {
         m_StartGrouping = true;
         InvitePlayersInZoneToQueue();
@@ -155,13 +157,13 @@ bool Battlefield::Update(uint32 diff)
         if (m_uiKickDontAcceptTimer <= diff)
         {
             for (int team = 0; team < 2; team++)
-                for (PlayerTimerMap::iterator itr = m_InvitedPlayers[team].begin(); itr != m_InvitedPlayers[team].end(); itr++)
+                for (PlayerTimerMap::iterator itr = m_InvitedPlayers[team].begin(); itr != m_InvitedPlayers[team].end(); ++itr)
                     if ((*itr).second <= time(NULL))
                         KickPlayerFromBattlefield((*itr).first);
 
             InvitePlayersInZoneToWar();
             for (int team = 0; team < 2; team++)
-                for (PlayerTimerMap::iterator itr = m_PlayersWillBeKick[team].begin(); itr != m_PlayersWillBeKick[team].end(); itr++)
+                for (PlayerTimerMap::iterator itr = m_PlayersWillBeKick[team].begin(); itr != m_PlayersWillBeKick[team].end(); ++itr)
                     if ((*itr).second <= time(NULL))
                         KickPlayerFromBattlefield((*itr).first);
 
@@ -203,7 +205,7 @@ void Battlefield::InvitePlayerToQueue(Player* player)
         return;
 
     if (m_PlayersInQueue[player->GetTeamId()].size() <= m_MinPlayer || m_PlayersInQueue[GetOtherTeam(player->GetTeamId())].size() >= m_MinPlayer)
-        player->GetSession()->SendBfInvitePlayerToQueue(m_BattleId);
+        player->GetSession()->SendBfInvitePlayerToQueue(m_Guid);
 }
 
 void Battlefield::InvitePlayersInQueueToWar()
@@ -272,7 +274,7 @@ void Battlefield::InvitePlayerToWar(Player* player)
 
     m_PlayersWillBeKick[player->GetTeamId()].erase(player->GetGUID());
     m_InvitedPlayers[player->GetTeamId()][player->GetGUID()] = time(NULL) + m_TimeForAcceptInvite;
-    player->GetSession()->SendBfInvitePlayerToWar(m_BattleId, m_ZoneId, m_TimeForAcceptInvite);
+    player->GetSession()->SendBfInvitePlayerToWar(m_Guid, m_ZoneId, m_TimeForAcceptInvite);
 }
 
 void Battlefield::InitStalker(uint32 entry, float x, float y, float z, float o)
@@ -368,7 +370,7 @@ void Battlefield::PlayerAcceptInviteToQueue(Player* player)
     // Add player in queue
     m_PlayersInQueue[player->GetTeamId()].insert(player->GetGUID());
     // Send notification
-    player->GetSession()->SendBfQueueInviteResponse(m_BattleId, m_ZoneId);
+    player->GetSession()->SendBfQueueInviteResponse(m_Guid, m_ZoneId);
 }
 
 // Called in WorldSession::HandleBfExitRequest
@@ -386,7 +388,7 @@ void Battlefield::PlayerAcceptInviteToWar(Player* player)
 
     if (AddOrSetPlayerToCorrectBfGroup(player))
     {
-        player->GetSession()->SendBfEntered(m_BattleId);
+        player->GetSession()->SendBfEntered(m_Guid);
         m_PlayersInWar[player->GetTeamId()].insert(player->GetGUID());
         m_InvitedPlayers[player->GetTeamId()].erase(player->GetGUID());
 
@@ -862,7 +864,8 @@ BfCapturePoint::BfCapturePoint(Battlefield* battlefield) : m_Bf(battlefield), m_
 {
     m_team = TEAM_NEUTRAL;
     m_value = 0;
-    m_maxValue = 0;
+    m_minValue = 0.0f;
+    m_maxValue = 0.0f;
     m_State = BF_CAPTUREPOINT_OBJECTIVESTATE_NEUTRAL;
     m_OldState = BF_CAPTUREPOINT_OBJECTIVESTATE_NEUTRAL;
     m_capturePointEntry = 0;

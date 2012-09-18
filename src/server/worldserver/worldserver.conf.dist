@@ -49,7 +49,7 @@
 #
 #    RealmID
 #        Description: ID of the Realm using this config.
-#        Important:   RealmID must match the realmlist inside the realmd database.
+#        Important:   RealmID must match the realmlist inside the auth database.
 #        Default:     1
 
 RealmID = 1
@@ -174,7 +174,7 @@ Compression = 1
 #    PlayerLimit
 #        Description: Maximum number of players in the world. Excluding Mods, GMs and Admins.
 #          Important: If you want to block players and only allow Mods, GMs or Admins to join the
-#                     server, use the DB field "realmd.realmlist.allowedSecurityLevel".
+#                     server, use the DB field "auth.realmlist.allowedSecurityLevel".
 #            Default: 100 - (Enabled)
 #                     1+  - (Enabled)
 #                     0   - (Disabled, No limit)
@@ -390,6 +390,14 @@ CleanCharacterDB = 0
 #        Default:     0  - (All cleanup methods will be disabled after the next cleanup)
 
 PersistentCharacterCleanFlags = 0
+
+#
+#    GuildSaveInterval
+#        Description: Time (in minutes) between guild experience saves
+#        Default:     15
+#
+
+GuildSaveInterval = 15
 
 #
 ###################################################################################################
@@ -3188,8 +3196,8 @@ GuildDefault.ID = 0
 #guild rank
 GuildDefault.Rank = 0
 
-// Achievements for account
+# Achievements for account
 Account.Achievements = 0
 
-//
+#
 CharacterModel.Enable = 0

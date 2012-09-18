@@ -545,6 +545,7 @@ class WorldSession
         void HandleGroupUninviteOpcode(WorldPacket& recvPacket);
         void HandleGroupUninviteGuidOpcode(WorldPacket& recvPacket);
         void HandleGroupSetLeaderOpcode(WorldPacket& recvPacket);
+        void HandleGroupSetRolesOpcode(WorldPacket& recvData);
         void HandleGroupDisbandOpcode(WorldPacket& recvPacket);
         void HandleOptOutOfLootOpcode(WorldPacket& recvData);
         void HandleLootMethodOpcode(WorldPacket& recvPacket);
@@ -618,6 +619,7 @@ class WorldSession
         void HandleStableRevivePet(WorldPacket& recvPacket);
         void HandleStableSwapPet(WorldPacket& recvPacket);
         void HandleStableSwapPetCallback(PreparedQueryResult result, uint32 petId);
+        void SendTrainerBuyFailed(uint64 guid, uint32 spellId, uint32 reason);
 
         void HandleDuelAcceptedOpcode(WorldPacket& recvPacket);
         void HandleDuelCancelledOpcode(WorldPacket& recvPacket);
@@ -808,14 +810,14 @@ class WorldSession
         void HandleInstanceLockResponse(WorldPacket& recvPacket);
 
         // Battlefield
-        void SendBfInvitePlayerToWar(uint32 BattleId,uint32 ZoneId,uint32 time);
-        void SendBfInvitePlayerToQueue(uint32 BattleId);
-        void SendBfQueueInviteResponse(uint32 BattleId,uint32 ZoneId, bool CanQueue = true, bool Full = false);
-        void SendBfEntered(uint32 BattleId);
-        void SendBfLeaveMessage(uint32 BattleId, BFLeaveReason reason = BF_LEAVE_REASON_EXITED);
-        void HandleBfQueueInviteResponse(WorldPacket &recv_data);
-        void HandleBfEntryInviteResponse(WorldPacket &recv_data);
-        void HandleBfExitRequest(WorldPacket &recv_data);
+        void SendBfInvitePlayerToWar(uint64 guid, uint32 zoneId, uint32 pTime);
+        void SendBfInvitePlayerToQueue(uint64 guid);
+        void SendBfQueueInviteResponse(uint64 guid, uint32 zoneId, bool canQueue = true, bool full = false);
+        void SendBfEntered(uint64 guid);
+        void SendBfLeaveMessage(uint64 guid, BFLeaveReason reason = BF_LEAVE_REASON_EXITED);
+        void HandleBfQueueInviteResponse(WorldPacket& recvData);
+        void HandleBfEntryInviteResponse(WorldPacket& recvData);
+        void HandleBfExitRequest(WorldPacket& recvData);
 
         // Looking for Dungeon/Raid
         void HandleLfgSetCommentOpcode(WorldPacket& recvData);
