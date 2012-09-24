@@ -174,7 +174,7 @@ class spell_pal_blessing_of_faith : public SpellScriptLoader
 
 // 20911 Blessing of Sanctuary
 // 25899 Greater Blessing of Sanctuary
-class spell_pal_blessing_of_sanctuary : public SpellScriptLoader
+/*class spell_pal_blessing_of_sanctuary : public SpellScriptLoader
 {
     public:
         spell_pal_blessing_of_sanctuary() : SpellScriptLoader("spell_pal_blessing_of_sanctuary") { }
@@ -183,21 +183,21 @@ class spell_pal_blessing_of_sanctuary : public SpellScriptLoader
         {
             PrepareAuraScript(spell_pal_blessing_of_sanctuary_AuraScript);
 
-            bool Validate(SpellInfo const* /*entry*/)
+            bool Validate(SpellInfo const* /*entry*//*)
             {
                 if (!sSpellMgr->GetSpellInfo(PALADIN_SPELL_BLESSING_OF_SANCTUARY_BUFF))
                     return false;
                 return true;
             }
 
-            void HandleEffectApply(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
+            void HandleEffectApply(AuraEffect const* /*aurEff*//*, AuraEffectHandleModes /*mode*//*)
             {
                 Unit* target = GetTarget();
                 if (Unit* caster = GetCaster())
                     caster->CastSpell(target, PALADIN_SPELL_BLESSING_OF_SANCTUARY_BUFF, true);
             }
 
-            void HandleEffectRemove(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
+            void HandleEffectRemove(AuraEffect const* /*aurEff*//*, AuraEffectHandleModes /*mode*//*)
             {
                 Unit* target = GetTarget();
                 target->RemoveAura(PALADIN_SPELL_BLESSING_OF_SANCTUARY_BUFF, GetCasterGUID());
@@ -214,7 +214,7 @@ class spell_pal_blessing_of_sanctuary : public SpellScriptLoader
         {
             return new spell_pal_blessing_of_sanctuary_AuraScript();
         }
-};
+};	*/
 
 // 63521 Guarded by The Light
 class spell_pal_guarded_by_the_light : public SpellScriptLoader
@@ -570,7 +570,7 @@ void AddSC_paladin_spell_scripts()
 {
     //new spell_pal_ardent_defender();
     new spell_pal_blessing_of_faith();
-    new spell_pal_blessing_of_sanctuary();
+//    new spell_pal_blessing_of_sanctuary();
     new spell_pal_guarded_by_the_light();
     new spell_pal_holy_shock();
     new spell_pal_judgement_of_command();
