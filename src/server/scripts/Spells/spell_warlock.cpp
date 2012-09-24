@@ -41,6 +41,7 @@ enum WarlockSpells
     WARLOCK_HAUNT_HEAL                      = 48210,
     WARLOCK_UNSTABLE_AFFLICTION_DISPEL      = 31117,
     WARLOCK_CURSE_OF_DOOM_EFFECT            = 18662,
+	WARLOCK_CREATE_HEALTHSTONE              = 6201,
     WARLOCK_IMPROVED_HEALTH_FUNNEL_R1       = 18703,
     WARLOCK_IMPROVED_HEALTH_FUNNEL_R2       = 18704,
     WARLOCK_IMPROVED_HEALTH_FUNNEL_BUFF_R1  = 60955,
@@ -178,7 +179,7 @@ class spell_warl_create_healthstone : public SpellScriptLoader
 
             bool Validate(SpellInfo const* /*spellEntry*/)
             {
-                if (!sSpellMgr->GetSpellInfo(WARLOCK_IMPROVED_HEALTHSTONE_R1) || !sSpellMgr->GetSpellInfo(WARLOCK_IMPROVED_HEALTHSTONE_R2))
+                if (!sSpellMgr->GetSpellInfo(WARLOCK_CREATE_HEALTHSTONE)) // || !sSpellMgr->GetSpellInfo(WARLOCK_IMPROVED_HEALTHSTONE_R2))
                     return false;
                 return true;
             }
