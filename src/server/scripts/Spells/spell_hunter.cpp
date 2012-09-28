@@ -382,7 +382,7 @@ class spell_hun_scatter_shot : public SpellScriptLoader
 
             void Register()
             {
-                OnEffectHitTarget += SpellEffectFn(spell_hun_scatter_shot_SpellScript::HandleDummy, EFFECT_0, SPELL_EFFECT_DUMMY);
+                OnEffectHitTarget += SpellEffectFn(spell_hun_scatter_shot_SpellScript::HandleDummy, EFFECT_0, SPELL_AURA_MOD_CONFUSE);
             }
         };
 
@@ -392,6 +392,40 @@ class spell_hun_scatter_shot : public SpellScriptLoader
         }
 };
 
+class spell_hun_scatter_shot_dummy : public SpellScriptLoader
+{
+    public:
+        spell_hun_scatter_shot_dummy() : SpellScriptLoader("spell_hun_scatter_shot_dummy") { }
+
+        class spell_hun_scatter_shot_dummy_SpellScript : public SpellScript
+        {
+            PrepareSpellScript(spell_hun_scatter_shot_dummy_SpellScript);
+
+            bool Load()
+            {
+                return GetCaster()->GetTypeId() == TYPEID_PLAYER;
+            }
+
+            void HandleDummy(SpellEffIndex /*effIndex*/)
+            {
+                Player* caster = GetCaster()->ToPlayer();
+                // break Auto Shot and autohit
+                caster->InterruptSpell(CURRENT_AUTOREPEAT_SPELL);
+                caster->AttackStop();
+                caster->SendAttackSwingCancelAttack();
+            }
+
+            void Register()
+            {
+                OnEffectHitTarget += SpellEffectFn(spell_hun_scatter_shot_dummy_SpellScript::HandleDummy, EFFECT_0, SPELL_EFFECT_DUMMY);
+            }
+        };
+
+        SpellScript* GetSpellScript() const
+        {
+            return new spell_hun_scatter_shot_dummy_SpellScript();
+        }
+};
 // 53302, 53303, 53304 Sniper Training
 enum eSniperTrainingSpells
 {
@@ -708,6 +742,7 @@ void AddSC_hunter_spell_scripts()
     new spell_hun_masters_call();
     new spell_hun_readiness();
     new spell_hun_scatter_shot();
+	new spell_hun_scatter_shot_dummy();
     new spell_hun_sniper_training();
     new spell_hun_pet_heart_of_the_phoenix();
     new spell_hun_pet_carrion_feeder();
