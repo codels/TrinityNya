@@ -74,6 +74,9 @@ DiminishingGroup GetDiminishingReturnsGroupForSpell(SpellInfo const* spellproto,
             // Pet charge effects (Infernal Awakening, Demon Charge)
             if (spellproto->SpellVisual[0] == 2816 && spellproto->SpellIconID == 15)
                 return DIMINISHING_CONTROLLED_STUN;
+            // Frost Tomb
+            else if (spellproto->Id == 48400)
+                return DIMINISHING_NONE;
             // Gnaw
             else if (spellproto->Id == 47481)
                 return DIMINISHING_CONTROLLED_STUN;
@@ -2794,6 +2797,10 @@ void SpellMgr::LoadSpellCustomAttr()
 
         switch (spellInfo->Id)
         {
+            case 60256:
+                //Crashes client on pressing ESC (Maybe because of ReqSpellFocus and GameObject)
+                spellInfo->AttributesEx4 &= ~SPELL_ATTR4_TRIGGERED;
+                break;
             case 1776: // Gouge
             case 1777:
             case 8629:
@@ -3013,6 +3020,7 @@ void SpellMgr::LoadDbcDataCorrections()
 				spellInfo->DmgClass = SPELL_DAMAGE_CLASS_MAGIC;
 				spellInfo->SchoolMask = SPELL_SCHOOL_MASK_HOLY;
 				break;
+                break;
             case 40244: // Simon Game Visual
             case 40245: // Simon Game Visual
             case 40246: // Simon Game Visual

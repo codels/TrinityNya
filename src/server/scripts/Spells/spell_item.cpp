@@ -61,13 +61,56 @@ class spell_item_trigger_spell : public SpellScriptLoader
 
             void Register()
             {
-                OnEffectHit += SpellEffectFn(spell_item_trigger_spell_SpellScript::HandleDummy, EFFECT_0, SPELL_EFFECT_DUMMY);
+                OnEffectHit += SpellEffectFn(spell_item_trigger_spell_SpellScript::HandleDummy, EFFECT_0, SPELL_EFFECT_SUMMON);
             }
         };
 
         SpellScript* GetSpellScript() const
         {
             return new spell_item_trigger_spell_SpellScript(_triggeredSpellId);
+        }
+};
+
+class spell_item_trigger_spell_dummy : public SpellScriptLoader
+{
+    private:
+        uint32 _triggeredSpellId;
+
+    public:
+        spell_item_trigger_spell_dummy(const char* name, uint32 triggeredSpellId) : SpellScriptLoader(name), _triggeredSpellId(triggeredSpellId) { }
+
+        class spell_item_trigger_spell_dummy_SpellScript : public SpellScript
+        {
+            PrepareSpellScript(spell_item_trigger_spell_dummy_SpellScript);
+        private:
+            uint32 _triggeredSpellId;
+
+        public:
+            spell_item_trigger_spell_dummy_SpellScript(uint32 triggeredSpellId) : SpellScript(), _triggeredSpellId(triggeredSpellId) { }
+
+            bool Validate(SpellInfo const* /*spellEntry*/)
+            {
+                if (!sSpellMgr->GetSpellInfo(_triggeredSpellId))
+                    return false;
+                return true;
+            }
+
+            void HandleDummy(SpellEffIndex /*effIndex*/)
+            {
+                Unit* caster = GetCaster();
+                if (Item* item = GetCastItem())
+                    caster->CastSpell(caster, _triggeredSpellId, true, item);
+            }
+
+            void Register()
+            {
+                OnEffectHit += SpellEffectFn(spell_item_trigger_spell_dummy_SpellScript::HandleDummy, EFFECT_0, SPELL_EFFECT_DUMMY);
+            }
+        };
+
+        SpellScript* GetSpellScript() const
+        {
+            return new spell_item_trigger_spell_dummy_SpellScript(_triggeredSpellId);
         }
 };
 
@@ -231,13 +274,53 @@ class spell_item_gnomish_death_ray : public SpellScriptLoader
 
             void Register()
             {
-                OnEffectHitTarget += SpellEffectFn(spell_item_gnomish_death_ray_SpellScript::HandleDummy, EFFECT_0, SPELL_EFFECT_DUMMY);
+                OnEffectHitTarget += SpellEffectFn(spell_item_gnomish_death_ray_SpellScript::HandleDummy, EFFECT_0, SPELL_EFFECT_APPLY_AURA);
             }
         };
 
         SpellScript* GetSpellScript() const
         {
             return new spell_item_gnomish_death_ray_SpellScript();
+        }
+};
+
+class spell_item_gnomish_death_ray_dummy : public SpellScriptLoader
+{
+    public:
+        spell_item_gnomish_death_ray_dummy() : SpellScriptLoader("spell_item_gnomish_death_ray_dummy") { }
+
+        class spell_item_gnomish_death_ray_dummy_SpellScript : public SpellScript
+        {
+            PrepareSpellScript(spell_item_gnomish_death_ray_dummy_SpellScript);
+
+            bool Validate(SpellInfo const* /*spellEntry*/)
+            {
+                if (!sSpellMgr->GetSpellInfo(SPELL_GNOMISH_DEATH_RAY_SELF) || !sSpellMgr->GetSpellInfo(SPELL_GNOMISH_DEATH_RAY_TARGET))
+                    return false;
+                return true;
+            }
+
+            void HandleDummy(SpellEffIndex /*effIndex*/)
+            {
+                Unit* caster = GetCaster();
+                if (Unit* target = GetHitUnit())
+                {
+                    if (urand(0, 99) < 15)
+                        caster->CastSpell(caster, SPELL_GNOMISH_DEATH_RAY_SELF, true, NULL);    // failure
+                    else
+                        caster->CastSpell(target, SPELL_GNOMISH_DEATH_RAY_TARGET, true, NULL);
+                }
+            }
+
+            void Register()
+            {
+                OnEffectHitTarget += SpellEffectFn(spell_item_gnomish_death_ray_dummy_SpellScript::HandleDummy, EFFECT_0, SPELL_EFFECT_DUMMY);
+            }
+        };
+
+        SpellScript* GetSpellScript() const
+        {
+            return new spell_item_gnomish_death_ray_dummy_SpellScript();
         }
 };
 
@@ -2021,16 +2104,20 @@ void AddSC_item_spell_scripts()
 {
     // 23074 Arcanite Dragonling
     new spell_item_trigger_spell("spell_item_arcanite_dragonling", SPELL_ARCANITE_DRAGONLING);
+	new spell_item_trigger_spell_dummy("spell_item_arcanite_dragonling_dummy", SPELL_ARCANITE_DRAGONLING);
     // 23133 Gnomish Battle Chicken
-    new spell_item_trigger_spell("spell_item_gnomish_battle_chicken", SPELL_BATTLE_CHICKEN);
+    new spell_item_trigger_spell_dummy("spell_item_gnomish_battle_chicken", SPELL_BATTLE_CHICKEN);
     // 23076 Mechanical Dragonling
     new spell_item_trigger_spell("spell_item_mechanical_dragonling", SPELL_MECHANICAL_DRAGONLING);
+	new spell_item_trigger_spell_dummy("spell_item_mechanical_dragonling_dummy", SPELL_MECHANICAL_DRAGONLING);
     // 23075 Mithril Mechanical Dragonling
     new spell_item_trigger_spell("spell_item_mithril_mechanical_dragonling", SPELL_MITHRIL_MECHANICAL_DRAGONLING);
+	new spell_item_trigger_spell_dummy("spell_item_mithril_mechanical_dragonling_dummy", SPELL_MITHRIL_MECHANICAL_DRAGONLING);
 
     new spell_item_deviate_fish();
     new spell_item_flask_of_the_north();
     new spell_item_gnomish_death_ray();
+	new spell_item_gnomish_death_ray_dummy();
     new spell_item_make_a_wish();
     new spell_item_mingos_fortune_generator();
     new spell_item_net_o_matic();

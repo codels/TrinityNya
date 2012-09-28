@@ -174,6 +174,7 @@ Unit::Unit(bool isWorldObject): WorldObject(isWorldObject)
     , m_vehicleKit(NULL)
     , m_unitTypeMask(UNIT_MASK_NONE)
     , m_HostileRefManager(this)
+    , _lastDamagedTime(0)
 {
 #ifdef _MSC_VER
 #pragma warning(default:4355)
@@ -1684,8 +1685,10 @@ void Unit::CalcAbsorbResist(Unit* victim, SpellSchoolMask schoolMask, DamageEffe
         for (AuraEffectList::iterator itr = vSplitDamagePctCopy.begin(), next; (itr != vSplitDamagePctCopy.end()) &&  (dmgInfo.GetDamage() > 0); ++itr)
         {
             // Check if aura was removed during iteration - we don't need to work on such auras
-            if (!((*itr)->GetBase()->IsAppliedOnTarget(victim->GetGUID())))
+            AuraApplication const* aurApp = (*itr)->GetBase()->GetApplicationOfTarget(victim->GetGUID());
+            if (!aurApp)
                 continue;
+
             // check damage school mask
             if (!((*itr)->GetMiscValue() & schoolMask))
                 continue;
@@ -1695,13 +1698,14 @@ void Unit::CalcAbsorbResist(Unit* victim, SpellSchoolMask schoolMask, DamageEffe
             if (!caster || (caster == victim) || !caster->IsInWorld() || !caster->isAlive())
                 continue;
 
-            int32 splitDamage = CalculatePctN(dmgInfo.GetDamage(), (*itr)->GetAmount());
+            uint32 splitDamage = CalculatePctN(dmgInfo.GetDamage(), (*itr)->GetAmount());
+
+            (*itr)->GetBase()->CallScriptEffectSplitHandlers((*itr), aurApp, dmgInfo, splitDamage);
 
             // absorb must be smaller than the damage itself
-            splitDamage = RoundToInterval(splitDamage, 0, int32(dmgInfo.GetDamage()));
+            splitDamage = RoundToInterval(splitDamage, uint32(0), uint32(dmgInfo.GetDamage()));
 
             dmgInfo.AbsorbDamage(splitDamage);
-
             uint32 splitted = splitDamage;
             uint32 split_absorb = 0;
             DealDamageMods(caster, splitted, &split_absorb);
@@ -6338,47 +6342,62 @@ bool Unit::HandleDummyAuraProc(Unit* victim, uint32 damage, AuraEffect* triggere
             // Light's Beacon - Beacon of Light
             if (dummySpell->Id == 53651)
             {
-                if (this->GetTypeId() != TYPEID_PLAYER)
+                if (!victim)
                     return false;
-                // Check Party/Raid Group
-                if (Group *group = this->ToPlayer()->GetGroup())
+                triggered_spell_id = 0;
+                Unit* beaconTarget = NULL;
+                if (this->GetTypeId() != TYPEID_PLAYER)
                 {
-                    for (GroupReference *itr = group->GetFirstMember(); itr != NULL; itr = itr->next())
+                    beaconTarget = triggeredByAura->GetBase()->GetCaster();
+                    if (beaconTarget == this || !(beaconTarget->GetAura(53563, victim->GetGUID())))
+                        return false;
+                    basepoints0 = int32(damage);
+                    triggered_spell_id = procSpell->IsRankOf(sSpellMgr->GetSpellInfo(365)) ? 53652 : 53654;
+                }
+                else
+                {    // Check Party/Raid Group
+                    if (Group *group = this->ToPlayer()->GetGroup())
                     {
-                        Player* Member = itr->getSource();
-
-                        // check if it was heal by paladin which casted this beacon of light
-                        if (Aura const * aura = Member->GetAura(53563, victim->GetGUID()))
+                        for (GroupReference *itr = group->GetFirstMember(); itr != NULL; itr = itr->next())
                         {
-                            Unit* beaconTarget = Member;
+                            Player* Member = itr->getSource();
 
-                            // do not proc when target of beacon of light is healed
-                            if (beaconTarget == this)
-                                return false;
-
-                            basepoints0 = int32(damage);
-                            triggered_spell_id = 53652;
-                            victim->CastCustomSpell(beaconTarget, triggered_spell_id, &basepoints0, NULL, NULL, true, 0, triggeredByAura);
-                            int32 percent = 0;
-                            switch (procSpell->Id)
+                            // check if it was heal by paladin which casted this beacon of light
+                            if (Aura const * aura = Member->GetAura(53563, victim->GetGUID()))
                             {
-                                case 85673: // Word of Glory
-                                case 20473: // Holy Shock
-                                case 19750: // Flash of Light
-                                case 82326: // Divine Light
-                                case 85222: // Light of Dawn
-                                    percent = triggerAmount; // 50% heal from these spells
-                                    break;
-                                case 635:   // Holy Light
-                                    percent = triggerAmount * 2; // 100% heal from Holy Light
-                                    break;
+                                // do not proc when target of beacon of light is healed
+                                if (Member == this)
+                                    return false;
+
+                                beaconTarget = Member;
+                                basepoints0 = int32(damage);
+                                triggered_spell_id = procSpell->IsRankOf(sSpellMgr->GetSpellInfo(365)) ? 53652 : 53654;
+                                break;
                             }
-                            basepoints0 = CalculatePctN(damage, percent);
-                            victim->CastCustomSpell(beaconTarget, 53652, &basepoints0, NULL, NULL, true);
-                            return true;
                         }
                     }
                 }
+
+                if (triggered_spell_id && beaconTarget)
+                {
+                    int32 percent = 0;
+                    switch (procSpell->Id)
+                    {
+                        case 85673: // Word of Glory
+                        case 20473: // Holy Shock
+                        case 19750: // Flash of Light
+                        case 82326: // Divine Light
+                        case 85222: // Light of Dawn
+                            percent = triggerAmount; // 50% heal from these spells
+                            break;
+                        case 635:   // Holy Light
+                            percent = triggerAmount * 2; // 100% heal from Holy Light
+                            break;
+                    }
+                    basepoints0 = CalculatePctN(damage, percent);
+                    victim->CastCustomSpell(beaconTarget, triggered_spell_id, &basepoints0, NULL, NULL, true, 0, triggeredByAura);
+                    return true;
+                } 
                 else
                     return false;
             }
@@ -11194,6 +11213,10 @@ int32 Unit::ModifyHealth(int32 dVal)
     if (dVal == 0)
         return 0;
 
+    // Part of Evade mechanics. Only track health lost, not gained.
+    if (dVal < 0 && GetTypeId() != TYPEID_PLAYER && !isPet())
+        SetLastDamagedTime(time(NULL));
+
     int32 curHealth = (int32)GetHealth();
 
     int32 val = dVal + curHealth;
@@ -12140,6 +12163,14 @@ Unit* Creature::SelectVictim()
         SetInFront(target);
         return target;
     }
+
+    // Case where mob is being kited.
+    // Mob may not be in range to attack or may have dropped target. In any case,
+    //  don't evade if damage received within the last 10 seconds
+    // Does not apply to world bosses to prevent kiting to cities
+    if (!isWorldBoss() && !GetInstanceId())
+        if (time(NULL) - GetLastDamagedTime() <= MAX_AGGRO_RESET_TIME)
+            return target;
 
     // last case when creature must not go to evade mode:
     // it in combat but attacker not make any damage and not enter to aggro radius to have record in threat list
@@ -13549,6 +13580,7 @@ void Unit::ProcDamageAndSpellFor(bool isVictim, Unit* target, uint32 procFlag, u
                 switch (triggeredByAura->GetAuraType())
                 {
                     case SPELL_AURA_PROC_TRIGGER_SPELL:
+                    case SPELL_AURA_PROC_TRIGGER_SPELL_2:
                     {
                         sLog->outDebug(LOG_FILTER_SPELLS_AURAS, "ProcDamageAndSpell: casting spell %u (triggered by %s aura of spell %u)", spellInfo->Id, (isVictim?"a victim's":"an attacker's"), triggeredByAura->GetId());
                         // Don`t drop charge or add cooldown for not started trigger
@@ -15391,12 +15423,16 @@ void Unit::RemoveCharmedBy(Unit* charmer)
                 charmer->ToPlayer()->SetClientControl(charmer, 1);
                 charmer->ToPlayer()->SetViewpoint(this, false);
                 charmer->ToPlayer()->SetClientControl(this, 0);
+                if (GetTypeId() == TYPEID_PLAYER)
+                    ToPlayer()->SetMover(this);
                 break;
             case CHARM_TYPE_POSSESS:
                 charmer->ToPlayer()->SetClientControl(charmer, 1);
                 charmer->ToPlayer()->SetViewpoint(this, false);
                 charmer->ToPlayer()->SetClientControl(this, 0);
                 charmer->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_DISABLE_MOVE);
+                if (GetTypeId() == TYPEID_PLAYER)
+                    ToPlayer()->SetMover(this);
                 break;
             case CHARM_TYPE_CHARM:
                 if (GetTypeId() == TYPEID_UNIT && charmer->getClass() == CLASS_WARLOCK)

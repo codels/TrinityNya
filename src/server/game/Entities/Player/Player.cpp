@@ -2164,6 +2164,9 @@ bool Player::TeleportTo(uint32 mapid, float x, float y, float z, float orientati
     else
         sLog->outDebug(LOG_FILTER_MAPS, "Player %s is being teleported to map %u", GetName(), mapid);
 
+    if (m_vehicle)
+        ExitVehicle();
+
     // reset movement flags at teleport, because player will continue move with these flags after teleport
     SetUnitMovementFlags(0);
     DisableSpline();
@@ -7378,13 +7381,16 @@ bool Player::HasCurrency(uint32 id, uint32 count) const
     return itr != _currencyStorage.end() && itr->second.totalCount >= count;
 }
 
-void Player::ModifyCurrency(uint32 id, int32 count, bool printLog/* = true*/)
+void Player::ModifyCurrency(uint32 id, int32 count, bool printLog/* = true*/, bool ignoreMultipliers/* = false*/)
 {
     if (!count)
         return;
 
     CurrencyTypesEntry const* currency = sCurrencyTypesStore.LookupEntry(id);
     ASSERT(currency);
+
+    if (!ignoreMultipliers)
+        count *= GetTotalAuraMultiplierByMiscValue(SPELL_AURA_MOD_CURRENCY_GAIN, id);
 
     int32 precision = currency->Flags & CURRENCY_FLAG_HIGH_PRECISION ? 100 : 1;
     uint32 oldTotalCount = 0;
@@ -7686,7 +7692,7 @@ void Player::UpdateZone(bool ressurect)
     if (!zone)
         return;
 
-    if (sWorld->getBoolConfig(CONFIG_WEATHER))
+    if (sWorld->getBoolConfig(CONFIG_WEATHER) && !HasAuraType(SPELL_AURA_FORCE_WEATHER))
     {
         if (Weather* weather = WeatherMgr::FindWeather(zone->ID))
             weather->SendWeatherUpdateToPlayer(this);
@@ -21217,7 +21223,7 @@ inline bool Player::_StoreOrEquipNewItem(uint32 vendorslot, uint32 item, uint8 c
         for (int i = 0; i < MAX_ITEM_EXT_COST_CURRENCIES; ++i)
         {
             if (iece->RequiredCurrency[i])
-                ModifyCurrency(iece->RequiredCurrency[i], -int32(iece->RequiredCurrencyCount[i]));
+                ModifyCurrency(iece->RequiredCurrency[i], -int32(iece->RequiredCurrencyCount[i]), true, true);
         }
     }
 
@@ -21351,7 +21357,7 @@ bool Player::BuyCurrencyFromVendorSlot(uint64 vendorGuid, uint32 vendorSlot, uin
         return false;
     }
 
-    ModifyCurrency(currency, crItem->maxcount);
+    ModifyCurrency(currency, crItem->maxcount, true, true);
 
     return true;
 }
