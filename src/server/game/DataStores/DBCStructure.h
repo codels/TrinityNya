@@ -547,7 +547,7 @@ struct AreaTableEntry
     char*   area_name;                                      // 11
     uint32  team;                                           // 12
     uint32  LiquidTypeOverride[4];                          // 13-16 liquid override by type
-    //float  unk13;                                         // 17,
+    float   MaxDepth;                                       // 17,
     //float  unk13;                                         // 18,
     //uint32 unk19;                                         // 19, All zeros (4.2.2)
     //uint32 unk20;                                         // 20 4.0.0
@@ -706,9 +706,9 @@ struct ChrClassesEntry
     //uint32 flags2;                                        // 8        m_flags (0x08 HasRelicSlot)
     uint32  CinematicSequence;                              // 9        m_cinematicSequenceID
     uint32  expansion;                                      // 10       m_required_expansion
-    uint32 APPerStrenth;                                    // 11
-    uint32 APPerAgility;                                    // 12
-    //uint32                                                // 13
+    uint32 APPerStrenth;                                    // 11       Attack Power bonus per point of strength
+    uint32 APPerAgility;                                    // 12       Attack Power bonus per point of agility
+    uint32 RAPPerAgility;                                   // 13       Ranged Attack Power bonus per point of agility
 };
 
 struct ChrRacesEntry
