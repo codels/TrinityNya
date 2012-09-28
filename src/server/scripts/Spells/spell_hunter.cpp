@@ -382,7 +382,7 @@ class spell_hun_scatter_shot : public SpellScriptLoader
 
             void Register()
             {
-                OnEffectHitTarget += SpellEffectFn(spell_hun_scatter_shot_SpellScript::HandleDummy, EFFECT_0, SPELL_AURA_MOD_CONFUSE);
+                OnEffectHitTarget += SpellEffectFn(spell_hun_scatter_shot_SpellScript::HandleDummy, EFFECT_0, SPELL_EFFECT_TRIGGER_SPELL);
             }
         };
 
