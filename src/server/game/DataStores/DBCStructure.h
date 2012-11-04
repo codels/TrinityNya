@@ -225,7 +225,8 @@ struct AchievementCriteriaEntry
         // ACHIEVEMENT_CRITERIA_TYPE_WIN_ARENA              = 32
         struct
         {
-            uint32  mapID;                                  // 3 Reference to Map.dbc
+            uint32 mapID;                                   // 3 Reference to Map.dbc
+            uint32 count;                                   // 4 Number of times that the arena must be won.
         } win_arena;
 
         // ACHIEVEMENT_CRITERIA_TYPE_PLAY_ARENA             = 33
@@ -1349,7 +1350,7 @@ struct ItemSetEntry
 struct LFGDungeonEntry
 {
     uint32  ID;                                             // 0
-    //char*   name;                                         // 1
+    char*   name;                                           // 1
     uint32  minlevel;                                       // 2
     uint32  maxlevel;                                       // 3
     uint32  reclevel;                                       // 4
@@ -1357,10 +1358,10 @@ struct LFGDungeonEntry
     uint32  recmaxlevel;                                    // 6
     int32  map;                                             // 7
     uint32  difficulty;                                     // 8
-    //uint32  unk;                                          // 9
+    uint32  flags;                                          // 9
     uint32  type;                                           // 10
     //uint32  unk2;                                         // 11
-    //char*   unk3;                                         // 12
+    //char*   iconname;                                     // 12
     uint32  expansion;                                      // 13
     //uint32  unk4;                                         // 14
     uint32  grouptype;                                      // 15
@@ -1407,8 +1408,8 @@ struct LockEntry
 struct PhaseEntry
 {
     uint32    ID;                                           // 0
-    char* Name;                                             // 1
-    uint32    phaseShift;                                   // 2
+    char*     Name;                                         // 1
+    uint32    flag;                                         // 2
 };
 
 struct MailTemplateEntry

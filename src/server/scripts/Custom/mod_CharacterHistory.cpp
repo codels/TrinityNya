@@ -21,7 +21,7 @@ bool CharacterHistoryDelete   = false;
 void WriteToHistory(Player* player, uint8 historyType)
 {
     WorldSession* session = player->GetSession();
-    LoginDatabase.PExecute(SQL_HISTORY, session->GetAccountId(), realmID, session->GetRemoteAddress().c_str(), historyType, player->GetGUIDLow(), player->GetName());
+    LoginDatabase.PExecute(SQL_HISTORY, session->GetAccountId(), realmID, session->GetRemoteAddress().c_str(), historyType, player->GetGUIDLow(), player->GetName().c_str());
 }
 
 class mod_CharacterHistory_WorldScript : public WorldScript

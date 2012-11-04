@@ -323,7 +323,7 @@ bool Vehicle::AddPassenger(Unit* unit, int8 seatId)
         ASSERT(!seat->second.Passenger);
     }
 
-    sLog->outDebug(LOG_FILTER_VEHICLES, "Unit %s enter vehicle entry %u id %u dbguid %u seat %d", unit->GetName(), _me->GetEntry(), _vehicleInfo->m_ID, _me->GetGUIDLow(), (int32)seat->first);
+    sLog->outDebug(LOG_FILTER_VEHICLES, "Unit %s enter vehicle entry %u id %u dbguid %u seat %d", unit->GetName().c_str(), _me->GetEntry(), _vehicleInfo->m_ID, _me->GetGUIDLow(), (int32)seat->first);
 
     seat->second.Passenger = unit->GetGUID();
     if (seat->second.SeatInfo->CanEnterOrExit())
@@ -396,7 +396,7 @@ void Vehicle::RemovePassenger(Unit* unit)
     SeatMap::iterator seat = GetSeatIteratorForPassenger(unit);
     ASSERT(seat != Seats.end());
 
-    sLog->outDebug(LOG_FILTER_VEHICLES, "Unit %s exit vehicle entry %u id %u dbguid %u seat %d", unit->GetName(), _me->GetEntry(), _vehicleInfo->m_ID, _me->GetGUIDLow(), (int32)seat->first);
+    sLog->outDebug(LOG_FILTER_VEHICLES, "Unit %s exit vehicle entry %u id %u dbguid %u seat %d", unit->GetName().c_str(), _me->GetEntry(), _vehicleInfo->m_ID, _me->GetGUIDLow(), (int32)seat->first);
 
     seat->second.Passenger = 0;
     if (seat->second.SeatInfo->CanEnterOrExit())
@@ -516,8 +516,8 @@ void Vehicle::CalculatePassengerPosition(float& x, float& y, float& z, float& o)
 {
     float inx = x, iny = y, inz = z, ino = o;
     o = GetBase()->GetOrientation() + ino;
-    x = GetBase()->GetPositionX() + inx * cos(GetBase()->GetOrientation()) - iny * sin(GetBase()->GetOrientation());
-    y = GetBase()->GetPositionY() + iny * cos(GetBase()->GetOrientation()) + inx * sin(GetBase()->GetOrientation());
+    x = GetBase()->GetPositionX() + inx * std::cos(GetBase()->GetOrientation()) - iny * std::sin(GetBase()->GetOrientation());
+    y = GetBase()->GetPositionY() + iny * std::cos(GetBase()->GetOrientation()) + inx * std::sin(GetBase()->GetOrientation());
     z = GetBase()->GetPositionZ() + inz;
 }
 
@@ -525,9 +525,9 @@ void Vehicle::CalculatePassengerOffset(float& x, float& y, float& z, float& o)
 {
     o -= GetBase()->GetOrientation();
     z -= GetBase()->GetPositionZ();
-    y -= GetBase()->GetPositionY();    // y = searchedY * cos(o) + searchedX * sin(o)
-    x -= GetBase()->GetPositionX();    // x = searchedX * cos(o) + searchedY * sin(o + pi)
+    y -= GetBase()->GetPositionY();    // y = searchedY * std::cos(o) + searchedX * std::sin(o)
+    x -= GetBase()->GetPositionX();    // x = searchedX * std::cos(o) + searchedY * std::sin(o + pi)
     float inx = x, iny = y;
-    y = (iny - inx * tan(GetBase()->GetOrientation())) / (cos(GetBase()->GetOrientation()) + sin(GetBase()->GetOrientation()) * tan(GetBase()->GetOrientation()));
-    x = (inx + iny * tan(GetBase()->GetOrientation())) / (cos(GetBase()->GetOrientation()) + sin(GetBase()->GetOrientation()) * tan(GetBase()->GetOrientation()));
+    y = (iny - inx * tan(GetBase()->GetOrientation())) / (cos(GetBase()->GetOrientation()) + std::sin(GetBase()->GetOrientation()) * tan(GetBase()->GetOrientation()));
+    x = (inx + iny * tan(GetBase()->GetOrientation())) / (cos(GetBase()->GetOrientation()) + std::sin(GetBase()->GetOrientation()) * tan(GetBase()->GetOrientation()));
 }

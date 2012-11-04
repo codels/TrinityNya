@@ -629,7 +629,7 @@ void Creature::RegenerateMana()
     AuraEffectList const& ModPowerRegenPCTAuras = GetAuraEffectsByType(SPELL_AURA_MOD_POWER_REGEN_PERCENT);
     for (AuraEffectList::const_iterator i = ModPowerRegenPCTAuras.begin(); i != ModPowerRegenPCTAuras.end(); ++i)
         if ((*i)->GetMiscValue() == POWER_MANA)
-            AddPctN(addvalue, (*i)->GetAmount());
+            AddPct(addvalue, (*i)->GetAmount());
 
     addvalue += GetTotalAuraModifierByMiscValue(SPELL_AURA_MOD_POWER_REGEN, POWER_MANA) * CREATURE_REGEN_INTERVAL / (5 * IN_MILLISECONDS);
 
@@ -666,7 +666,7 @@ void Creature::RegenerateHealth()
     // Apply modifiers (if any).
     AuraEffectList const& ModPowerRegenPCTAuras = GetAuraEffectsByType(SPELL_AURA_MOD_HEALTH_REGEN_PERCENT);
     for (AuraEffectList::const_iterator i = ModPowerRegenPCTAuras.begin(); i != ModPowerRegenPCTAuras.end(); ++i)
-        AddPctN(addvalue, (*i)->GetAmount());
+        AddPct(addvalue, (*i)->GetAmount());
 
     addvalue += GetTotalAuraModifier(SPELL_AURA_MOD_REGEN) * CREATURE_REGEN_INTERVAL  / (5 * IN_MILLISECONDS);
 
@@ -1615,7 +1615,8 @@ void Creature::Respawn(bool force)
         if (m_DBTableGuid)
             GetMap()->RemoveCreatureRespawnTime(m_DBTableGuid);
 
-        sLog->outDebug(LOG_FILTER_UNITS, "Respawning creature %s (GuidLow: %u, Full GUID: " UI64FMTD " Entry: %u)", GetName(), GetGUIDLow(), GetGUID(), GetEntry());
+        sLog->outDebug(LOG_FILTER_UNITS, "Respawning creature %s (GuidLow: %u, Full GUID: " UI64FMTD " Entry: %u)",
+            GetName().c_str(), GetGUIDLow(), GetGUID(), GetEntry());
         m_respawnTime = 0;
         lootForPickPocketed = false;
         lootForBody         = false;
@@ -2460,7 +2461,7 @@ TrainerSpellData const* Creature::GetTrainerSpells() const
 }
 
 // overwrite WorldObject function for proper name localization
-const char* Creature::GetNameForLocaleIdx(LocaleConstant loc_idx) const
+std::string const & Creature::GetNameForLocaleIdx(LocaleConstant loc_idx) const
 {
     if (loc_idx != DEFAULT_LOCALE)
     {
@@ -2469,7 +2470,7 @@ const char* Creature::GetNameForLocaleIdx(LocaleConstant loc_idx) const
         if (cl)
         {
             if (cl->Name.size() > uloc_idx && !cl->Name[uloc_idx].empty())
-                return cl->Name[uloc_idx].c_str();
+                return cl->Name[uloc_idx];
         }
     }
 
@@ -2512,9 +2513,10 @@ bool Creature::SetWalk(bool enable)
         return false;
 
     ObjectGuid guid = GetGUID();
+    WorldPacket data;
     if (enable)
     {
-        WorldPacket data(SMSG_SPLINE_MOVE_SET_WALK_MODE, 9);
+        data.Initialize(SMSG_SPLINE_MOVE_SET_WALK_MODE, 9);
         data.WriteBit(guid[7]);
         data.WriteBit(guid[6]);
         data.WriteBit(guid[5]);
@@ -2523,7 +2525,7 @@ bool Creature::SetWalk(bool enable)
         data.WriteBit(guid[4]);
         data.WriteBit(guid[2]);
         data.WriteBit(guid[0]);
-        data.FlushBits();
+
         data.WriteByteSeq(guid[4]);
         data.WriteByteSeq(guid[2]);
         data.WriteByteSeq(guid[1]);
@@ -2532,11 +2534,10 @@ bool Creature::SetWalk(bool enable)
         data.WriteByteSeq(guid[0]);
         data.WriteByteSeq(guid[7]);
         data.WriteByteSeq(guid[3]);
-        SendMessageToSet(&data, false);
     }
     else
     {
-        WorldPacket data(SMSG_SPLINE_MOVE_SET_RUN_MODE, 9);
+        data.Initialize(SMSG_SPLINE_MOVE_SET_RUN_MODE, 9);
         data.WriteBit(guid[5]);
         data.WriteBit(guid[6]);
         data.WriteBit(guid[3]);
@@ -2545,7 +2546,7 @@ bool Creature::SetWalk(bool enable)
         data.WriteBit(guid[0]);
         data.WriteBit(guid[4]);
         data.WriteBit(guid[1]);
-        data.FlushBits();
+
         data.WriteByteSeq(guid[7]);
         data.WriteByteSeq(guid[0]);
         data.WriteByteSeq(guid[4]);
@@ -2554,9 +2555,9 @@ bool Creature::SetWalk(bool enable)
         data.WriteByteSeq(guid[1]);
         data.WriteByteSeq(guid[2]);
         data.WriteByteSeq(guid[3]);
-        SendMessageToSet(&data, false);
     }
 
+    SendMessageToSet(&data, false);
     return true;
 }
 
@@ -2571,9 +2572,10 @@ bool Creature::SetDisableGravity(bool disable, bool packetOnly/*=false*/)
         return true;
 
     ObjectGuid guid = GetGUID();
+    WorldPacket data;
     if (disable)
     {
-        WorldPacket data(SMSG_SPLINE_MOVE_GRAVITY_DISABLE, 9);
+        data.Initialize(SMSG_SPLINE_MOVE_GRAVITY_DISABLE, 9);
         data.WriteBit(guid[7]);
         data.WriteBit(guid[3]);
         data.WriteBit(guid[4]);
@@ -2582,7 +2584,7 @@ bool Creature::SetDisableGravity(bool disable, bool packetOnly/*=false*/)
         data.WriteBit(guid[1]);
         data.WriteBit(guid[0]);
         data.WriteBit(guid[6]);
-        data.FlushBits();
+
         data.WriteByteSeq(guid[7]);
         data.WriteByteSeq(guid[1]);
         data.WriteByteSeq(guid[3]);
@@ -2591,11 +2593,10 @@ bool Creature::SetDisableGravity(bool disable, bool packetOnly/*=false*/)
         data.WriteByteSeq(guid[2]);
         data.WriteByteSeq(guid[5]);
         data.WriteByteSeq(guid[0]);
-        SendMessageToSet(&data, false);
     }
     else
     {
-        WorldPacket data(SMSG_SPLINE_MOVE_GRAVITY_ENABLE, 9);
+        data.Initialize(SMSG_SPLINE_MOVE_GRAVITY_ENABLE, 9);
         data.WriteBit(guid[5]);
         data.WriteBit(guid[4]);
         data.WriteBit(guid[7]);
@@ -2604,7 +2605,7 @@ bool Creature::SetDisableGravity(bool disable, bool packetOnly/*=false*/)
         data.WriteBit(guid[6]);
         data.WriteBit(guid[2]);
         data.WriteBit(guid[0]);
-        data.FlushBits();
+
         data.WriteByteSeq(guid[7]);
         data.WriteByteSeq(guid[3]);
         data.WriteByteSeq(guid[4]);
@@ -2613,9 +2614,9 @@ bool Creature::SetDisableGravity(bool disable, bool packetOnly/*=false*/)
         data.WriteByteSeq(guid[6]);
         data.WriteByteSeq(guid[0]);
         data.WriteByteSeq(guid[5]);
-        SendMessageToSet(&data, false);
     }
 
+    SendMessageToSet(&data, false);
     return true;
 }
 
@@ -2635,9 +2636,10 @@ bool Creature::SetHover(bool enable)
 
     //! Not always a packet is sent
     ObjectGuid guid = GetGUID();
+    WorldPacket data;
     if (enable)
     {
-        WorldPacket data(SMSG_SPLINE_MOVE_SET_HOVER, 9);
+        data.Initialize(SMSG_SPLINE_MOVE_SET_HOVER, 9);
         data.WriteBit(guid[3]);
         data.WriteBit(guid[7]);
         data.WriteBit(guid[0]);
@@ -2646,7 +2648,7 @@ bool Creature::SetHover(bool enable)
         data.WriteBit(guid[6]);
         data.WriteBit(guid[2]);
         data.WriteBit(guid[5]);
-        data.FlushBits();
+
         data.WriteByteSeq(guid[2]);
         data.WriteByteSeq(guid[4]);
         data.WriteByteSeq(guid[3]);
@@ -2655,11 +2657,10 @@ bool Creature::SetHover(bool enable)
         data.WriteByteSeq(guid[0]);
         data.WriteByteSeq(guid[5]);
         data.WriteByteSeq(guid[6]);
-        SendMessageToSet(&data, false);
     }
     else
     {
-        WorldPacket data(SMSG_SPLINE_MOVE_UNSET_HOVER, 9);
+        data.Initialize(SMSG_SPLINE_MOVE_UNSET_HOVER, 9);
         data.WriteBit(guid[6]);
         data.WriteBit(guid[7]);
         data.WriteBit(guid[4]);
@@ -2668,7 +2669,7 @@ bool Creature::SetHover(bool enable)
         data.WriteBit(guid[1]);
         data.WriteBit(guid[5]);
         data.WriteBit(guid[2]);
-        data.FlushBits();
+
         data.WriteByteSeq(guid[4]);
         data.WriteByteSeq(guid[5]);
         data.WriteByteSeq(guid[3]);
@@ -2677,8 +2678,8 @@ bool Creature::SetHover(bool enable)
         data.WriteByteSeq(guid[7]);
         data.WriteByteSeq(guid[6]);
         data.WriteByteSeq(guid[1]);
-        SendMessageToSet(&data, false);
     }
 
+    SendMessageToSet(&data, false);
     return true;
 }

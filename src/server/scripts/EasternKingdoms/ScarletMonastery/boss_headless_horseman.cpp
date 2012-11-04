@@ -27,6 +27,7 @@ EndScriptData */
 #include "ScriptedCreature.h"
 #include "SpellMgr.h"
 #include "scarlet_monastery.h"
+#include "LFGMgr.h"
 
 //this texts are already used by 3975 and 3976
 enum Says
@@ -45,7 +46,7 @@ uint32 RandomLaugh[] = {11965, 11975, 11976};
 enum Entry
 {
     HH_MOUNTED                  = 23682,
-    HH_DISMOUNTED               = 23800,  // unhorsed?? wtf type of engrish was that?
+    HH_DISMOUNTED               = 23800,
     HEAD                        = 23775,
     PULSING_PUMPKIN             = 23694,
     PUMPKIN_FIEND               = 23545,
@@ -126,7 +127,7 @@ static Locations Spawn[]=
     {1765.28f, 1347.46f, 17.55f}     //spawn point for smoke
 };
 
-static const char* Text[]=
+static char const* Text[]=
 {
     "Horseman rise...",
     "Your time is nigh...",
@@ -562,6 +563,13 @@ public:
                 CAST_AI(mob_wisp_invis::mob_wisp_invisAI, wisp->AI())->SetType(4);
             if (instance)
                 instance->SetData(DATA_HORSEMAN_EVENT, DONE);
+
+            Map::PlayerList const& players = me->GetMap()->GetPlayers();
+            if (!players.isEmpty())
+                for (Map::PlayerList::const_iterator i = players.begin(); i != players.end(); ++i)
+                    if (Player* player = i->getSource())
+                        if (player->IsAtGroupRewardDistance(me))
+                            sLFGMgr->RewardDungeonDoneFor(285, player);
         }
 
         void SpellHit(Unit* caster, const SpellInfo* spell)
@@ -584,8 +592,8 @@ public:
                 caster->GetMotionMaster()->Clear(false);
                 caster->GetMotionMaster()->MoveFollow(me, 6, float(urand(0, 5)));
                 //DoResetThreat();//not sure if need
-                std::list<HostileReference*>::const_iterator itr;
-                for (itr = caster->getThreatManager().getThreatList().begin(); itr != caster->getThreatManager().getThreatList().end(); ++itr)
+                ThreatContainer::StorageType threatlist = caster->getThreatManager().getThreatList();
+                for (ThreatContainer::StorageType::const_iterator itr = threatlist.begin(); itr != threatlist.end(); ++itr)
                 {
                     Unit* unit = Unit::GetUnit(*me, (*itr)->getUnitGuid());
                     if (unit && unit->isAlive() && unit != caster)

@@ -47,6 +47,7 @@
 #include "PoolMgr.h"
 #include "DB2Structure.h"
 #include "DB2Stores.h"
+#include "LFGMgr.h"
 
 ScriptMapMap sQuestEndScripts;
 ScriptMapMap sQuestStartScripts;
@@ -528,10 +529,10 @@ void ObjectMgr::LoadCreatureTemplateAddons()
         creatureAddon.bytes2  = fields[4].GetUInt32();
         creatureAddon.emote   = fields[5].GetUInt32();
 
-        Tokens tokens(fields[6].GetString(), ' ');
+        Tokenizer tokens(fields[6].GetString(), ' ');
         uint8 i = 0;
         creatureAddon.auras.resize(tokens.size());
-        for (Tokens::iterator itr = tokens.begin(); itr != tokens.end(); ++itr)
+        for (Tokenizer::const_iterator itr = tokens.begin(); itr != tokens.end(); ++itr)
         {
             SpellInfo const* AdditionalSpellInfo = sSpellMgr->GetSpellInfo(uint32(atol(*itr)));
             if (!AdditionalSpellInfo)
@@ -916,10 +917,10 @@ void ObjectMgr::LoadCreatureAddons()
         creatureAddon.bytes2  = fields[4].GetUInt32();
         creatureAddon.emote   = fields[5].GetUInt32();
 
-        Tokens tokens(fields[6].GetString(), ' ');
+        Tokenizer tokens(fields[6].GetString(), ' ');
         uint8 i = 0;
         creatureAddon.auras.resize(tokens.size());
-        for (Tokens::iterator itr = tokens.begin(); itr != tokens.end(); ++itr)
+        for (Tokenizer::const_iterator itr = tokens.begin(); itr != tokens.end(); ++itr)
         {
             SpellInfo const* AdditionalSpellInfo = sSpellMgr->GetSpellInfo(uint32(atol(*itr)));
             if (!AdditionalSpellInfo)
@@ -1873,7 +1874,7 @@ Player* ObjectMgr::GetPlayerByLowGUID(uint32 lowguid) const
 }
 
 // name must be checked to correctness (if received) before call this function
-uint64 ObjectMgr::GetPlayerGUIDByName(std::string name) const
+uint64 ObjectMgr::GetPlayerGUIDByName(std::string const& name) const
 {
     uint64 guid = 0;
 
@@ -4978,7 +4979,7 @@ void ObjectMgr::LoadInstanceEncounters()
             continue;
         }
 
-        if (lastEncounterDungeon && !sLFGDungeonStore.LookupEntry(lastEncounterDungeon))
+        if (lastEncounterDungeon && !sLFGMgr->GetLFGDungeon(lastEncounterDungeon))
         {
             sLog->outError(LOG_FILTER_SQL, "Table `instance_encounters` has an encounter %u (%s) marked as final for invalid dungeon id %u, skipped!", entry, dungeonEncounter->encounterName, lastEncounterDungeon);
             continue;
@@ -5481,7 +5482,7 @@ uint32 ObjectMgr::GetTaxiMountDisplayId(uint32 id, uint32 team, bool allowed_alt
             if (!mount_id)
             {
                 sLog->outError(LOG_FILTER_SQL, "No displayid found for the taxi mount with the entry %u! Can't load it!", mount_entry);
-                return false;
+                return 0;
             }
         }
     }
@@ -5920,7 +5921,7 @@ void ObjectMgr::LoadAccessRequirements()
 
         if (ar.achievement)
         {
-            if (!sAchievementStore.LookupEntry(ar.achievement))
+            if (!sAchievementMgr->GetAchievement(ar.achievement))
             {
                 sLog->outError(LOG_FILTER_SQL, "Required Achievement %u not exist for map %u difficulty %u, remove quest done requirement.", ar.achievement, mapid, difficulty);
                 ar.achievement = 0;
@@ -7035,7 +7036,7 @@ void ObjectMgr::DeleteCorpseCellData(uint32 mapid, uint32 cellid, uint32 player_
     cell_guids.corpses.erase(player_guid);
 }
 
-void ObjectMgr::LoadQuestRelationsHelper(QuestRelations& map, std::string table, bool starter, bool go)
+void ObjectMgr::LoadQuestRelationsHelper(QuestRelations& map, std::string const& table, bool starter, bool go)
 {
     uint32 oldMSTime = getMSTime();
 
@@ -7048,7 +7049,6 @@ void ObjectMgr::LoadQuestRelationsHelper(QuestRelations& map, std::string table,
     if (!result)
     {
         sLog->outError(LOG_FILTER_SERVER_LOADING, ">> Loaded 0 quest relations from `%s`, table is empty.", table.c_str());
-
         return;
     }
 
@@ -7562,6 +7562,27 @@ uint32 ObjectMgr::GetAreaTriggerScriptId(uint32 trigger_id)
 SpellScriptsBounds ObjectMgr::GetSpellScriptsBounds(uint32 spell_id)
 {
     return SpellScriptsBounds(_spellScriptsStore.lower_bound(spell_id), _spellScriptsStore.upper_bound(spell_id));
+}
+
+// this allows calculating base reputations to offline players, just by race and class
+int32 ObjectMgr::GetBaseReputationOff(FactionEntry const* factionEntry, uint8 race, uint8 playerClass)
+{
+    if (!factionEntry)
+        return 0;
+
+    uint32 raceMask = (1 << (race - 1));
+    uint32 classMask = (1 << (playerClass-1));
+
+    for (int i = 0; i < 4; i++)
+    {
+        if ((!factionEntry->BaseRepClassMask[i] ||
+            factionEntry->BaseRepClassMask[i] & classMask) &&
+            (!factionEntry->BaseRepRaceMask[i] ||
+            factionEntry->BaseRepRaceMask[i] & raceMask))
+            return factionEntry->BaseRepValue[i];
+    }
+
+    return 0;
 }
 
 SkillRangeType GetSkillRangeType(SkillLineEntry const* pSkill, bool racial)
@@ -8466,9 +8487,9 @@ void ObjectMgr::LoadFactionChangeAchievements()
         uint32 alliance = fields[0].GetUInt32();
         uint32 horde = fields[1].GetUInt32();
 
-        if (!sAchievementStore.LookupEntry(alliance))
+        if (!sAchievementMgr->GetAchievement(alliance))
             sLog->outError(LOG_FILTER_SQL, "Achievement %u referenced in `player_factionchange_achievement` does not exist, pair skipped!", alliance);
-        else if (!sAchievementStore.LookupEntry(horde))
+        else if (!sAchievementMgr->GetAchievement(horde))
             sLog->outError(LOG_FILTER_SQL, "Achievement %u referenced in `player_factionchange_achievement` does not exist, pair skipped!", horde);
         else
             FactionChange_Achievements[alliance] = horde;
@@ -8616,6 +8637,134 @@ void ObjectMgr::LoadHotfixData()
     while (result->NextRow());
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, ">> Loaded %u hotfix info entries in %u ms", count, GetMSTimeDiffToNow(oldMSTime));
+}
+
+void ObjectMgr::LoadFactionChangeTitles()
+{
+    uint32 oldMSTime = getMSTime();
+
+    QueryResult result = WorldDatabase.Query("SELECT alliance_id, horde_id FROM player_factionchange_titles");
+
+    if (!result)
+    {
+        sLog->outInfo(LOG_FILTER_SERVER_LOADING, ">> Loaded 0 faction change title pairs. DB table `player_factionchange_title` is empty.");
+        return;
+    }
+
+    uint32 count = 0;
+    
+    do
+    {
+        Field* fields = result->Fetch();
+
+        uint32 alliance = fields[0].GetUInt32();
+        uint32 horde = fields[1].GetUInt32();
+
+        if (!sCharTitlesStore.LookupEntry(alliance))
+            sLog->outError(LOG_FILTER_SQL, "Title %u referenced in `player_factionchange_title` does not exist, pair skipped!", alliance);
+        else if (!sCharTitlesStore.LookupEntry(horde))
+            sLog->outError(LOG_FILTER_SQL, "Title %u referenced in `player_factionchange_title` does not exist, pair skipped!", horde);
+        else
+            FactionChange_Titles[alliance] = horde;
+        
+        ++count;
+    }
+    while (result->NextRow());
+
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, ">> Loaded %u faction change title pairs in %u ms", count, GetMSTimeDiffToNow(oldMSTime));
+}
+
+void ObjectMgr::LoadPhaseDefinitions()
+{
+    _PhaseDefinitionStore.clear();
+
+    uint32 oldMSTime = getMSTime();
+
+    //                                                 0       1       2         3            4           5
+    QueryResult result = WorldDatabase.Query("SELECT zoneId, entry, phasemask, phaseId, terrainswapmap, flags FROM `phase_definitions` ORDER BY `entry` ASC");
+
+    if (!result)
+    {
+        sLog->outInfo(LOG_FILTER_SERVER_LOADING, ">> Loaded 0 phasing definitions. DB table `phase_definitions` is empty.");
+        return;
+    }
+
+    uint32 count = 0;
+
+    do
+    {
+        Field *fields = result->Fetch();
+
+        PhaseDefinition PhaseDefinition;
+
+        PhaseDefinition.zoneId                = fields[0].GetUInt32();
+        PhaseDefinition.entry                 = fields[1].GetUInt32();
+        PhaseDefinition.phasemask             = fields[2].GetUInt32();
+        PhaseDefinition.phaseId               = fields[3].GetUInt32();
+        PhaseDefinition.terrainswapmap        = fields[4].GetUInt32();
+        PhaseDefinition.flags                 = fields[5].GetUInt32();
+
+        // Checks
+        if ((PhaseDefinition.flags & PHASE_FLAG_OVERWRITE_EXISTING) && (PhaseDefinition.flags & PHASE_FLAG_NEGATE_PHASE))
+        {
+            sLog->outError(LOG_FILTER_SQL, "Flags defined in phase_definitions in zoneId %d and entry %u does contain PHASE_FLAG_OVERWRITE_EXISTING and PHASE_FLAG_NEGATE_PHASE. Setting flags to PHASE_FLAG_OVERWRITE_EXISTING", PhaseDefinition.zoneId, PhaseDefinition.entry);
+            PhaseDefinition.flags &= ~PHASE_FLAG_NEGATE_PHASE;
+        }
+
+        _PhaseDefinitionStore[PhaseDefinition.zoneId].push_back(PhaseDefinition);
+
+        ++count;
+    }
+    while (result->NextRow());
+
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, ">> Loaded %u phasing definitions in %u ms.", count, GetMSTimeDiffToNow(oldMSTime));
+}
+
+void ObjectMgr::LoadSpellPhaseInfo()
+{
+    _SpellPhaseStore.clear();
+
+    uint32 oldMSTime = getMSTime();
+
+    //                                               0       1            2
+    QueryResult result = WorldDatabase.Query("SELECT id, phasemask, terrainswapmap FROM `spell_phase`");
+
+    if (!result)
+    {
+        sLog->outInfo(LOG_FILTER_SERVER_LOADING, ">> Loaded 0 spell dbc infos. DB table `spell_phase` is empty.");
+        return;
+    }
+
+    uint32 count = 0;
+    do
+    {
+        Field *fields = result->Fetch();
+
+        SpellPhaseInfo spellPhaseInfo;
+        spellPhaseInfo.spellId                = fields[0].GetUInt32();
+
+        SpellInfo const* spell = sSpellMgr->GetSpellInfo(spellPhaseInfo.spellId);
+        if (!spell)
+        {
+            sLog->outError(LOG_FILTER_SQL, "Spell %u defined in `spell_phase` does not exists, skipped.", spellPhaseInfo.spellId);
+            continue;
+        }
+
+        if (!spell->HasAura(SPELL_AURA_PHASE))
+        {
+            sLog->outError(LOG_FILTER_SQL, "Spell %u defined in `spell_phase` does not have aura effect type SPELL_AURA_PHASE, useless value.", spellPhaseInfo.spellId);
+            continue;
+        }
+
+        spellPhaseInfo.phasemask              = fields[1].GetUInt32();
+        spellPhaseInfo.terrainswapmap         = fields[2].GetUInt32();
+
+        _SpellPhaseStore[spellPhaseInfo.spellId] = spellPhaseInfo;
+
+        ++count;
+    }
+    while (result->NextRow());
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, ">> Loaded %u spell dbc infos in %u ms.", count, GetMSTimeDiffToNow(oldMSTime));
 }
 
 GameObjectTemplate const* ObjectMgr::GetGameObjectTemplate(uint32 entry)

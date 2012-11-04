@@ -112,7 +112,7 @@ enum PaladinSpells
                     uint32 damageToReduce = (victim->GetHealth() < allowedHealth)
                         ? dmgInfo.GetDamage()
                         : allowedHealth - remainingHealth;
-                    absorbAmount = CalculatePctN(damageToReduce, absorbPct);
+                    absorbAmount = CalculatePct(damageToReduce, absorbPct);
                 }
             }
 
@@ -627,7 +627,7 @@ class spell_pal_divine_sacrifice : public SpellScriptLoader
 
             bool Load()
             {
-                
+
                 if (Unit* caster = GetCaster())
                 {
                     if (caster->GetTypeId() == TYPEID_PLAYER)

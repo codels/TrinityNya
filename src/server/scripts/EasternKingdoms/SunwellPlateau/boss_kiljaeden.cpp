@@ -367,7 +367,6 @@ public:
             }
         }
     };
-
 };
 
 class go_orb_of_the_blue_flight : public GameObjectScript
@@ -391,7 +390,6 @@ public:
         }
         return true;
     }
-
 };
 
 //AI for Kil'jaeden Event Controller
@@ -492,7 +490,6 @@ public:
             }
         }
     };
-
 };
 
 //AI for Kil'jaeden
@@ -774,8 +771,8 @@ public:
                             for (uint8 i = 1; i < Phase; ++i)
                             {
                                 float sx, sy;
-                                sx = ShieldOrbLocations[0][0] + sin(ShieldOrbLocations[i][0]);
-                                sy = ShieldOrbLocations[0][1] + sin(ShieldOrbLocations[i][1]);
+                                sx = ShieldOrbLocations[0][0] + std::sin(ShieldOrbLocations[i][0]);
+                                sy = ShieldOrbLocations[0][1] + std::sin(ShieldOrbLocations[i][1]);
                                 me->SummonCreature(CREATURE_SHIELD_ORB, sx, sy, SHIELD_ORB_Z, 0, TEMPSUMMON_TIMED_OR_CORPSE_DESPAWN, 45000);
                             }
                             Timer[TIMER_SUMMON_SHILEDORB] = urand(30000, 60000); // 30-60seconds cooldown
@@ -900,7 +897,6 @@ public:
             }
         }
     };
-
 };
 
 //AI for Hand of the Deceiver
@@ -987,8 +983,8 @@ public:
             {
                 if (Creature* pPortal = DoSpawnCreature(CREATURE_FELFIRE_PORTAL, 0, 0, 0, 0, TEMPSUMMON_TIMED_DESPAWN, 20000))
                 {
-                    std::list<HostileReference*>::iterator itr;
-                    for (itr = me->getThreatManager().getThreatList().begin(); itr != me->getThreatManager().getThreatList().end(); ++itr)
+                    ThreatContainer::StorageType const &threatlist = me->getThreatManager().getThreatList();
+                    for (ThreatContainer::StorageType::const_iterator itr = threatlist.begin(); itr != threatlist.end(); ++itr)
                     {
                         Unit* unit = Unit::GetUnit(*me, (*itr)->getUnitGuid());
                         if (unit)
@@ -1001,7 +997,6 @@ public:
             DoMeleeAttackIfReady();
         }
     };
-
 };
 
 //AI for Felfire Portal
@@ -1046,7 +1041,6 @@ public:
             } else uiSpawnFiendTimer -= diff;
         }
     };
-
 };
 
 //AI for Felfire Fiend
@@ -1104,7 +1098,6 @@ public:
             }
         }
     };
-
 };
 
 //AI for Armageddon target
@@ -1159,7 +1152,6 @@ public:
             } else uiTimer -=diff;
         }
     };
-
 };
 
 //AI for Shield Orbs
@@ -1207,13 +1199,13 @@ public:
             {
                 if (bClockwise)
                 {
-                    y = my - r * sin(c);
-                    x = mx - r * cos(c);
+                    y = my - r * std::sin(c);
+                    x = mx - r * std::cos(c);
                 }
                 else
                 {
-                    y = my + r * sin(c);
-                    x = mx + r * cos(c);
+                    y = my + r * std::sin(c);
+                    x = mx + r * std::cos(c);
                 }
                 bPointReached = false;
                 uiCheckTimer = 1000;
@@ -1247,7 +1239,6 @@ public:
             bPointReached = true;
         }
     };
-
 };
 
 //AI for Sinister Reflection
@@ -1310,7 +1301,8 @@ public:
                 }
             }
 
-            switch (victimClass) {
+            switch (victimClass)
+            {
                 case CLASS_DRUID:
                     if (uiTimer[1] <= diff)
                     {
@@ -1411,13 +1403,12 @@ public:
                     }
                     DoMeleeAttackIfReady();
                     break;
-                }
-                sLog->outDebug(LOG_FILTER_TSCR, "Sinister-Timer");
-                for (uint8 i = 0; i < 3; ++i)
-                    uiTimer[i] -= diff;
             }
+            sLog->outDebug(LOG_FILTER_TSCR, "Sinister-Timer");
+            for (uint8 i = 0; i < 3; ++i)
+                uiTimer[i] -= diff;
+        }
     };
-
 };
 
 void AddSC_boss_kiljaeden()

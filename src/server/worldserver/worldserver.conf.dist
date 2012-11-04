@@ -1097,12 +1097,15 @@ Command.LookupMaxResults = 0
 AllowTickets = 1
 
 #
-#     DungeonFinder.Enable
+#     DungeonFinder.OptionsMask
 #        Description: Dungeon and raid finder system.
-#        Default:     1 - (Enabled)
-#                     0 - (Disabled)
+#        Value is a bitmask consisting of:
+#           LFG_OPTION_ENABLE_DUNGEON_FINDER = 1,     Enable the dungeon finder browser
+#           LFG_OPTION_ENABLE_RAID_BROWSER   = 2,     Enable the raid browser
+#        Default:     1
 
-DungeonFinder.Enable = 1
+DungeonFinder.OptionsMask = 1
+
 
 #
 #   DBC.EnforceItemAttributes
@@ -2802,6 +2805,8 @@ Appenders=Console Server GM DBErrors Char RA Warden Chat
 #                        39 - Battlefield
 #                        40 - Server Loading
 #                        41 - Opcodes (just id and name sent / received)
+#                        42 - SOAP
+#
 #                     LogLevel
 #                         0 - (Disabled)
 #                         1 - (Trace)
