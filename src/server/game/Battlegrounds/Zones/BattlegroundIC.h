@@ -19,7 +19,7 @@
 #ifndef __BATTLEGROUNDIC_H
 #define __BATTLEGROUNDIC_H
 
-class Battleground;
+#include "Battleground.h"
 
 const uint32 BG_IC_Factions[2] =
 {
@@ -178,19 +178,19 @@ enum gameobjectsIC
     GO_HORDE_BANNER_GRAVEYARD_H_CONT = 195394,
 
     GO_HORDE_GUNSHIP = 195276,
-    GO_ALLIANCE_GUNSHIP = 195121,
+    GO_ALLIANCE_GUNSHIP = 195121
 };
 
 #define MAX_REINFORCEMENTS 300
 
 enum Times
 {
-    WORKSHOP_UPDATE_TIME = 180000, // 3 minutes
-    DOCKS_UPDATE_TIME = 180000, // not sure if it is 3 minutes
-    IC_RESOURCE_TIME = 45000, // not sure, need more research
-    CLOSE_DOORS_TIME = 20000,
+    WORKSHOP_UPDATE_TIME     = 180000, // 3 minutes
+    DOCKS_UPDATE_TIME        = 180000, // not sure if it is 3 minutes
+    IC_RESOURCE_TIME         = 45000, // not sure, need more research
+    CLOSE_DOORS_TIME         = 20000,
     BANNER_STATE_CHANGE_TIME = 60000,
-    TRANSPORT_PERIOD_TIME = 120000
+    TRANSPORT_PERIOD_TIME    = 120000
 };
 
 enum Actions
@@ -336,7 +336,7 @@ enum BG_IC_GOs
     BG_IC_GO_TELEPORTER_EFFECTS_H_3,
     BG_IC_GO_TELEPORTER_EFFECTS_H_4,
     BG_IC_GO_TELEPORTER_EFFECTS_H_5,
-    BG_IC_GO_TELEPORTER_EFFECTS_H_6,
+    BG_IC_GO_TELEPORTER_EFFECTS_H_6
 };
 
 enum BG_IC_NPCs
@@ -411,7 +411,7 @@ enum BG_IC_NPCs
     BG_IC_NPC_SPIRIT_GUIDE_4,
     BG_IC_NPC_SPIRIT_GUIDE_5,
     BG_IC_NPC_SPIRIT_GUIDE_6,
-    BG_IC_NPC_SPIRIT_GUIDE_7,
+    BG_IC_NPC_SPIRIT_GUIDE_7
 };
 
 enum BannersTypes
@@ -654,18 +654,15 @@ const Position workshopBombs[2] =
 
 enum Spells
 {
-    SPELL_OIL_REFINERY      = 68719,
-    SPELL_QUARRY            = 68720,
-
-    SPELL_PARACHUTE = 66656,
-    SPELL_SLOW_FALL = 12438,
-
-    SPELL_DESTROYED_VEHICLE_ACHIEVEMENT = 68357,
-
-    SPELL_DRIVING_CREDIT_DEMOLISHER = 68365,
-    SPELL_DRIVING_CREDIT_GLAIVE = 68363,
-    SPELL_DRIVING_CREDIT_SIEGE = 68364,
-    SPELL_DRIVING_CREDIT_CATAPULT = 68362
+    SPELL_OIL_REFINERY                     = 68719,
+    SPELL_QUARRY                           = 68720,
+    SPELL_PARACHUTE                        = 66656,
+    SPELL_SLOW_FALL                        = 12438,
+    SPELL_DESTROYED_VEHICLE_ACHIEVEMENT    = 68357,
+    SPELL_DRIVING_CREDIT_DEMOLISHER        = 68365,
+    SPELL_DRIVING_CREDIT_GLAIVE            = 68363,
+    SPELL_DRIVING_CREDIT_SIEGE             = 68364,
+    SPELL_DRIVING_CREDIT_CATAPULT          = 68362,
 };
 
 enum BG_IC_Objectives
@@ -751,7 +748,7 @@ enum ICDoorList
     BG_IC_A_FRONT,
     BG_IC_A_WEST,
     BG_IC_A_EAST,
-    BG_IC_MAXDOOR,
+    BG_IC_MAXDOOR
 };
 
 enum ICNodePointType
@@ -847,13 +844,12 @@ enum HonorRewards
     WINNER_HONOR_AMOUNT = 500
 };
 
-class BattlegroundICScore : public BattlegroundScore
+struct BattlegroundICScore : public BattlegroundScore
 {
-    public:
-        BattlegroundICScore() : BasesAssaulted(0), BasesDefended(0) {};
-        virtual ~BattlegroundICScore() {};
-        uint32 BasesAssaulted;
-        uint32 BasesDefended;
+    BattlegroundICScore() : BasesAssaulted(0), BasesDefended(0) { }
+    ~BattlegroundICScore() { }
+    uint32 BasesAssaulted;
+    uint32 BasesDefended;
 };
 
 class BattlegroundIC : public Battleground
@@ -863,10 +859,10 @@ class BattlegroundIC : public Battleground
         ~BattlegroundIC();
 
         /* inherited from BattlegroundClass */
-        virtual void AddPlayer(Player* player);
-        virtual void StartingEventCloseDoors();
-        virtual void StartingEventOpenDoors();
-        virtual void PostUpdateImpl(uint32 diff);
+        void AddPlayer(Player* player);
+        void StartingEventCloseDoors();
+        void StartingEventOpenDoors();
+        void PostUpdateImpl(uint32 diff);
 
         void RemovePlayer(Player* player, uint64 guid, uint32 team);
         void HandleAreaTrigger(Player* Source, uint32 Trigger);
@@ -880,7 +876,7 @@ class BattlegroundIC : public Battleground
         void EventPlayerDamagedGO(Player* /*player*/, GameObject* go, uint32 eventType);
         void DestroyGate(Player* player, GameObject* go);
 
-        virtual WorldSafeLocsEntry const* GetClosestGraveYard(Player* player);
+        WorldSafeLocsEntry const* GetClosestGraveYard(Player* player);
 
         /* Scorekeeping */
         void UpdatePlayerScore(Player* Source, uint32 type, uint32 value, bool doAddHonor = true);
@@ -889,11 +885,11 @@ class BattlegroundIC : public Battleground
 
         void DoAction(uint32 action, uint64 var);
 
-        virtual void HandlePlayerResurrect(Player* player);
+        void HandlePlayerResurrect(Player* player);
 
-        uint32 GetNodeState(uint8 nodeType) { return (uint8)nodePoint[nodeType].nodeState; }
+        uint32 GetNodeState(uint8 nodeType) const { return (uint8)nodePoint[nodeType].nodeState; }
 
-        virtual bool IsAllNodesConrolledByTeam(uint32 team) const;  // overwrited
+        bool IsAllNodesConrolledByTeam(uint32 team) const;  // overwrited
     private:
         uint32 closeFortressDoorsTimer;
         bool doorsClosed;
@@ -959,4 +955,5 @@ class BattlegroundIC : public Battleground
         Transport* CreateTransport(uint32 goEntry, uint32 period);
         void SendTransportInit(Player* player);
 };
+
 #endif

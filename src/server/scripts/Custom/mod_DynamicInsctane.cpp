@@ -217,7 +217,7 @@ bool DICreatureCalcStats(Creature* creature)
 
     float damagemod = 1.0f;
     float healthmod = 1.0f;
-    uint32 attackTime = cinfo->baseattacktime;
+    //uint32 attackTime = cinfo->baseattacktime;
 
     if (rank == CREATURE_ELITE_ELITE)
     {
@@ -274,7 +274,7 @@ bool DICreatureCalcStats(Creature* creature)
     {
         //..nothing
     }
-    
+/*
     if (cinfo->type == CREATURE_TYPE_BEAST)
     {
         if (cinfo->family == CREATURE_FAMILY_WOLF)
@@ -282,7 +282,7 @@ bool DICreatureCalcStats(Creature* creature)
         else if (cinfo->family == CREATURE_FAMILY_CAT)
             attackTime = 1000;
     }
-
+*/
     uint32 basehp = stats->GenerateHealth(expansion, cinfo->ModHealth);
     uint32 health = uint32(basehp * healthmod);
     
@@ -419,7 +419,7 @@ class Mod_DynamicInstance_AllCreatureScript : public AllCreatureScript
             lootid = newlootid;
     }
 
-    void AllCreatureSpellDamageMod(Creature* creature, SpellInfo const* spellProto, DamageEffectType damagetype, float& doneTotalMod)
+    void AllCreatureSpellDamageMod(Creature* creature, SpellInfo const* spellProto, DamageEffectType /*damagetype*/, float& doneTotalMod)
     {
         //if (spellProto->SchoolMask == SPELL_SCHOOL_MASK_NORMAL)
             //return;

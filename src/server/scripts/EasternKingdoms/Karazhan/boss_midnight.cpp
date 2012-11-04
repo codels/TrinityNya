@@ -111,7 +111,6 @@ public:
                 DoScriptText(SAY_DISARMED, me);
         }
     };
-
 };
 
 class boss_midnight : public CreatureScript
@@ -210,16 +209,16 @@ public:
             pAttumen->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
             float angle = me->GetAngle(pAttumen);
             float distance = me->GetDistance2d(pAttumen);
-            float newX = me->GetPositionX() + cos(angle)*(distance/2);
-            float newY = me->GetPositionY() + sin(angle)*(distance/2);
+            float newX = me->GetPositionX() + std::cos(angle)*(distance/2);
+            float newY = me->GetPositionY() + std::sin(angle)*(distance/2);
             float newZ = 50;
             //me->Relocate(newX, newY, newZ, angle);
             //me->SendMonsterMove(newX, newY, newZ, 0, true, 1000);
             me->GetMotionMaster()->Clear();
             me->GetMotionMaster()->MovePoint(0, newX, newY, newZ);
             distance += 10;
-            newX = me->GetPositionX() + cos(angle)*(distance/2);
-            newY = me->GetPositionY() + sin(angle)*(distance/2);
+            newX = me->GetPositionX() + std::cos(angle)*(distance/2);
+            newY = me->GetPositionY() + std::sin(angle)*(distance/2);
             pAttumen->GetMotionMaster()->Clear();
             pAttumen->GetMotionMaster()->MovePoint(0, newX, newY, newZ);
             //pAttumen->Relocate(newX, newY, newZ, -angle);
@@ -232,7 +231,6 @@ public:
             CAST_AI(boss_attumen::boss_attumenAI, pAttumen->AI())->Midnight = value;
         }
     };
-
 };
 
 void boss_attumen::boss_attumenAI::UpdateAI(const uint32 diff)
@@ -284,9 +282,9 @@ void boss_attumen::boss_attumenAI::UpdateAI(const uint32 diff)
         if (ChargeTimer <= diff)
         {
             Unit* target = NULL;
-            std::list<HostileReference*> t_list = me->getThreatManager().getThreatList();
+            ThreatContainer::StorageType const &t_list = me->getThreatManager().getThreatList();
             std::vector<Unit*> target_list;
-            for (std::list<HostileReference*>::const_iterator itr = t_list.begin(); itr!= t_list.end(); ++itr)
+            for (ThreatContainer::StorageType::const_iterator itr = t_list.begin(); itr != t_list.end(); ++itr)
             {
                 target = Unit::GetUnit(*me, (*itr)->getUnitGuid());
                 if (target && !target->IsWithinDist(me, ATTACK_DISTANCE, false))

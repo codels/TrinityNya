@@ -26,12 +26,6 @@
 #include "GroupMgr.h"
 #include "Battlefield.h"
 
-uint32 const VehNumWorldState[2]        = { 3680, 3490 };
-uint32 const MaxVehNumWorldState[2]     = { 3681, 3491 };
-uint32 const ClockWorldState[2]         = { 3781, 4354 };
-uint32 const WintergraspFaction[3]      = { 1732, 1735, 35 };
-float const WintergraspStalkerPos[4]    = { 0, 0, 0, 0 };
-
 class BattlefieldWG;
 class WintergraspCapturePoint;
 
@@ -47,7 +41,7 @@ typedef std::set<Group*> GroupSet;
 enum WintergrastData
 {
     BATTLEFIELD_WG_ZONEID                        = 4197,             // Wintergrasp
-    BATTLEFIELD_WG_MAPID                         = 571,              // Northrend
+    BATTLEFIELD_WG_MAPID                         = 571               // Northrend
 };
 
 enum WintergraspSpells
@@ -91,7 +85,7 @@ enum WintergraspSpells
     SPELL_ALLIANCE_CONTROLS_FACTORY_PHASE_SHIFT = 56617, // ADDS PHASE 32
 
     SPELL_HORDE_CONTROL_PHASE_SHIFT             = 55773, // ADDS PHASE 64
-    SPELL_ALLIANCE_CONTROL_PHASE_SHIFT          = 55774, // ADDS PHASE 128
+    SPELL_ALLIANCE_CONTROL_PHASE_SHIFT          = 55774  // ADDS PHASE 128
 };
 
 enum WintergraspData
@@ -104,7 +98,7 @@ enum WintergraspData
     BATTLEFIELD_WG_DATA_MAX_VEHICLE_H,
     BATTLEFIELD_WG_DATA_VEHICLE_A,
     BATTLEFIELD_WG_DATA_VEHICLE_H,
-    BATTLEFIELD_WG_DATA_MAX,
+    BATTLEFIELD_WG_DATA_MAX
 };
 
 enum WintergraspAchievements
@@ -124,7 +118,7 @@ enum WintergraspAchievements
     ACHIEVEMENTS_STONE_KEEPER_1000               = 2089, // todo
     ACHIEVEMENTS_WG_RANGER                       = 2199, // todo
     ACHIEVEMENTS_DESTRUCTION_DERBY_H             = 2476, // todo
-    ACHIEVEMENTS_WG_MASTER_H                     = 2776, // todo
+    ACHIEVEMENTS_WG_MASTER_H                     = 2776  // todo
 };
 
 enum WintergraspWorldStates
@@ -136,7 +130,7 @@ enum WintergraspWorldStates
     BATTLEFIELD_WG_WORLD_STATE_ACTIVE            = 3801,
     BATTLEFIELD_WG_WORLD_STATE_DEFENDER          = 3802,
     BATTLEFIELD_WG_WORLD_STATE_ATTACKER          = 3803,
-    BATTLEFIELD_WG_WORLD_STATE_SHOW_WORLDSTATE   = 3710,
+    BATTLEFIELD_WG_WORLD_STATE_SHOW_WORLDSTATE   = 3710
 };
 
 enum WintergraspAreaIds
@@ -147,7 +141,7 @@ enum WintergraspAreaIds
     AREA_WESTPARK_WORKSHOP          = 4611,
     AREA_EASTPARK_WORKSHOP          = 4612,
     AREA_WINTERGRASP                = 4197,
-    AREA_THE_CHILLED_QUAGMIRE       = 4589,
+    AREA_THE_CHILLED_QUAGMIRE       = 4589
 };
 
 /*#########################
@@ -174,7 +168,7 @@ enum WGGraveyardId
     BATTLEFIELD_WG_GY_KEEP,
     BATTLEFIELD_WG_GY_HORDE,
     BATTLEFIELD_WG_GY_ALLIANCE,
-    BATTLEFIELD_WG_GRAVEYARD_MAX,
+    BATTLEFIELD_WG_GRAVEYARD_MAX
 };
 
 enum WGGossipText
@@ -185,7 +179,7 @@ enum WGGossipText
     BATTLEFIELD_WG_GOSSIPTEXT_GY_SW              = -1850503,
     BATTLEFIELD_WG_GOSSIPTEXT_GY_KEEP            = -1850500,
     BATTLEFIELD_WG_GOSSIPTEXT_GY_HORDE           = -1850505,
-    BATTLEFIELD_WG_GOSSIPTEXT_GY_ALLIANCE        = -1850506,
+    BATTLEFIELD_WG_GOSSIPTEXT_GY_ALLIANCE        = -1850506
 };
 
 enum WintergraspNpcs
@@ -222,7 +216,7 @@ enum WintergraspNpcs
     NPC_WINTERGRASP_SIEGE_ENGINE_HORDE              = 32627,
     NPC_WINTERGRASP_CATAPULT                        = 27881,
     NPC_WINTERGRASP_DEMOLISHER                      = 28094,
-    NPC_WINTERGRASP_TOWER_CANNON                    = 28366,
+    NPC_WINTERGRASP_TOWER_CANNON                    = 28366
 };
 
 struct BfWGCoordGY
@@ -404,9 +398,9 @@ class BattlefieldWG : public Battlefield
         void UpdateVehicleCountWG();
         void UpdateCounterVehicle(bool init);
 
-        WorldPacket BuildInitWorldStates();
         void SendInitWorldStatesTo(Player* player);
         void SendInitWorldStatesToAll();
+        void FillInitialWorldStates(WorldPacket& data);
 
         void HandleKill(Player* killer, Unit* victim);
         void OnUnitDeath(Unit* unit);
@@ -421,6 +415,7 @@ class BattlefieldWG : public Battlefield
         uint8 GetSpiritGraveyardId(uint32 areaId);
 
         uint32 GetData(uint32 data);
+
     protected:
         bool m_isRelicInteractible;
 
@@ -441,13 +436,19 @@ class BattlefieldWG : public Battlefield
         GameObject* m_titansRelic;
 };
 
+uint32 const VehNumWorldState[]        = { 3680, 3490 };
+uint32 const MaxVehNumWorldState[]     = { 3681, 3491 };
+uint32 const ClockWorldState[]         = { 3781, 4354 };
+uint32 const WintergraspFaction[]      = { 1732, 1735, 35 };
+float const WintergraspStalkerPos[]    = { 4948.985f, 2937.789f, 550.5172f, 1.815142f };
+
 uint8 const WG_MAX_OBJ              = 32;
-uint8 const WG_KEEPGAMEOBJECT_MAX   = 44;
 uint8 const WG_MAX_TURRET           = 15;
 uint8 const WG_MAX_KEEP_NPC         = 39;
 uint8 const WG_MAX_OUTSIDE_NPC      = 14;
 uint8 const WG_OUTSIDE_ALLIANCE_NPC = 7;
 uint8 const WG_MAX_TELEPORTER       = 12;
+uint8 const WG_MAX_WORKSHOP = 6;
 
 enum WintergraspGameObjectBuildingType
 {
@@ -456,7 +457,7 @@ enum WintergraspGameObjectBuildingType
     BATTLEFIELD_WG_OBJECTTYPE_WALL,
     BATTLEFIELD_WG_OBJECTTYPE_DOOR_LAST,
     BATTLEFIELD_WG_OBJECTTYPE_KEEP_TOWER,
-    BATTLEFIELD_WG_OBJECTTYPE_TOWER,
+    BATTLEFIELD_WG_OBJECTTYPE_TOWER
 };
 
 enum WintergraspGameObjectState
@@ -470,7 +471,7 @@ enum WintergraspGameObjectState
     BATTLEFIELD_WG_OBJECTSTATE_HORDE_DESTROY,
     BATTLEFIELD_WG_OBJECTSTATE_ALLIANCE_INTACT,
     BATTLEFIELD_WG_OBJECTSTATE_ALLIANCE_DAMAGE,
-    BATTLEFIELD_WG_OBJECTSTATE_ALLIANCE_DESTROY,
+    BATTLEFIELD_WG_OBJECTSTATE_ALLIANCE_DESTROY
 };
 
 enum WintergraspWorkshopIds
@@ -480,7 +481,7 @@ enum WintergraspWorkshopIds
     BATTLEFIELD_WG_WORKSHOP_SE,
     BATTLEFIELD_WG_WORKSHOP_SW,
     BATTLEFIELD_WG_WORKSHOP_KEEP_WEST,
-    BATTLEFIELD_WG_WORKSHOP_KEEP_EAST,
+    BATTLEFIELD_WG_WORKSHOP_KEEP_EAST
 };
 
 enum WintergraspWorldstates
@@ -497,7 +498,7 @@ enum WintergraspTeamControl
 {
     BATTLEFIELD_WG_TEAM_ALLIANCE,
     BATTLEFIELD_WG_TEAM_HORDE,
-    BATTLEFIELD_WG_TEAM_NEUTRAL,
+    BATTLEFIELD_WG_TEAM_NEUTRAL
 };
 
 // TODO: Handle this with creature_text ?
@@ -525,7 +526,7 @@ enum WintergraspText
     BATTLEFIELD_WG_TEXT_TOWER_NAME_E             = 12070,
     BATTLEFIELD_WG_TEXT_TOWER_NAME_W             = 12071,
     BATTLEFIELD_WG_TEXT_DEFEND_KEEP              = 12068,
-    BATTLEFIELD_WG_TEXT_WIN_KEEP                 = 12072,
+    BATTLEFIELD_WG_TEXT_WIN_KEEP                 = 12072
 };
 
 enum WintergraspGameObject
@@ -549,8 +550,7 @@ enum WintergraspGameObject
     GO_WINTERGRASP_FORTRESS_GATE                 = 190375,
     GO_WINTERGRASP_VAULT_GATE                    = 191810,
 
-    GO_WINTERGRASP_KEEP_COLLISION_WALL           = 194323,
-
+    GO_WINTERGRASP_KEEP_COLLISION_WALL           = 194323
 };
 
 struct WintergraspObjectPositionData
@@ -570,6 +570,19 @@ struct WintergraspObjectPositionData
 struct WintergraspBuildingSpawnData
 {
     uint32 entry;
+    uint32 WorldState;
+    float x;
+    float y;
+    float z;
+    float o;
+    uint32 type;
+    uint32 nameId;
+};
+
+struct WintergraspRebuildableBuildingData
+{
+    uint32 entry;
+    uint64 Guid;
     uint32 WorldState;
     float x;
     float y;
@@ -625,99 +638,6 @@ const WintergraspBuildingSpawnData WGGameObjectBuilding[WG_MAX_OBJ] =
 
     // Last door (Not spawned in db)
     { GO_WINTERGRASP_VAULT_GATE, 3773, 5397.11f, 2841.54f, 425.899f, 3.14159f, BATTLEFIELD_WG_OBJECTTYPE_DOOR_LAST, 0 },
-};
-
-
-// *********************************************************
-// **********Keep Element(GameObject,Creature)**************
-// *********************************************************
-
-// Keep gameobject
-// 192488 : 10 in sql, 19 in header
-// 192501 : 12 in sql, 17 in header
-// 192416 : 1 in sql, 33 in header
-// 192374 : 1 in sql, 1 in header
-// 192375 : 1 in sql, 1 in header
-// 192336 : 1 in sql, 1 in header
-// 192255 : 1 in sql, 1 in header
-// 192269 : 1 in sql, 7 in header
-// 192254 : 1 in sql, 1 in header
-// 192349 : 1 in sql, 1 in header
-// 192366 : 1 in sql, 3 in header
-// 192367 : 1 in sql, 1 in header
-// 192364 : 1 in sql, 1 in header
-// 192370 : 1 in sql, 1 in header
-// 192369 : 1 in sql, 1 in header
-// 192368 : 1 in sql, 1 in header
-// 192362 : 1 in sql, 1 in header
-// 192363 : 1 in sql, 1 in header
-// 192379 : 1 in sql, 1 in header
-// 192378 : 1 in sql, 1 in header
-// 192355 : 1 in sql, 1 in header
-// 192354 : 1 in sql, 1 in header
-// 192358 : 1 in sql, 1 in header
-// 192359 : 1 in sql, 1 in header
-// 192338 : 1 in sql, 1 in header
-// 192339 : 1 in sql, 1 in header
-// 192284 : 1 in sql, 1 in header
-// 192285 : 1 in sql, 1 in header
-// 192371 : 1 in sql, 1 in header
-// 192372 : 1 in sql, 1 in header
-// 192373 : 1 in sql, 1 in header
-// 192360 : 1 in sql, 1 in header
-// 192361 : 1 in sql, 1 in header
-// 192356 : 1 in sql, 1 in header
-// 192352 : 1 in sql, 1 in header
-// 192353 : 1 in sql, 1 in header
-// 192357 : 1 in sql, 1 in header
-// 192350 : 1 in sql, 1 in header
-// 192351 : 1 in sql, 1 in header
-const WintergraspObjectPositionData WGKeepGameObject[WG_KEEPGAMEOBJECT_MAX] =
-{
-    { 5262.540039f, 3047.949951f, 432.054993f, 3.106650f, 192488, 192501 },       // Flag on tower
-    { 5272.939941f, 2976.550049f, 444.492004f, 3.124120f, 192374, 192416 },       // Flag on Wall Intersect
-    { 5235.189941f, 2941.899902f, 444.278015f, 1.588250f, 192375, 192416 },       // Flag on Wall Intersect
-    { 5163.129883f, 2952.590088f, 433.502991f, 1.535890f, 192488, 192501 },       // Flag on tower
-    { 5145.109863f, 2935.000000f, 433.385986f, 3.141590f, 192488, 192501 },       // Flag on tower
-    { 5158.810059f, 2883.129883f, 431.618011f, 3.141590f, 192488, 192416 },       // Flag on wall
-    { 5154.490234f, 2862.149902f, 445.011993f, 3.141590f, 192336, 192416 },       // Flag on Wall Intersect
-    { 5154.520020f, 2853.310059f, 409.183014f, 3.141590f, 192255, 192269 },       // Flag on the floor
-    { 5154.459961f, 2828.939941f, 409.188995f, 3.141590f, 192254, 192269 },       // Flag on the floor
-    { 5155.310059f, 2820.739990f, 444.979004f, -3.13286f, 192349, 192416 },       // Flag on wall intersect
-    { 5160.339844f, 2798.610107f, 430.769012f, 3.141590f, 192488, 192416 },       // Flag on wall
-    { 5146.040039f, 2747.209961f, 433.584015f, 3.071770f, 192488, 192501 },       // Flag on tower
-    { 5163.779785f, 2729.679932f, 433.394012f, -1.58825f, 192488, 192501 },       // Flag on tower
-    { 5236.270020f, 2739.459961f, 444.992004f, -1.59698f, 192366, 192416 },       // Flag on wall intersect
-    { 5271.799805f, 2704.870117f, 445.183014f, -3.13286f, 192367, 192416 },       // Flag on wall intersect
-    { 5260.819824f, 2631.800049f, 433.324005f, 3.054330f, 192488, 192501 },       // Flag on tower
-    { 5278.379883f, 2613.830078f, 433.408997f, -1.58825f, 192488, 192501 },       // Flag on tower
-    { 5350.879883f, 2622.719971f, 444.686005f, -1.57080f, 192364, 192416 },       // Flag on wall intersect
-    { 5392.270020f, 2639.739990f, 435.330994f, 1.509710f, 192370, 192416 },       // Flag on wall intersect
-    { 5350.950195f, 2640.360107f, 435.407990f, 1.570800f, 192369, 192416 },       // Flag on wall intersect
-    { 5289.459961f, 2704.679932f, 435.875000f, -0.01745f, 192368, 192416 },       // Flag on wall intersect
-    { 5322.120117f, 2763.610107f, 444.973999f, -1.55334f, 192362, 192416 },       // Flag on wall intersect
-    { 5363.609863f, 2763.389893f, 445.023987f, -1.54462f, 192363, 192416 },       // Flag on wall intersect
-    { 5363.419922f, 2781.030029f, 435.763000f, 1.570800f, 192379, 192416 },       // Flag on wall intersect
-    { 5322.020020f, 2781.129883f, 435.811005f, 1.570800f, 192378, 192416 },       // Flag on wall intersect
-    { 5288.919922f, 2820.219971f, 435.721008f, 0.017452f, 192355, 192416 },       // Flag on wall intersect
-    { 5288.410156f, 2861.790039f, 435.721008f, 0.017452f, 192354, 192416 },       // Flag on wall intersect
-    { 5322.229980f, 2899.429932f, 435.808014f, -1.58825f, 192358, 192416 },       // Flag on wall intersect
-    { 5364.350098f, 2899.399902f, 435.838989f, -1.57080f, 192359, 192416 },       // Flag on wall intersect
-    { 5397.759766f, 2873.080078f, 455.460999f, 3.106650f, 192338, 192416 },       // Flag on keep
-    { 5397.390137f, 2809.330078f, 455.343994f, 3.106650f, 192339, 192416 },       // Flag on keep
-    { 5372.479980f, 2862.500000f, 409.049011f, 3.141590f, 192284, 192269 },       // Flag on floor
-    { 5371.490234f, 2820.800049f, 409.177002f, 3.141590f, 192285, 192269 },       // Flag on floor
-    { 5364.290039f, 2916.939941f, 445.330994f, 1.579520f, 192371, 192416 },       // Flag on wall intersect
-    { 5322.859863f, 2916.949951f, 445.153992f, 1.562070f, 192372, 192416 },       // Flag on wall intersect
-    { 5290.350098f, 2976.560059f, 435.221008f, 0.017452f, 192373, 192416 },       // Flag on wall intersect
-    { 5352.370117f, 3037.090088f, 435.252014f, -1.57080f, 192360, 192416 },       // Flag on wall intersect
-    { 5392.649902f, 3037.110107f, 433.713013f, -1.52716f, 192361, 192416 },       // Flag on wall intersect
-    { 5237.069824f, 2757.030029f, 435.795990f, 1.518440f, 192356, 192416 },       // Flag on wall intersect
-    { 5173.020020f, 2820.929932f, 435.720001f, 0.017452f, 192352, 192416 },       // Flag on wall intersect
-    { 5172.109863f, 2862.570068f, 435.721008f, 0.017452f, 192353, 192416 },       // Flag on wall intersect
-    { 5235.339844f, 2924.340088f, 435.040009f, -1.57080f, 192357, 192416 },       // Flag on wall intersect
-    { 5270.689941f, 2861.780029f, 445.058014f, -3.11539f, 192350, 192416 },       // Flag on wall intersect
-    { 5271.279785f, 2820.159912f, 445.200989f, -3.13286f, 192351, 192416 }        // Flag on wall intersect
 };
 
 const Position WGTurret[WG_MAX_TURRET] =
@@ -1113,8 +1033,6 @@ const WintergraspTowerCannonData TowerCannon[WG_MAX_TOWER_CANNON] =
 // *****************WorkShop Data & Element*****************
 // *********************************************************
 
-uint8 const WG_MAX_WORKSHOP = 6;
-
 struct WGWorkshopData
 {
     uint8 id;
@@ -1133,9 +1051,9 @@ const WGWorkshopData WorkshopsData[WG_MAX_WORKSHOP] =
     // SW
     {BATTLEFIELD_WG_WORKSHOP_SW, WORLDSTATE_WORKSHOP_SW, BATTLEFIELD_WG_TEXT_WORKSHOP_NAME_SW},
     // KEEP WEST - It can't be taken, so it doesn't have a textid
-    {BATTLEFIELD_WG_WORKSHOP_KEEP_WEST, WORLDSTATE_WORKSHOP_K_W, NULL},
+    {BATTLEFIELD_WG_WORKSHOP_KEEP_WEST, WORLDSTATE_WORKSHOP_K_W, 0},
     // KEEP EAST - It can't be taken, so it doesn't have a textid
-    {BATTLEFIELD_WG_WORKSHOP_KEEP_EAST, WORLDSTATE_WORKSHOP_K_E, NULL}
+    {BATTLEFIELD_WG_WORKSHOP_KEEP_EAST, WORLDSTATE_WORKSHOP_K_E, 0}
 };
 
 // ********************************************************************

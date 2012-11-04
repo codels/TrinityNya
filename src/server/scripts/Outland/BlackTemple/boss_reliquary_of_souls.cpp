@@ -128,7 +128,6 @@ public:
 
         void JustDied(Unit* /*killer*/);
     };
-
 };
 
 class boss_reliquary_of_souls : public CreatureScript
@@ -181,6 +180,23 @@ public:
             me->RemoveAurasDueToSpell(SPELL_SUBMERGE);
         }
 
+        void MoveInLineOfSight(Unit* who)
+        {
+            if (!who)
+                return;
+
+            if (me->isInCombat())
+                return;
+
+            if (who->GetTypeId() != TYPEID_PLAYER)
+                return;
+
+            if (me->GetDistance(who) > 50.0f)
+                return;
+
+            AttackStartNoMove(who);
+        }
+
         void EnterCombat(Unit* who)
         {
             me->AddThreat(who, 10000.0f);
@@ -216,9 +232,8 @@ public:
             if (!target)
                 return;
 
-            std::list<HostileReference*>& m_threatlist = target->getThreatManager().getThreatList();
-            std::list<HostileReference*>::const_iterator itr = m_threatlist.begin();
-            for (; itr != m_threatlist.end(); ++itr)
+            ThreatContainer::StorageType threatlist = target->getThreatManager().getThreatList();
+            for (ThreatContainer::StorageType::const_iterator itr = threatlist.begin(); itr != threatlist.end(); ++itr)
             {
                 Unit* unit = Unit::GetUnit(*me, (*itr)->getUnitGuid());
                 if (unit)
@@ -359,7 +374,6 @@ public:
             } else Timer -= diff;
         }
     };
-
 };
 
 void npc_enslaved_soul::npc_enslaved_soulAI::JustDied(Unit* /*killer*/)
@@ -412,6 +426,7 @@ public:
                 me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
                 me->Yell(SUFF_SAY_RECAP, LANG_UNIVERSAL, 0);
                 DoScriptText(SUFF_SAY_RECAP, me);
+                me->SetReactState(REACT_PASSIVE);
             }
         }
 
@@ -435,12 +450,12 @@ public:
 
         void CastFixate()
         {
-            std::list<HostileReference*>& m_threatlist = me->getThreatManager().getThreatList();
-            if (m_threatlist.empty())
+            ThreatContainer::StorageType const &threatlist = me->getThreatManager().getThreatList();
+            if (threatlist.empty())
                 return; // No point continuing if empty threatlist.
             std::list<Unit*> targets;
-            std::list<HostileReference*>::const_iterator itr = m_threatlist.begin();
-            for (; itr != m_threatlist.end(); ++itr)
+            ThreatContainer::StorageType::const_iterator itr = threatlist.begin();
+            for (; itr != threatlist.end(); ++itr)
             {
                 Unit* unit = Unit::GetUnit(*me, (*itr)->getUnitGuid());
                 if (unit && unit->isAlive() && (unit->GetTypeId() == TYPEID_PLAYER)) // Only alive players
@@ -493,7 +508,6 @@ public:
             DoMeleeAttackIfReady();
         }
     };
-
 };
 
 class boss_essence_of_desire : public CreatureScript
@@ -532,6 +546,7 @@ public:
                 damage = 0;
                 me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
                 DoScriptText(SUFF_SAY_RECAP, me);
+                me->SetReactState(REACT_PASSIVE);
             }
             else
             {
@@ -596,7 +611,6 @@ public:
             DoMeleeAttackIfReady();
         }
     };
-
 };
 
 class boss_essence_of_anger : public CreatureScript
@@ -697,7 +711,6 @@ public:
             DoMeleeAttackIfReady();
         }
     };
-
 };
 
 void AddSC_boss_reliquary_of_souls()

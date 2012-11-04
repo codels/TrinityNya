@@ -33,7 +33,7 @@ enum ConnectionFlags
 {
     CONNECTION_ASYNC = 0x1,
     CONNECTION_SYNCH = 0x2,
-    CONNECTION_BOTH = CONNECTION_ASYNC | CONNECTION_SYNCH,
+    CONNECTION_BOTH = CONNECTION_ASYNC | CONNECTION_SYNCH
 };
 
 struct MySQLConnectionInfo
@@ -41,7 +41,7 @@ struct MySQLConnectionInfo
     MySQLConnectionInfo() {}
     MySQLConnectionInfo(const std::string& infoString)
     {
-        Tokens tokens(infoString, ';');
+        Tokenizer tokens(infoString, ';');
 
         if (tokens.size() != 5)
             return;

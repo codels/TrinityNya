@@ -29,13 +29,12 @@
 
 enum BattlefieldTypes
 {
-    BATTLEFIELD_WG,                                         // Wintergrasp
-    BATTLEFIELD_TB,                                         // Tol Barad (cataclysm)
+    BATTLEFIELD_WG                                          // Wintergrasp
 };
 
 enum BattlefieldIDs
 {
-    BATTLEFIELD_BATTLEID_WG                      = 1,       // Wintergrasp battle
+    BATTLEFIELD_BATTLEID_WG                      = 1        // Wintergrasp battle
 };
 
 enum BattlefieldObjectiveStates
@@ -46,7 +45,7 @@ enum BattlefieldObjectiveStates
     BF_CAPTUREPOINT_OBJECTIVESTATE_NEUTRAL_ALLIANCE_CHALLENGE,
     BF_CAPTUREPOINT_OBJECTIVESTATE_NEUTRAL_HORDE_CHALLENGE,
     BF_CAPTUREPOINT_OBJECTIVESTATE_ALLIANCE_HORDE_CHALLENGE,
-    BF_CAPTUREPOINT_OBJECTIVESTATE_HORDE_ALLIANCE_CHALLENGE,
+    BF_CAPTUREPOINT_OBJECTIVESTATE_HORDE_ALLIANCE_CHALLENGE
 };
 
 enum BattlefieldSounds
@@ -212,9 +211,6 @@ class Battlefield : public ZoneScript
         /// Call this to init the Battlefield
         virtual bool SetupBattlefield() { return true; }
 
-        /// Generate packet which contain all worldstatedata of area
-        virtual void FillInitialWorldStates(WorldPacket& /*data*/) {}
-
         /// Update data of a worldstate to all players present in zone
         void SendUpdateWorldState(uint32 field, uint32 value);
 
@@ -318,7 +314,7 @@ class Battlefield : public ZoneScript
         /// Called when a player enter in battlefield zone
         virtual void OnPlayerEnterZone(Player* /*player*/) {};
 
-        WorldPacket BuildWarningAnnPacket(std::string msg);
+        WorldPacket BuildWarningAnnPacket(std::string const& msg);
         void SendWarningToAllInZone(uint32 entry);
         //void SendWarningToAllInWar(int32 entry, ...); -- UNUSED
         void SendWarningToPlayer(Player* player, uint32 entry);
@@ -331,7 +327,8 @@ class Battlefield : public ZoneScript
         virtual void DoCompleteOrIncrementAchievement(uint32 /*achievement*/, Player* /*player*/, uint8 /*incrementNumber = 1*/) {};
 
         /// Send all worldstate data to all player in zone.
-        virtual void SendInitWorldStatesToAll() {};
+        virtual void SendInitWorldStatesToAll() = 0;
+        virtual void FillInitialWorldStates(WorldPacket& /*data*/) = 0;
 
         /// Return if we can use mount in battlefield
         bool CanFlyIn() { return !m_isActive; }

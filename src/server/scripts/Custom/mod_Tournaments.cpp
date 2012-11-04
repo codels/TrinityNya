@@ -137,7 +137,7 @@ TournamentLevel* TournamentManager::getTournamentLevel(uint32 entry, uint32 leve
     if (!tournament)
     {
         if (TournamentDebug)
-            sLog->outError(LOG_FILTER_GENERAL, "TournamentManager::getTournamentLevel not exists entry: %u", entry, level);
+            sLog->outError(LOG_FILTER_GENERAL, "TournamentManager::getTournamentLevel not exists entry: %u level: %u", entry, level);
         return NULL;
     }
         
@@ -747,7 +747,7 @@ class npc_tournaments_organizer : public CreatureScript
         return true;
     }
 
-    bool OnGossipSelect(Player* player, Creature* creature, uint32 sender, uint32 action)
+    bool OnGossipSelect(Player* player, Creature* creature, uint32 /*sender*/, uint32 action)
     {
         player->PlayerTalkClass->ClearMenus();
         

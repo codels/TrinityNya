@@ -81,7 +81,7 @@ public:
             { "save",               SEC_PLAYER,             false, &HandleSaveCommand,                  "", NULL },
             { "saveall",            SEC_MODERATOR,          true,  &HandleSaveAllCommand,               "", NULL },
             { "kick",               SEC_GAMEMASTER,         true,  &HandleKickPlayerCommand,            "", NULL },
-            { "start",              SEC_PLAYER,             false, &HandleStartCommand,                 "", NULL },
+            { "unstuck",            SEC_PLAYER,             true,  &HandleUnstuckCommand,               "", NULL },
             { "linkgrave",          SEC_ADMINISTRATOR,      false, &HandleLinkGraveCommand,             "", NULL },
             { "neargrave",          SEC_ADMINISTRATOR,      false, &HandleNearGraveCommand,             "", NULL },
             { "showarea",           SEC_ADMINISTRATOR,      false, &HandleShowAreaCommand,              "", NULL },
@@ -476,12 +476,12 @@ public:
             }
             else if (map->IsDungeon())
             {
-                Map* map = target->GetMap();
+                Map* destMap = target->GetMap();
 
-                if (map->Instanceable() && map->GetInstanceId() != map->GetInstanceId())
+                if (destMap->Instanceable() && destMap->GetInstanceId() != map->GetInstanceId())
                     target->UnbindInstance(map->GetInstanceId(), target->GetDungeonDifficulty(), true);
 
-                // we are in instance, and can summon only player in our group with us as lead
+                // we are in an instance, and can only summon players in our group with us as leader
                 if (!handler->GetSession()->GetPlayer()->GetGroup() || !target->GetGroup() ||
                     (target->GetGroup()->GetLeaderGUID() != handler->GetSession()->GetPlayer()->GetGUID()) ||
                     (handler->GetSession()->GetPlayer()->GetGroup()->GetLeaderGUID() != handler->GetSession()->GetPlayer()->GetGUID()))
@@ -928,34 +928,67 @@ public:
         return true;
     }
 
-    static bool HandleStartCommand(ChatHandler* handler, char const* /*args*/)
+    static bool HandleUnstuckCommand(ChatHandler* handler, char const* args)
     {
-        Player* player = handler->GetSession()->GetPlayer();
-
-        if (player->isInFlight())
+        //No args required for players
+        if (handler->GetSession() && AccountMgr::IsPlayerAccount(handler->GetSession()->GetSecurity()))
         {
-            handler->SendSysMessage(LANG_YOU_IN_FLIGHT);
+            Player* player = handler->GetSession()->GetPlayer();
+            if (player->isInFlight() || player->isInCombat())
+            {
+                handler->SendSysMessage(LANG_CANT_DO_NOW);
+                handler->SetSentErrorMessage(true);
+                return false;
+            }
+
+            //7355: "Stuck"
+            player->CastSpell(player, 7355, false);
+            return true;
+        }
+
+        if (!*args)
+            return false;
+
+        char* player_str = strtok((char*)args, " ");
+        if (!player_str)
+            return false;
+
+        std::string location_str = "inn";
+        if (char const* loc = strtok(NULL, " "))
+            location_str = loc;
+
+        Player* player = NULL;
+        if (!handler->extractPlayerTarget(player_str, &player))
+            return false;
+
+        if (player->isInFlight() || player->isInCombat())
+        {
+            handler->SendSysMessage(LANG_CANT_DO_NOW);
             handler->SetSentErrorMessage(true);
             return false;
         }
 
-        if (player->isInCombat())
+        if (location_str == "inn")
         {
-            handler->SendSysMessage(LANG_YOU_IN_COMBAT);
-            handler->SetSentErrorMessage(true);
-            return false;
+            player->TeleportTo(player->m_homebindMapId, player->m_homebindX, player->m_homebindY, player->m_homebindZ, player->GetOrientation());
+            return true;
         }
 
-        if (player->isDead() || player->HasFlag(PLAYER_FLAGS, PLAYER_FLAGS_GHOST))
+        if (location_str == "graveyard")
         {
-            // if player is dead and stuck, send ghost to graveyard
             player->RepopAtGraveyard();
             return true;
         }
 
-        // cast spell Stuck
-        player->CastSpell(player, 7355, false);
-        return true;
+        if (location_str == "startzone")
+        {
+            player->TeleportTo(player->GetStartPosition());
+            return true;
+        }
+
+        //Not a supported argument
+        return false;
+
     }
 
     static bool HandleLinkGraveCommand(ChatHandler* handler, char const* args)
@@ -1890,9 +1923,9 @@ public:
                     if (!target)
                         handler->SendSysMessage(LANG_MOVEGENS_CHASE_NULL);
                     else if (target->GetTypeId() == TYPEID_PLAYER)
-                        handler->PSendSysMessage(LANG_MOVEGENS_CHASE_PLAYER, target->GetName(), target->GetGUIDLow());
+                        handler->PSendSysMessage(LANG_MOVEGENS_CHASE_PLAYER, target->GetName().c_str(), target->GetGUIDLow());
                     else
-                        handler->PSendSysMessage(LANG_MOVEGENS_CHASE_CREATURE, target->GetName(), target->GetGUIDLow());
+                        handler->PSendSysMessage(LANG_MOVEGENS_CHASE_CREATURE, target->GetName().c_str(), target->GetGUIDLow());
                     break;
                 }
                 case FOLLOW_MOTION_TYPE:
@@ -1906,9 +1939,9 @@ public:
                     if (!target)
                         handler->SendSysMessage(LANG_MOVEGENS_FOLLOW_NULL);
                     else if (target->GetTypeId() == TYPEID_PLAYER)
-                        handler->PSendSysMessage(LANG_MOVEGENS_FOLLOW_PLAYER, target->GetName(), target->GetGUIDLow());
+                        handler->PSendSysMessage(LANG_MOVEGENS_FOLLOW_PLAYER, target->GetName().c_str(), target->GetGUIDLow());
                     else
-                        handler->PSendSysMessage(LANG_MOVEGENS_FOLLOW_CREATURE, target->GetName(), target->GetGUIDLow());
+                        handler->PSendSysMessage(LANG_MOVEGENS_FOLLOW_CREATURE, target->GetName().c_str(), target->GetGUIDLow());
                     break;
                 }
                 case HOME_MOTION_TYPE:
@@ -2501,7 +2534,7 @@ public:
         {
             name = TargetName;
             normalizePlayerName(name);
-            player = sObjectAccessor->FindPlayerByName(name.c_str());
+            player = sObjectAccessor->FindPlayerByName(name);
         }
 
         if (!player)
@@ -2535,7 +2568,7 @@ public:
                 {
                     pet->SavePetToDB(PET_SAVE_AS_CURRENT);
                     // not let dismiss dead pet
-                    if (pet && pet->isAlive())
+                    if (pet->isAlive())
                         player->RemovePet(pet, PET_SAVE_NOT_IN_SLOT);
                 }
             }
@@ -2560,7 +2593,7 @@ public:
         {
             name = targetName;
             normalizePlayerName(name);
-            player = sObjectAccessor->FindPlayerByName(name.c_str());
+            player = sObjectAccessor->FindPlayerByName(name);
         }
         else // If no name was entered - use target
         {

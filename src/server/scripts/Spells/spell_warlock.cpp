@@ -41,6 +41,10 @@ enum WarlockSpells
     WARLOCK_HAUNT_HEAL                      = 48210,
     WARLOCK_UNSTABLE_AFFLICTION_DISPEL      = 31117,
     WARLOCK_CURSE_OF_DOOM_EFFECT            = 18662,
+    WARLOCK_IMPROVED_HEALTH_FUNNEL_R1       = 18703,
+    WARLOCK_IMPROVED_HEALTH_FUNNEL_R2       = 18704,
+    WARLOCK_IMPROVED_HEALTH_FUNNEL_BUFF_R1  = 60955,
+    WARLOCK_IMPROVED_HEALTH_FUNNEL_BUFF_R2  = 60956,
 };
 
 class spell_warl_banish : public SpellScriptLoader
@@ -406,7 +410,7 @@ class spell_warl_life_tap : public SpellScriptLoader
 
                     // Improved Life Tap mod
                     if (AuraEffect const* aurEff = caster->GetDummyAuraEffect(SPELLFAMILY_WARLOCK, ICON_ID_IMPROVED_LIFE_TAP, 0))
-                        AddPctN(mana, aurEff->GetAmount());
+                        AddPct(mana, aurEff->GetAmount());
 
                     caster->CastCustomSpell(target, SPELL_LIFE_TAP_ENERGIZE, &mana, NULL, NULL, false);
 
@@ -417,7 +421,7 @@ class spell_warl_life_tap : public SpellScriptLoader
 
                     if (manaFeedVal > 0)
                     {
-                        ApplyPctN(manaFeedVal, mana);
+                        ApplyPct(manaFeedVal, mana);
                         caster->CastCustomSpell(caster, SPELL_LIFE_TAP_ENERGIZE_2, &manaFeedVal, NULL, NULL, true, NULL);
                     }
                 }
@@ -540,7 +544,7 @@ class spell_warl_haunt : public SpellScriptLoader
             {
                 if (Aura* aura = GetHitAura())
                     if (AuraEffect* aurEff = aura->GetEffect(EFFECT_1))
-                        aurEff->SetAmount(CalculatePctN(aurEff->GetAmount(), GetHitDamage()));
+                        aurEff->SetAmount(CalculatePct(aurEff->GetAmount(), GetHitDamage()));
             }
 
             void Register()
@@ -671,6 +675,48 @@ class spell_warl_curse_of_doom : public SpellScriptLoader
         }
 };
 
+class spell_warl_health_funnel : public SpellScriptLoader
+{
+public:
+    spell_warl_health_funnel() : SpellScriptLoader("spell_warl_health_funnel") { }
+
+    class spell_warl_health_funnel_AuraScript : public AuraScript
+    {
+        PrepareAuraScript(spell_warl_health_funnel_AuraScript);
+
+        void ApplyEffect(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
+        {
+            Unit* caster = GetCaster();
+            if (!caster)
+                return;
+
+            Unit* target = GetTarget();
+            if (caster->HasAura(WARLOCK_IMPROVED_HEALTH_FUNNEL_R2))
+                target->CastSpell(target, WARLOCK_IMPROVED_HEALTH_FUNNEL_BUFF_R2, true);
+            else if (caster->HasAura(WARLOCK_IMPROVED_HEALTH_FUNNEL_R1))
+                target->CastSpell(target, WARLOCK_IMPROVED_HEALTH_FUNNEL_BUFF_R1, true);
+        }
+
+        void RemoveEffect(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
+        {
+            Unit* target = GetTarget();
+            target->RemoveAurasDueToSpell(WARLOCK_IMPROVED_HEALTH_FUNNEL_BUFF_R1);
+            target->RemoveAurasDueToSpell(WARLOCK_IMPROVED_HEALTH_FUNNEL_BUFF_R2);
+        }
+
+        void Register()
+        {
+            OnEffectRemove += AuraEffectRemoveFn(spell_warl_health_funnel_AuraScript::RemoveEffect, EFFECT_0, SPELL_AURA_PERIODIC_HEAL, AURA_EFFECT_HANDLE_REAL);
+            OnEffectApply += AuraEffectApplyFn(spell_warl_health_funnel_AuraScript::ApplyEffect, EFFECT_0, SPELL_AURA_PERIODIC_HEAL, AURA_EFFECT_HANDLE_REAL);
+        }
+    };
+
+    AuraScript* GetAuraScript() const
+    {
+        return new spell_warl_health_funnel_AuraScript();
+    }
+};
+
 void AddSC_warlock_spell_scripts()
 {
     new spell_warl_banish();
@@ -686,4 +732,5 @@ void AddSC_warlock_spell_scripts()
     new spell_warl_haunt();
     new spell_warl_unstable_affliction();
     new spell_warl_curse_of_doom();
+    new spell_warl_health_funnel();
 }

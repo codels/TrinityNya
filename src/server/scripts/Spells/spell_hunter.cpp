@@ -32,6 +32,7 @@
 enum HunterSpells
 {
     HUNTER_SPELL_READINESS                       = 23989,
+    DRAENEI_SPELL_GIFT_OF_THE_NAARU              = 59543,
     HUNTER_SPELL_BESTIAL_WRATH                   = 19574,
     HUNTER_PET_SPELL_LAST_STAND_TRIGGERED        = 53479,
     HUNTER_PET_HEART_OF_THE_PHOENIX              = 55709,
@@ -138,7 +139,7 @@ class spell_hun_chimera_shot : public SpellScriptLoader
                                 int32 TickCount = aurEff->GetTotalTicks();
                                 spellId = HUNTER_SPELL_CHIMERA_SHOT_SERPENT;
                                 basePoint = caster->SpellDamageBonusDone(unitTarget, aura->GetSpellInfo(), aurEff->GetAmount(), DOT, aura->GetStackAmount());
-                                ApplyPctN(basePoint, TickCount * 40);
+                                ApplyPct(basePoint, TickCount * 40);
                                 basePoint = unitTarget->SpellDamageBonusTaken(caster, aura->GetSpellInfo(), basePoint, DOT, aura->GetStackAmount());
                             }
                             // Viper Sting - Instantly restores mana to you equal to 60% of the total amount drained by your Viper Sting.
@@ -148,11 +149,11 @@ class spell_hun_chimera_shot : public SpellScriptLoader
                                 spellId = HUNTER_SPELL_CHIMERA_SHOT_VIPER;
 
                                 // Amount of one aura tick
-                                basePoint = int32(CalculatePctN(unitTarget->GetMaxPower(POWER_MANA), aurEff->GetAmount()));
+                                basePoint = int32(CalculatePct(unitTarget->GetMaxPower(POWER_MANA), aurEff->GetAmount()));
                                 int32 casterBasePoint = aurEff->GetAmount() * unitTarget->GetMaxPower(POWER_MANA) / 50; // TODO: WTF? caster uses unitTarget?
                                 if (basePoint > casterBasePoint)
                                     basePoint = casterBasePoint;
-                                ApplyPctN(basePoint, TickCount * 60);
+                                ApplyPct(basePoint, TickCount * 60);
                             }
                             // Scorpid Sting - Attempts to Disarm the target for 10 sec. This effect cannot occur more than once per 1 minute.
                             else if (familyFlag[0] & 0x00008000)
@@ -277,27 +278,31 @@ class spell_hun_masters_call : public SpellScriptLoader
                 return true;
             }
 
+            void HandleDummy(SpellEffIndex /*effIndex*/)
+            {
+                if (Unit* ally = GetHitUnit())
+                    if (Player* caster = GetCaster()->ToPlayer())
+                        if (Pet* target = caster->GetPet())
+                        {
+                            TriggerCastFlags castMask = TriggerCastFlags(TRIGGERED_FULL_MASK & ~TRIGGERED_IGNORE_CASTER_AURASTATE);
+                            target->CastSpell(ally, GetEffectValue(), castMask);
+                            target->CastSpell(ally, GetSpellInfo()->Effects[EFFECT_0].CalcValue(), castMask);
+                        }
+            }
+
             void HandleScriptEffect(SpellEffIndex /*effIndex*/)
             {
                 if (Unit* target = GetHitUnit())
                 {
                     // Cannot be processed while pet is dead
                     TriggerCastFlags castMask = TriggerCastFlags(TRIGGERED_FULL_MASK & ~TRIGGERED_IGNORE_CASTER_AURASTATE);
-                    target->CastSpell(target, GetEffectValue(), castMask);
                     target->CastSpell(target, HUNTER_SPELL_MASTERS_CALL_TRIGGERED, castMask);
-                    // there is a possibility that this effect should access effect 0 (dummy) target, but i dubt that
-                    // it's more likely that on on retail it's possible to call target selector based on dbc values
-                    // anyways, we're using GetExplTargetUnit() here and it's ok
-                    if (Unit* ally = GetExplTargetUnit())
-                    {
-                        target->CastSpell(ally, GetEffectValue(), castMask);
-                        target->CastSpell(ally, GetSpellInfo()->Effects[EFFECT_0].CalcValue(), castMask);
-                    }
                 }
             }
 
             void Register()
             {
+                OnEffectHitTarget += SpellEffectFn(spell_hun_masters_call_SpellScript::HandleDummy, EFFECT_0, SPELL_EFFECT_DUMMY);
                 OnEffectHitTarget += SpellEffectFn(spell_hun_masters_call_SpellScript::HandleScriptEffect, EFFECT_1, SPELL_EFFECT_SCRIPT_EFFECT);
             }
         };
@@ -336,6 +341,7 @@ class spell_hun_readiness : public SpellScriptLoader
                         spellInfo->SpellFamilyName == SPELLFAMILY_HUNTER &&
                         spellInfo->Id != HUNTER_SPELL_READINESS &&
                         spellInfo->Id != HUNTER_SPELL_BESTIAL_WRATH &&
+                        spellInfo->Id != DRAENEI_SPELL_GIFT_OF_THE_NAARU &&
                         spellInfo->GetRecoveryTime() > 0)
                         caster->RemoveSpellCooldown((itr++)->first, true);
                     else
@@ -574,7 +580,7 @@ class spell_hun_misdirection : public SpellScriptLoader
             void OnRemove(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
             {
                 if (Unit* caster = GetCaster())
-                    if (!GetDuration())
+                    if (GetTargetApplication()->GetRemoveMode() != AURA_REMOVE_BY_DEFAULT)
                         caster->SetReducedThreatPercent(0, 0);
             }
 

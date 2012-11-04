@@ -184,9 +184,9 @@ class Mod_MultiKill_PlayerScript : public PlayerScript
                 if (MultiKillInfo[i].Text != 0)
                 {
                     if (bg)
-                        bg->SendWarningToAll(MultiKillInfo[i].Text, player->GetName());
+                        bg->SendWarningToAll(MultiKillInfo[i].Text, player->GetName().c_str());
                     else
-                        sWorld->SendWorldText(MultiKillInfo[i].Text, player->GetName());
+                        sWorld->SendWorldText(MultiKillInfo[i].Text, player->GetName().c_str());
                 }
 
                 // KillCredit for quests/achi.

@@ -839,19 +839,10 @@ public:
                     return 1500;
                     break;
                 case 16:
-                    if (player)
-                    {
-                        Illi->CastSpell(player, SPELL_TWO, true);
-                        player->RemoveAurasDueToSpell(SPELL_THREE);
-                        player->RemoveAurasDueToSpell(SPELL_FOUR);
-                        return 5000;
-                    }
-                    else
-                    {
-                        player->FailQuest(QUEST_LORD_ILLIDAN_STORMRAGE);
-                        Step = 30;
-                        return 100;
-                    }
+                    Illi->CastSpell(player, SPELL_TWO, true);
+                    player->RemoveAurasDueToSpell(SPELL_THREE);
+                    player->RemoveAurasDueToSpell(SPELL_FOUR);
+                    return 5000;
                     break;
                 case 17:
                     DoScriptText(LORD_ILLIDAN_SAY_5, Illi);
@@ -1871,8 +1862,8 @@ public:
 
 enum ZuluhedChains
 {
-    QUEST_ZULUHED = 10866,
-    NPC_KARYNAKU  = 22112,
+    QUEST_ZULUHED   = 10866,
+    NPC_KARYNAKU    = 22112,
 };
 
 class spell_unlocking_zuluheds_chains : public SpellScriptLoader
@@ -1884,18 +1875,21 @@ class spell_unlocking_zuluheds_chains : public SpellScriptLoader
         {
             PrepareSpellScript(spell_unlocking_zuluheds_chains_SpellScript);
 
-            void HandleOnCast()
+            bool Load()
             {
-                // FIXME: Hackish solution, a better way to reward killcredit should be found
-                if (Unit* caster = GetCaster())
-                    if(Player* player = caster->ToPlayer())
-                        if (player->GetQuestStatus(QUEST_ZULUHED) == QUEST_STATUS_INCOMPLETE)
-                            player->CastedCreatureOrGO(NPC_KARYNAKU, MAKE_NEW_GUID(0, NPC_KARYNAKU, HIGHGUID_UNIT), 0);
+                return GetCaster()->GetTypeId() == TYPEID_PLAYER;
+            }
+
+            void HandleAfterHit()
+            {
+                Player* caster = GetCaster()->ToPlayer();
+                if (caster->GetQuestStatus(QUEST_ZULUHED) == QUEST_STATUS_INCOMPLETE)
+                    caster->KilledMonsterCredit(NPC_KARYNAKU, 0);
             }
 
             void Register()
             {
-                OnCast += SpellCastFn(spell_unlocking_zuluheds_chains_SpellScript::HandleOnCast);
+                AfterHit += SpellHitFn(spell_unlocking_zuluheds_chains_SpellScript::HandleAfterHit);
             }
         };
 
@@ -1903,6 +1897,96 @@ class spell_unlocking_zuluheds_chains : public SpellScriptLoader
         {
             return new spell_unlocking_zuluheds_chains_SpellScript();
         }
+};
+
+enum ShadowMoonTuberEnum
+{
+    SPELL_WHISTLE               = 36652,
+    SPELL_SHADOWMOON_TUBER      = 36462,
+
+    NPC_BOAR_ENTRY              = 21195,
+    GO_SHADOWMOON_TUBER_MOUND   = 184701,
+
+    POINT_TUBER                 = 1,
+    TYPE_BOAR                   = 1,
+    DATA_BOAR                   = 1
+};
+
+class npc_shadowmoon_tuber_node : public CreatureScript
+{
+public:
+    npc_shadowmoon_tuber_node() : CreatureScript("npc_shadowmoon_tuber_node") {}
+
+    struct npc_shadowmoon_tuber_nodeAI : public ScriptedAI
+    {
+        npc_shadowmoon_tuber_nodeAI(Creature* creature) : ScriptedAI(creature) {}
+
+        void Reset()
+        {
+            tapped = false;
+            tuberGUID = 0;
+            resetTimer = 60000;
+        }
+
+        void SetData(uint32 id, uint32 data)
+        {
+            if (id == TYPE_BOAR && data == DATA_BOAR)
+            {
+                // Spawn chest GO
+                DoCast(SPELL_SHADOWMOON_TUBER);
+
+                // Despawn the tuber
+                if (GameObject* tuber = me->FindNearestGameObject(GO_SHADOWMOON_TUBER_MOUND, 5.0f))
+                {
+                    tuberGUID = tuber->GetGUID();
+                    // @Workaround: find how to properly despawn the GO
+                    tuber->SetPhaseMask(2, true);
+                }
+            }
+        }
+
+        void SpellHit(Unit* /*caster*/, const SpellInfo* spell)
+        {
+            if (!tapped && spell->Id == SPELL_WHISTLE)
+            {
+                if (Creature* boar = me->FindNearestCreature(NPC_BOAR_ENTRY, 30.0f))
+                {
+                    // Disable trigger and force nearest boar to walk to him
+                    tapped = true;
+                    boar->SetWalk(false);
+                    boar->GetMotionMaster()->MovePoint(POINT_TUBER, me->GetPositionX(), me->GetPositionY(), me->GetPositionZ());
+                }
+            }
+        }
+
+        void UpdateAI(const uint32 diff)
+        {
+            if (tapped)
+            {
+                if (resetTimer <= diff)
+                {
+                    // Respawn the tuber
+                    if (tuberGUID)
+                        if (GameObject* tuber = GameObject::GetGameObject(*me, tuberGUID))
+                        // @Workaround: find how to properly respawn the GO
+                            tuber->SetPhaseMask(1, true);
+
+                    Reset();
+                }
+                else
+                    resetTimer -= diff;
+            }
+        }
+    private:
+        bool tapped;
+        uint64 tuberGUID;
+        uint32 resetTimer;
+    };
+
+    CreatureAI* GetAI(Creature* creature) const
+    {
+        return new npc_shadowmoon_tuber_nodeAI(creature);
+    }
 };
 
 void AddSC_shadowmoon_valley()
@@ -1923,4 +2007,5 @@ void AddSC_shadowmoon_valley()
     new mob_torloth_the_magnificent();
     new npc_enraged_spirit();
     new spell_unlocking_zuluheds_chains();
+    new npc_shadowmoon_tuber_node();
 }

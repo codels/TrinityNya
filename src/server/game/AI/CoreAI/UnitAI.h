@@ -20,8 +20,9 @@
 #define TRINITY_UNITAI_H
 
 #include "Define.h"
-#include <list>
 #include "Unit.h"
+#include "Containers.h"
+#include <list>
 
 class Unit;
 class Player;
@@ -35,7 +36,7 @@ enum GeneralScriptTexts
     EMOTE_GENERIC_FRENZY        = -1000002,
     EMOTE_GENERIC_ENRAGED       = -1000003,
     EMOTE_GENERIC_BERSERK       = -1000004,
-    EMOTE_GENERIC_BERSERK_RAID  = -1000005, // RaidBossEmote version of the previous one
+    EMOTE_GENERIC_BERSERK_RAID  = -1000005 // RaidBossEmote version of the previous one
 };
 
 //Selection method used by SelectTarget
@@ -45,7 +46,7 @@ enum SelectAggroTarget
     SELECT_TARGET_TOPAGGRO,                                 //Selects targes from top aggro to bottom
     SELECT_TARGET_BOTTOMAGGRO,                              //Selects targets from bottom aggro to top
     SELECT_TARGET_NEAREST,
-    SELECT_TARGET_FARTHEST,
+    SELECT_TARGET_FARTHEST
 };
 
 // default predicate function to select target based on distance, player and/or aura criteria
@@ -60,7 +61,7 @@ struct DefaultTargetSelector : public std::unary_function<Unit*, bool>
     // dist: if 0: ignored, if > 0: maximum distance to the reference unit, if < 0: minimum distance to the reference unit
     // playerOnly: self explaining
     // aura: if 0: ignored, if > 0: the target shall have the aura, if < 0, the target shall NOT have the aura
-    DefaultTargetSelector(Unit const* unit, float dist, bool playerOnly, int32 aura) : me(unit), m_dist(dist), m_playerOnly(playerOnly), m_aura(aura) {}
+    DefaultTargetSelector(Unit const* unit, float dist, bool playerOnly, int32 aura) : me(unit), m_dist(dist), m_playerOnly(playerOnly), m_aura(aura) { }
 
     bool operator()(Unit const* target) const
     {
@@ -155,12 +156,12 @@ class UnitAI
         // predicate shall extend std::unary_function<Unit*, bool>
         template <class PREDICATE> Unit* SelectTarget(SelectAggroTarget targetType, uint32 position, PREDICATE const& predicate)
         {
-            const std::list<HostileReference*>& threatlist = me->getThreatManager().getThreatList();
+            ThreatContainer::StorageType const& threatlist = me->getThreatManager().getThreatList();
             if (position >= threatlist.size())
                 return NULL;
 
             std::list<Unit*> targetList;
-            for (std::list<HostileReference*>::const_iterator itr = threatlist.begin(); itr != threatlist.end(); ++itr)
+            for (ThreatContainer::StorageType::const_iterator itr = threatlist.begin(); itr != threatlist.end(); ++itr)
                 if (predicate((*itr)->getTarget()))
                     targetList.push_back((*itr)->getTarget());
 
@@ -205,11 +206,11 @@ class UnitAI
         // predicate shall extend std::unary_function<Unit*, bool>
         template <class PREDICATE> void SelectTargetList(std::list<Unit*>& targetList, PREDICATE const& predicate, uint32 maxTargets, SelectAggroTarget targetType)
         {
-            std::list<HostileReference*> const& threatlist = me->getThreatManager().getThreatList();
+            ThreatContainer::StorageType const& threatlist = me->getThreatManager().getThreatList();
             if (threatlist.empty())
                 return;
 
-            for (std::list<HostileReference*>::const_iterator itr = threatlist.begin(); itr != threatlist.end(); ++itr)
+            for (ThreatContainer::StorageType::const_iterator itr = threatlist.begin(); itr != threatlist.end(); ++itr)
                 if (predicate((*itr)->getTarget()))
                     targetList.push_back((*itr)->getTarget());
 
@@ -241,6 +242,10 @@ class UnitAI
 
         // Called when the unit heals
         virtual void HealDone(Unit* /*done_to*/, uint32& /*addhealth*/) {}
+
+        /// Called when a spell is interrupted by Spell::EffectInterruptCast
+        /// Use to reschedule next planned cast of spell.
+        virtual void SpellInterrupted(uint32 /*spellId*/, uint32 /*unTimeMs*/) {}
 
         void AttackStartCaster(Unit* victim, float dist);
 

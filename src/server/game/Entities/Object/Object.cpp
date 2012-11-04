@@ -92,7 +92,8 @@ WorldObject::~WorldObject()
     {
         if (GetTypeId() == TYPEID_CORPSE)
         {
-            sLog->outFatal(LOG_FILTER_GENERAL, "Object::~Object Corpse guid="UI64FMTD", type=%d, entry=%u deleted but still in map!!", GetGUID(), ((Corpse*)this)->GetType(), GetEntry());
+            sLog->outFatal(LOG_FILTER_GENERAL, "Object::~Object Corpse guid="UI64FMTD", type=%d, entry=%u deleted but still in map!!",
+                GetGUID(), ((Corpse*)this)->GetType(), GetEntry());
             ASSERT(false);
         }
         ResetMap();
@@ -767,23 +768,6 @@ void Object::BuildFieldsUpdate(Player* player, UpdateDataMapType& data_map) cons
     BuildValuesUpdateBlockForPlayer(&iter->second, iter->first);
 }
 
-void Object::_LoadIntoDataField(char const* data, uint32 startOffset, uint32 count)
-{
-    if (!data)
-        return;
-
-    Tokens tokens(data, ' ', count);
-
-    if (tokens.size() != count)
-        return;
-
-    for (uint32 index = 0; index < count; ++index)
-    {
-        m_uint32Values[startOffset + index] = atol(tokens[index]);
-        _changedFields[startOffset + index] = true;
-    }
-}
-
 void Object::GetUpdateFieldData(Player const* target, uint32*& flags, bool& isOwner, bool& isItemOwner, bool& hasSpecialInfo, bool& isPartyMember) const
 {
     // This function assumes updatefield index is always valid
@@ -842,6 +826,23 @@ bool Object::IsUpdateFieldVisible(uint32 flags, bool isSelf, bool isOwner, bool 
         return true;
 
     return false;
+}
+
+void Object::_LoadIntoDataField(std::string const& data, uint32 startOffset, uint32 count)
+{
+    if (data.empty())
+        return;
+
+    Tokenizer tokens(data, ' ', count);
+
+    if (tokens.size() != count)
+        return;
+
+    for (uint32 index = 0; index < count; ++index)
+    {
+        m_uint32Values[startOffset + index] = atol(tokens[index]);
+        _changedFields[startOffset + index] = true;
+    }
 }
 
 void Object::_SetUpdateBits(UpdateMask* updateMask, Player* target) const
@@ -1511,8 +1512,8 @@ bool WorldObject::IsInRange3d(float x, float y, float z, float minRange, float m
 
 void Position::RelocateOffset(const Position & offset)
 {
-    m_positionX = GetPositionX() + (offset.GetPositionX() * cos(GetOrientation()) + offset.GetPositionY() * sin(GetOrientation() + M_PI));
-    m_positionY = GetPositionY() + (offset.GetPositionY() * cos(GetOrientation()) + offset.GetPositionX() * sin(GetOrientation()));
+    m_positionX = GetPositionX() + (offset.GetPositionX() * std::cos(GetOrientation()) + offset.GetPositionY() * std::sin(GetOrientation() + M_PI));
+    m_positionY = GetPositionY() + (offset.GetPositionY() * std::cos(GetOrientation()) + offset.GetPositionX() * std::sin(GetOrientation()));
     m_positionZ = GetPositionZ() + offset.GetPositionZ();
     m_orientation = GetOrientation() + offset.GetOrientation();
 }
@@ -1522,8 +1523,8 @@ void Position::GetPositionOffsetTo(const Position & endPos, Position & retOffset
     float dx = endPos.GetPositionX() - GetPositionX();
     float dy = endPos.GetPositionY() - GetPositionY();
 
-    retOffset.m_positionX = dx * cos(GetOrientation()) + dy * sin(GetOrientation());
-    retOffset.m_positionY = dy * cos(GetOrientation()) - dx * sin(GetOrientation());
+    retOffset.m_positionX = dx * std::cos(GetOrientation()) + dy * std::sin(GetOrientation());
+    retOffset.m_positionY = dy * std::cos(GetOrientation()) - dx * std::sin(GetOrientation());
     retOffset.m_positionZ = endPos.GetPositionZ() - GetPositionZ();
     retOffset.m_orientation = endPos.GetOrientation() - GetOrientation();
 }
@@ -1555,8 +1556,8 @@ void Position::GetSinCos(const float x, const float y, float &vsin, float &vcos)
     if (fabs(dx) < 0.001f && fabs(dy) < 0.001f)
     {
         float angle = (float)rand_norm()*static_cast<float>(2*M_PI);
-        vcos = cos(angle);
-        vsin = sin(angle);
+        vcos = std::cos(angle);
+        vsin = std::sin(angle);
     }
     else
     {
@@ -1605,7 +1606,7 @@ bool WorldObject::IsInBetween(const WorldObject* obj1, const WorldObject* obj2, 
     float angle = obj1->GetAngle(obj2);
 
     // not using sqrt() for performance
-    return (size * size) >= GetExactDist2dSq(obj1->GetPositionX() + cos(angle) * dist, obj1->GetPositionY() + sin(angle) * dist);
+    return (size * size) >= GetExactDist2dSq(obj1->GetPositionX() + std::cos(angle) * dist, obj1->GetPositionY() + std::sin(angle) * dist);
 }
 
 bool WorldObject::isInFront(WorldObject const* target,  float arc) const
@@ -1630,8 +1631,8 @@ void WorldObject::GetRandomPoint(const Position &pos, float distance, float &ran
     float angle = (float)rand_norm()*static_cast<float>(2*M_PI);
     float new_dist = (float)rand_norm()*static_cast<float>(distance);
 
-    rand_x = pos.m_positionX + new_dist * cos(angle);
-    rand_y = pos.m_positionY + new_dist * sin(angle);
+    rand_x = pos.m_positionX + new_dist * std::cos(angle);
+    rand_y = pos.m_positionY + new_dist * std::sin(angle);
     rand_z = pos.m_positionZ;
 
     Trinity::NormalizeMapCoord(rand_x);
@@ -2124,13 +2125,13 @@ void WorldObject::MonsterWhisper(int32 textId, uint64 receiver, bool IsBossWhisp
     player->GetSession()->SendPacket(&data);
 }
 
-void WorldObject::BuildMonsterChat(WorldPacket* data, uint8 msgtype, char const* text, uint32 language, char const* name, uint64 targetGuid) const
+void WorldObject::BuildMonsterChat(WorldPacket* data, uint8 msgtype, char const* text, uint32 language, std::string const &name, uint64 targetGuid) const
 {
     *data << (uint8)msgtype;
     *data << (uint32)language;
     *data << (uint64)GetGUID();
     *data << (uint32)0;                                     // 2.1.0
-    *data << (uint32)(strlen(name)+1);
+    *data << (uint32)(name.size()+1);
     *data << name;
     *data << (uint64)targetGuid;                            // Unit Target
     if (targetGuid && !IS_PLAYER_GUID(targetGuid))
@@ -2537,6 +2538,15 @@ GameObject* WorldObject::FindNearestGameObject(uint32 entry, float range) const
     return go;
 }
 
+GameObject* WorldObject::FindNearestGameObjectOfType(GameobjectTypes type, float range) const
+{
+    GameObject* go = NULL;
+    Trinity::NearestGameObjectTypeInObjectRangeCheck checker(*this, type, range);
+    Trinity::GameObjectLastSearcher<Trinity::NearestGameObjectTypeInObjectRangeCheck> searcher(this, go, checker);
+    VisitNearbyGridObject(range, searcher);
+    return go;
+}
+
 void WorldObject::GetGameObjectListWithEntryInGrid(std::list<GameObject*>& gameobjectList, uint32 entry, float maxSearchRange) const
 {
     CellCoord pair(Trinity::ComputeCellCoord(this->GetPositionX(), this->GetPositionY()));
@@ -2640,8 +2650,8 @@ namespace Trinity
 
 void WorldObject::GetNearPoint2D(float &x, float &y, float distance2d, float absAngle) const
 {
-    x = GetPositionX() + (GetObjectSize() + distance2d) * cos(absAngle);
-    y = GetPositionY() + (GetObjectSize() + distance2d) * sin(absAngle);
+    x = GetPositionX() + (GetObjectSize() + distance2d) * std::cos(absAngle);
+    y = GetPositionY() + (GetObjectSize() + distance2d) * std::sin(absAngle);
 
     Trinity::NormalizeMapCoord(x);
     Trinity::NormalizeMapCoord(y);
@@ -2776,8 +2786,8 @@ void WorldObject::MovePosition(Position &pos, float dist, float angle)
 {
     angle += m_orientation;
     float destx, desty, destz, ground, floor;
-    destx = pos.m_positionX + dist * cos(angle);
-    desty = pos.m_positionY + dist * sin(angle);
+    destx = pos.m_positionX + dist * std::cos(angle);
+    desty = pos.m_positionY + dist * std::sin(angle);
 
     // Prevent invalid coordinates here, position is unchanged
     if (!Trinity::IsValidMapCoord(destx, desty))
@@ -2797,8 +2807,8 @@ void WorldObject::MovePosition(Position &pos, float dist, float angle)
         // do not allow too big z changes
         if (fabs(pos.m_positionZ - destz) > 6)
         {
-            destx -= step * cos(angle);
-            desty -= step * sin(angle);
+            destx -= step * std::cos(angle);
+            desty -= step * std::sin(angle);
             ground = GetMap()->GetHeight(GetPhaseMask(), destx, desty, MAX_HEIGHT, true);
             floor = GetMap()->GetHeight(GetPhaseMask(), destx, desty, pos.m_positionZ, true);
             destz = fabs(ground - pos.m_positionZ) <= fabs(floor - pos.m_positionZ) ? ground : floor;
@@ -2822,8 +2832,8 @@ void WorldObject::MovePositionToFirstCollision(Position &pos, float dist, float 
     angle += m_orientation;
     float destx, desty, destz, ground, floor;
     pos.m_positionZ += 2.0f;
-    destx = pos.m_positionX + dist * cos(angle);
-    desty = pos.m_positionY + dist * sin(angle);
+    destx = pos.m_positionX + dist * std::cos(angle);
+    desty = pos.m_positionY + dist * std::sin(angle);
 
     // Prevent invalid coordinates here, position is unchanged
     if (!Trinity::IsValidMapCoord(destx, desty))
@@ -2842,8 +2852,8 @@ void WorldObject::MovePositionToFirstCollision(Position &pos, float dist, float 
     if (col)
     {
         // move back a bit
-        destx -= CONTACT_DISTANCE * cos(angle);
-        desty -= CONTACT_DISTANCE * sin(angle);
+        destx -= CONTACT_DISTANCE * std::cos(angle);
+        desty -= CONTACT_DISTANCE * std::sin(angle);
         dist = sqrt((pos.m_positionX - destx)*(pos.m_positionX - destx) + (pos.m_positionY - desty)*(pos.m_positionY - desty));
     }
 
@@ -2853,8 +2863,8 @@ void WorldObject::MovePositionToFirstCollision(Position &pos, float dist, float 
     // Collided with a gameobject
     if (col)
     {
-        destx -= CONTACT_DISTANCE * cos(angle);
-        desty -= CONTACT_DISTANCE * sin(angle);
+        destx -= CONTACT_DISTANCE * std::cos(angle);
+        desty -= CONTACT_DISTANCE * std::sin(angle);
         dist = sqrt((pos.m_positionX - destx)*(pos.m_positionX - destx) + (pos.m_positionY - desty)*(pos.m_positionY - desty));
     }
 
@@ -2865,8 +2875,8 @@ void WorldObject::MovePositionToFirstCollision(Position &pos, float dist, float 
         // do not allow too big z changes
         if (fabs(pos.m_positionZ - destz) > 6)
         {
-            destx -= step * cos(angle);
-            desty -= step * sin(angle);
+            destx -= step * std::cos(angle);
+            desty -= step * std::sin(angle);
             ground = GetMap()->GetHeight(GetPhaseMask(), destx, desty, MAX_HEIGHT, true);
             floor = GetMap()->GetHeight(GetPhaseMask(), destx, desty, pos.m_positionZ, true);
             destz = fabs(ground - pos.m_positionZ) <= fabs(floor - pos.m_positionZ) ? ground : floor;

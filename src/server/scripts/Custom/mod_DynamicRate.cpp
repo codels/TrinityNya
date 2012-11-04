@@ -125,7 +125,7 @@ public:
         CharacterDatabase.PExecute("REPLACE INTO `character_rate` (`guid`, `rate`) VALUES ('%u', '%f')", guid, rate);
         DynamicRate[guid].update = time(NULL);
 
-        handler->PSendSysMessage(LANG_RATE_SET_CHARACTER, rate, handler->GetSession()->GetPlayer()->GetName());
+        handler->PSendSysMessage(LANG_RATE_SET_CHARACTER, rate, handler->GetSession()->GetPlayer()->GetName().c_str());
         return true;
     }
 };

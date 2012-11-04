@@ -69,14 +69,14 @@ enum SpellCastFlags
     CAST_FLAG_UNKNOWN_29         = 0x10000000,
     CAST_FLAG_UNKNOWN_30         = 0x20000000,
     CAST_FLAG_UNKNOWN_31         = 0x40000000,
-    CAST_FLAG_UNKNOWN_32         = 0x80000000,
+    CAST_FLAG_UNKNOWN_32         = 0x80000000
 };
 
 enum SpellRangeFlag
 {
     SPELL_RANGE_DEFAULT             = 0,
     SPELL_RANGE_MELEE               = 1,     //melee
-    SPELL_RANGE_RANGED              = 2,     //hunter range and ranged weapon
+    SPELL_RANGE_RANGED              = 2      //hunter range and ranged weapon
 };
 
 struct SpellDestination
@@ -154,8 +154,8 @@ class SpellCastTargets
         void SetSpeed(float speed) { m_speed = speed; }
 
         float GetDist2d() const { return m_src._position.GetExactDist2d(&m_dst._position); }
-        float GetSpeedXY() const { return m_speed * cos(m_elevation); }
-        float GetSpeedZ() const { return m_speed * sin(m_elevation); }
+        float GetSpeedXY() const { return m_speed * std::cos(m_elevation); }
+        float GetSpeedZ() const { return m_speed * std::sin(m_elevation); }
 
         void Update(Unit* caster);
         void OutDebug() const;
@@ -203,7 +203,7 @@ enum SpellEffectHandleMode
     SPELL_EFFECT_HANDLE_LAUNCH,
     SPELL_EFFECT_HANDLE_LAUNCH_TARGET,
     SPELL_EFFECT_HANDLE_HIT,
-    SPELL_EFFECT_HANDLE_HIT_TARGET,
+    SPELL_EFFECT_HANDLE_HIT_TARGET
 };
 
 class Spell
@@ -616,7 +616,6 @@ class Spell
 
         // spell execution log
         void InitEffectExecuteData(uint8 effIndex);
-        void CleanupEffectExecuteData();
         void CheckEffectExecuteData();
 
         // Scripting system
