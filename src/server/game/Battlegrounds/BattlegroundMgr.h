@@ -123,7 +123,7 @@ class BattlegroundMgr
         static bool IsBGWeekend(BattlegroundTypeId bgTypeId);
 
         //trinity_nya
-        BattlegroundContainer GetAllBattlegroundsWithTypeId(BattlegroundTypeId bgTypeId) { return bgDataStore[bgTypeId].m_Battlegrounds; }
+        BattlegroundContainer& GetAllBattlegroundsWithTypeId(BattlegroundTypeId bgTypeId) { return bgDataStore[bgTypeId].m_Battlegrounds; }
 
         uint32 GetMaxRatingDifference() const;
         uint32 GetRatingDiscardTimer()  const;

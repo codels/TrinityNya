@@ -178,7 +178,7 @@ class npc_arena_watcher : public CreatureScript
                 if (!BattlegroundMgr::IsArenaType(BattlegroundTypeId(bgTypeId)))
                     continue;
                 
-                BattlegroundContainer arenas = sBattlegroundMgr->GetAllBattlegroundsWithTypeId(BattlegroundTypeId(bgTypeId));
+                BattlegroundContainer& arenas = sBattlegroundMgr->GetAllBattlegroundsWithTypeId(BattlegroundTypeId(bgTypeId));
 
                 if (arenas.empty())
                     continue;
@@ -247,7 +247,7 @@ class npc_arena_watcher : public CreatureScript
                 if (!BattlegroundMgr::IsArenaType(BattlegroundTypeId(bgTypeId)))
                     continue;
                 
-                BattlegroundContainer arenas = sBattlegroundMgr->GetAllBattlegroundsWithTypeId(BattlegroundTypeId(bgTypeId));
+                BattlegroundContainer& arenas = sBattlegroundMgr->GetAllBattlegroundsWithTypeId(BattlegroundTypeId(bgTypeId));
 
                 if (arenas.empty())
                     continue;
@@ -307,7 +307,7 @@ class npc_arena_watcher : public CreatureScript
         {
             uint32 arenaId = action - GOSSIP_OFFSET;
             uint32 bgTypeId = sender - GOSSIP_SENDER_MAIN;
-            BattlegroundContainer arenas = sBattlegroundMgr->GetAllBattlegroundsWithTypeId(BattlegroundTypeId(bgTypeId));
+            BattlegroundContainer& arenas = sBattlegroundMgr->GetAllBattlegroundsWithTypeId(BattlegroundTypeId(bgTypeId));
 
             if (arenas[arenaId])
             {
