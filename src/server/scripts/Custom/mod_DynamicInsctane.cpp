@@ -222,22 +222,22 @@ bool DICreatureCalcStats(Creature* creature)
     if (rank == CREATURE_ELITE_ELITE)
     {
         healthmod *= sWorld->getRate(RATE_CREATURE_ELITE_ELITE_HP);
-        damagemod *= 2;
+        damagemod *= 4;
     }
     else if (rank == CREATURE_ELITE_RAREELITE)
     {
         healthmod *= sWorld->getRate(RATE_CREATURE_ELITE_RAREELITE_HP);
-        damagemod *= 3;
+        damagemod *= 6;
     }
     else if (rank == CREATURE_ELITE_WORLDBOSS)
     {
         healthmod *= sWorld->getRate(RATE_CREATURE_ELITE_WORLDBOSS_HP);
-        damagemod *= 8;
+        damagemod *= 16;
     }
     else if (rank == CREATURE_ELITE_RARE)
     {
         healthmod *= sWorld->getRate(RATE_CREATURE_ELITE_RARE_HP);
-        damagemod *= 2;
+        damagemod *= 4;
     }
     // CREATURE_ELITE_NORMAL
     else
@@ -297,8 +297,8 @@ bool DICreatureCalcStats(Creature* creature)
         dmgbase = 4 * level;
     else if (max)
         dmgbase = 6 * level;
+    dmgbase *= cinfo->dmg_multiplier;
 
-        
     float dmgmin = dmgbase * 0.95;
     float dmgmax = dmgbase * 1.05;
 
