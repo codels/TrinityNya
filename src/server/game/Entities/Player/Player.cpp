@@ -4941,13 +4941,13 @@ void Player::DeleteFromDB(uint64 playerguid, uint32 accountId, bool updateRealmC
             stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CHAR_PET_DECLINEDNAME_BY_OWNER);
             stmt->setUInt32(0, guid);
             trans->Append(stmt);
-            
+
             if (!sWorld->getBoolConfig(CONFIG_ACCOUNT_ACHIEVEMENTS))
             {
                 stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CHAR_ACHIEVEMENTS);
                 stmt->setUInt32(0, guid);
                 trans->Append(stmt);
-                
+
                 stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CHAR_ACHIEVEMENT_PROGRESS);
                 stmt->setUInt32(0, guid);
                 trans->Append(stmt);
@@ -16807,10 +16807,10 @@ bool Player::LoadFromDB(uint32 guid, SQLQueryHolder *holder)
     // load achievements before anything else to prevent multiple gains for the same achievement/criteria on every loading (as loading does call UpdateAchievementCriteria)
     // trinity_nya
     if (sWorld->getBoolConfig(CONFIG_ACCOUNT_ACHIEVEMENTS))
-        m_achievementMgr.LoadFromDB(holder->GetPreparedResult(PLAYER_LOGIN_QUERY_LOADACHIEVEMENTS_ACC), holder->GetPreparedResult(PLAYER_LOGIN_QUERY_LOADCRITERIAPROGRESS_ACC), true);
+        m_achievementMgr.LoadFromDB(holder->GetPreparedResult(PLAYER_LOGIN_QUERY_LOADACHIEVEMENTS_ACC), holder->GetPreparedResult(PLAYER_LOGIN_QUERY_LOADCRITERIAPROGRESS_ACC));
     else
         m_achievementMgr.LoadFromDB(holder->GetPreparedResult(PLAYER_LOGIN_QUERY_LOADACHIEVEMENTS), holder->GetPreparedResult(PLAYER_LOGIN_QUERY_LOADCRITERIAPROGRESS));
-    
+
 
     uint32 money = fields[8].GetUInt32();
     if (money > MAX_MONEY_AMOUNT)
@@ -18906,8 +18906,7 @@ void Player::SaveToDB(bool create /*=false*/)
     _SaveActions(trans);
     _SaveAuras(trans);
     _SaveSkills(trans);
-    // trinity_nya
-    m_achievementMgr.SaveToDB(trans, sWorld->getBoolConfig(CONFIG_ACCOUNT_ACHIEVEMENTS));
+    m_achievementMgr.SaveToDB(trans);
     m_reputationMgr.SaveToDB(trans);
     _SaveEquipmentSets(trans);
     GetSession()->SaveTutorialsData(trans);                 // changed only while character in game
@@ -21806,7 +21805,7 @@ bool Player::IsVisibleGloballyFor(Player* u) const
     // GMs are visible for higher gms (or players are visible for gms)
     if (!AccountMgr::IsPlayerAccount(u->GetSession()->GetSecurity()))
         return GetSession()->GetSecurity() <= u->GetSession()->GetSecurity();
-        
+
     // TrinityNya for ArenaWatcher
     if (!isGMVisible())
         return false;

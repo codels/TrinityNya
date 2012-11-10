@@ -34,7 +34,6 @@ enum WatcherStrings
 
 bool ArenaWatcherEnable = false;
 bool ArenaWatcherOnlyGM = false;
-bool ArenaWatcherShowNoGames = false;
 bool ArenaWatcherOnlyRated = false;
 bool ArenaWatcherToPlayers = false;
 bool ArenaWatcherSilence = false;
@@ -61,10 +60,10 @@ void ArenaWatcherStart(Player* player)
 {
     player->SetGMVisible(false);
     uint32 guid = player->GetGUIDLow();
-    
+
     if (IsWatcher(guid))
         return;
-    
+
     ArenaWatcher data;
     data.mutetime = player->GetSession()->m_muteTime;
     ArenaWatcherPlayers[guid] = data;
@@ -74,16 +73,16 @@ void ArenaWatcherAfterTeleport(Player* player)
 {
     player->SetMovement(MOVE_WATER_WALK);
     player->SetMovement(MOVE_UNROOT);
-    
+
     if (ArenaWatcherSilence)
         player->GetSession()->m_muteTime = time(NULL) + 120 * MINUTE;
-    
+
     if (ArenaWatcherFly)
     {
         player->SendMovementSetCanFly(true);
         player->SetCanFly(true);
     }
-    
+
     player->SetSpeed(MOVE_WALK, ArenaWatcherSpeed, true);
     player->SetSpeed(MOVE_RUN, ArenaWatcherSpeed, true);
     player->SetSpeed(MOVE_SWIM, ArenaWatcherSpeed, true);
@@ -94,13 +93,13 @@ void ArenaWatcherAfterTeleport(Player* player)
 void ArenaWatcherEnd(Player* player)
 {
     uint32 guid = player->GetGUIDLow();
-    
+
     if (!IsWatcher(guid))
         return;
-    
+
     if (ArenaWatcherSilence)
         player->GetSession()->m_muteTime = ArenaWatcherPlayers[guid].mutetime;
-        
+
 
     ArenaWatcherMap::iterator itr = ArenaWatcherPlayers.find(guid);
     if (itr != ArenaWatcherPlayers.end())
@@ -128,7 +127,6 @@ class mod_ArenaWatcher_WorldScript : public WorldScript
     {
         ArenaWatcherEnable = ConfigMgr::GetBoolDefault("ArenaWatcher.Enable", false);
         ArenaWatcherOnlyGM = ConfigMgr::GetBoolDefault("ArenaWatcher.OnlyGM", false);
-        ArenaWatcherShowNoGames = ConfigMgr::GetBoolDefault("ArenaWatcher.ShowNoGames", false);
         ArenaWatcherOnlyRated = ConfigMgr::GetBoolDefault("ArenaWatcher.OnlyRated", false);
         ArenaWatcherToPlayers = ConfigMgr::GetBoolDefault("ArenaWatcher.ToPlayers", false);
         ArenaWatcherSilence = ConfigMgr::GetBoolDefault("ArenaWatcher.Silence", false);
@@ -169,47 +167,42 @@ class npc_arena_watcher : public CreatureScript
 
     bool OnGossipHello(Player* player, Creature* creature)
     {
+        if (creature->isQuestGiver())
+            player->PrepareQuestMenu(creature->GetGUID());
+
         if (ArenaWatcherEnable && (!ArenaWatcherOnlyGM || player->isGameMaster()))
         {
-            uint32 arenasCount[MAX_ARENA_SLOT] = {0, 0, 0};
+            uint8 arenasCount[MAX_ARENA_SLOT] = {0, 0, 0};
 
-            for (uint32 bgTypeId = 0; bgTypeId < MAX_BATTLEGROUND_TYPE_ID; ++bgTypeId)
+            for (uint8 bgTypeId = 0; bgTypeId < MAX_BATTLEGROUND_TYPE_ID; ++bgTypeId)
             {
                 if (!BattlegroundMgr::IsArenaType(BattlegroundTypeId(bgTypeId)))
                     continue;
-                
-                BattlegroundContainer& arenas = sBattlegroundMgr->GetAllBattlegroundsWithTypeId(BattlegroundTypeId(bgTypeId));
 
-                if (arenas.empty())
+                BattlegroundData* arenas = sBattlegroundMgr->GetAllBattlegroundsWithTypeId(BattlegroundTypeId(bgTypeId));
+
+                if (!arenas || arenas->m_Battlegrounds.empty())
                     continue;
-                    
-                for (BattlegroundContainer::const_iterator itr = arenas.begin(); itr != arenas.end(); ++itr)
+
+                for (BattlegroundContainer::const_iterator itr = arenas->m_Battlegrounds.begin(); itr != arenas->m_Battlegrounds.end(); ++itr)
                 {
-                    Battleground* bg = itr->second;
-                    if (!bg)
-                        continue;
-                        
-                    if (bg->GetStatus() == STATUS_NONE || bg->GetStatus() == STATUS_WAIT_LEAVE)
-                        continue;
-                        
-                    if (bg->GetArenaType() == 0)
-                        continue;
-                        
-                    if (ArenaWatcherOnlyRated && !bg->isRated())
+                    if (!(itr->second->GetStatus() & 2))
                         continue;
 
-                    ++arenasCount[ArenaTeam::GetSlotByType(bg->GetArenaType())];
+                    if (ArenaWatcherOnlyRated && !itr->second->isRated())
+                        continue;
+
+                    ++arenasCount[ArenaTeam::GetSlotByType(itr->second->GetArenaType())];
                 }
             }
-            
+
             for (uint8 i = 0; i < MAX_ARENA_SLOT; ++i)
             {
-                // skip arena type with 0 games
-                if (!ArenaWatcherShowNoGames && arenasCount[i] == 0)
+                if (!arenasCount[i])
                     continue;
-                    
-                char gossipTextFormat[100];
-                snprintf(gossipTextFormat, 100, sObjectMgr->GetTrinityStringForDBCLocale(STRING_ARENA_2v2 + i), arenasCount[i]);
+
+                char gossipTextFormat[50];
+                snprintf(gossipTextFormat, 50, sObjectMgr->GetTrinityStringForDBCLocale(STRING_ARENA_2v2 + i), arenasCount[i]);
                 player->ADD_GOSSIP_ITEM(GOSSIP_ICON_CHAT, gossipTextFormat, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + ArenaTeam::GetTypeBySlot(i));
             }
 
@@ -224,8 +217,8 @@ class npc_arena_watcher : public CreatureScript
                     true
                 );
         }
-        
-        player->PlayerTalkClass->SendGossipMenu(player->GetGossipTextId(creature), creature->GetGUID());
+
+        player->SEND_GOSSIP_MENU(player->GetGossipTextId(creature), creature->GetGUID());
         return true;
     }
 
@@ -235,46 +228,43 @@ class npc_arena_watcher : public CreatureScript
 
         if (!ArenaWatcherEnable && (!ArenaWatcherOnlyGM || player->isGameMaster()))
             return true;
-        
+
         if (action <= GOSSIP_OFFSET)
         {
             bool bracketExists = false;
 
-			uint8 playerCount = action - GOSSIP_ACTION_INFO_DEF;
-            
-            for (uint32 bgTypeId = 0; bgTypeId < MAX_BATTLEGROUND_TYPE_ID; ++bgTypeId)
+            uint8 playerCount = action - GOSSIP_ACTION_INFO_DEF;
+
+            for (uint8 bgTypeId = 0; bgTypeId < MAX_BATTLEGROUND_TYPE_ID; ++bgTypeId)
             {
                 if (!BattlegroundMgr::IsArenaType(BattlegroundTypeId(bgTypeId)))
                     continue;
-                
-                BattlegroundContainer& arenas = sBattlegroundMgr->GetAllBattlegroundsWithTypeId(BattlegroundTypeId(bgTypeId));
 
-                if (arenas.empty())
+                BattlegroundData* arenas = sBattlegroundMgr->GetAllBattlegroundsWithTypeId(BattlegroundTypeId(bgTypeId));
+
+                if (!arenas || arenas->m_Battlegrounds.empty())
                     continue;
-                    
-                for (BattlegroundContainer::const_iterator itr = arenas.begin(); itr != arenas.end(); ++itr)
+
+                for (BattlegroundContainer::const_iterator itr = arenas->m_Battlegrounds.begin(); itr != arenas->m_Battlegrounds.end(); ++itr)
                 {
-                    Battleground* bg = itr->second;
-                    if (!bg)
-                        continue;
-                        
-                    Map* map = bg->FindBgMap();
+                    Map* map = itr->second->FindBgMap();
                     if (!map)
                         continue;
-                        
-                    if (bg->GetStatus() == STATUS_NONE || bg->GetStatus() == STATUS_WAIT_LEAVE)
+
+                    if (!(itr->second->GetStatus() & 2)) {
                         continue;
-                        
-                    if (bg->GetArenaType() != playerCount)
+                    }
+
+                    if (itr->second->GetArenaType() != playerCount)
                         continue;
 
-                    if (ArenaWatcherOnlyRated && !bg->isRated())
+                    if (ArenaWatcherOnlyRated && !itr->second->isRated())
                         continue;
-                        
-                    if (bg->isRated())
+
+                    if (itr->second->isRated())
                     {
-                        ArenaTeam* teamOne = sArenaTeamMgr->GetArenaTeamById(bg->GetArenaTeamIdByIndex(0));
-                        ArenaTeam* teamTwo = sArenaTeamMgr->GetArenaTeamById(bg->GetArenaTeamIdByIndex(1));
+                        ArenaTeam* teamOne = sArenaTeamMgr->GetArenaTeamById(itr->second->GetArenaTeamIdByIndex(0));
+                        ArenaTeam* teamTwo = sArenaTeamMgr->GetArenaTeamById(itr->second->GetArenaTeamIdByIndex(1));
 
                         if (teamOne && teamTwo)
                         {
@@ -293,9 +283,9 @@ class npc_arena_watcher : public CreatureScript
                     bracketExists = true;
                 }
             }
-            
+
             if (bracketExists)
-                player->PlayerTalkClass->SendGossipMenu(player->GetGossipTextId(creature), creature->GetGUID());
+                player->SEND_GOSSIP_MENU(player->GetGossipTextId(creature), creature->GetGUID());
             else
             {
                 sCreatureTextMgr->SendChat(creature, SAY_NOT_FOUND_BRACKET, player->GetGUID());
@@ -307,11 +297,14 @@ class npc_arena_watcher : public CreatureScript
         {
             uint32 arenaId = action - GOSSIP_OFFSET;
             uint32 bgTypeId = sender - GOSSIP_SENDER_MAIN;
-            BattlegroundContainer& arenas = sBattlegroundMgr->GetAllBattlegroundsWithTypeId(BattlegroundTypeId(bgTypeId));
+            BattlegroundData* arenas = sBattlegroundMgr->GetAllBattlegroundsWithTypeId(BattlegroundTypeId(bgTypeId));
 
-            if (arenas[arenaId])
+            if (!arenas || arenas->m_Battlegrounds.empty())
+                return false;
+
+            if (arenas->m_Battlegrounds[arenaId])
             {
-                Battleground* bg = arenas[arenaId];
+                Battleground* bg = arenas->m_Battlegrounds[arenaId];
 
                 if (bg->GetStatus() == STATUS_NONE)
                 {
@@ -320,7 +313,7 @@ class npc_arena_watcher : public CreatureScript
                     player->CLOSE_GOSSIP_MENU();
                     return false;
                 }
-                
+
                 float x = 0.0f, y = 0.0f, z = 0.0f;
                 switch (bg->GetMapId())
                 {
@@ -371,7 +364,7 @@ class npc_arena_watcher : public CreatureScript
 
         if (!ArenaWatcherToPlayers || !ArenaWatcherEnable || (ArenaWatcherOnlyGM && !player->isGameMaster()) || !*targetName)
             return true;
-            
+
         if (uiSender == GOSSIP_SENDER_MAIN)
         {
             switch (uiAction)
