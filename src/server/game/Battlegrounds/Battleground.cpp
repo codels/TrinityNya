@@ -646,7 +646,12 @@ void Battleground::SendPacketToTeam(uint32 TeamID, WorldPacket* packet, Player* 
     for (BattlegroundPlayerMap::const_iterator itr = m_Players.begin(); itr != m_Players.end(); ++itr)
         if (Player* player = _GetPlayerForTeam(TeamID, itr, "SendPacketToTeam"))
             if (self || sender != player)
-                player->GetSession()->SendPacket(packet);
+            {
+                WorldSession* session = player->GetSession();
+                sLog->outDebug(LOG_FILTER_BATTLEGROUND, "%s %s - SendPacketToTeam %u, Player: %s", GetOpcodeNameForLogging(packet->GetOpcode()).c_str(),
+                    session->GetPlayerInfo().c_str(), TeamID, sender ? sender->GetName().c_str() : "null");
+                session->SendPacket(packet);
+            }
 }
 
 void Battleground::PlaySoundToAll(uint32 SoundID)
@@ -1071,7 +1076,7 @@ void Battleground::RemovePlayerAtLeave(uint64 guid, bool Transport, bool SendPac
             player->TeleportToBGEntryPoint();
 
         sScriptMgr->OnPlayerRemoveFromBattleground(player, this);
-        sLog->outInfo(LOG_FILTER_BATTLEGROUND, "BATTLEGROUND: Removed player %s from Battleground.", player->GetName().c_str());
+        sLog->outDebug(LOG_FILTER_BATTLEGROUND, "Removed player %s from Battleground.", player->GetName().c_str());
     }
 
     //battleground object will be deleted next Battleground::Update() call
@@ -1085,9 +1090,6 @@ void Battleground::Reset()
     SetStartTime(0);
     SetEndTime(0);
     SetLastResurrectTime(0);
-    SetArenaType(0);
-    SetRated(false);
-
     m_Events = 0;
 
     if (m_InvitedAlliance > 0 || m_InvitedHorde > 0)
@@ -1184,10 +1186,9 @@ void Battleground::AddPlayer(Player* player)
             player->ResetAllPowers();
         }
 
-        WorldPacket teammate;
-        teammate.Initialize(SMSG_ARENA_OPPONENT_UPDATE, 8);
-        teammate << uint64(player->GetGUID());
-        SendPacketToTeam(team, &teammate, player, false);
+        WorldPacket data(SMSG_ARENA_OPPONENT_UPDATE, 8);
+        data << uint64(player->GetGUID());
+        SendPacketToTeam(team, &data, player, false);
     }
     else
     {
@@ -1210,7 +1211,6 @@ void Battleground::AddPlayer(Player* player)
     // setup BG group membership
     PlayerAddedToBGCheckIfBGIsRunning(player);
     AddOrSetPlayerToCorrectBgGroup(player, team);
-
     sScriptMgr->OnPlayerJoinedBattleground(player, this);
 
     // Log
@@ -1276,7 +1276,7 @@ void Battleground::EventPlayerLoggedIn(Player* player)
 void Battleground::EventPlayerLoggedOut(Player* player)
 {
     uint64 guid = player->GetGUID();
-    
+
     //TrinityNya: Fixed count players
     if (!IsPlayerInBattleground(guid))
         return;
