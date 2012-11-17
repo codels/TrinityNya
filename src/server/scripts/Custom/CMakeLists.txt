@@ -24,6 +24,7 @@ set(scripts_STAT_SRCS
   Custom/mod_Tournaments.cpp
   Custom/mod_GuildDefault.cpp
   Custom/mod_HonorRank.cpp
+  Custom/mod_ItemUpgrade.cpp
   Custom/mod_MailHistory.cpp
   Custom/mod_MultiKill.cpp
   Custom/mod_SpecialCode.cpp

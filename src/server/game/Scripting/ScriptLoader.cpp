@@ -33,6 +33,7 @@ void AddSC_Mod_FriendChat(); // by Codels
 void AddSC_Mod_Tournaments(); // by Codels
 void AddSC_Mod_GuildDefault(); // by s@m
 void AddSC_Mod_HonorRank(); // by Codels
+void AddSC_Mod_ItemUpgrade(); // by Codels
 void AddSC_Mod_MailHistory(); // by Codels
 void AddSC_Mod_Multikill(); // by Codels
 void AddSC_Mod_SpecialCode(); // by Codels
@@ -1309,6 +1310,7 @@ void AddCustomScripts()
     AddSC_Mod_Tournaments();
     AddSC_Mod_GuildDefault();
     AddSC_Mod_HonorRank();
+    AddSC_Mod_ItemUpgrade();
     AddSC_Mod_MailHistory();
     AddSC_Mod_Multikill();
     AddSC_Mod_SpecialCode();
