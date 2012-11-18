@@ -6,68 +6,13 @@
 #include "ArenaTeam.h"
 #include "Config.h"
 
-/*
-enum EquipmentSlots                                         // 19 slots
+enum ItemUpgradeStrings
 {
-    EQUIPMENT_SLOT_START        = 0,
-    EQUIPMENT_SLOT_HEAD         = 0,
-    EQUIPMENT_SLOT_NECK         = 1,
-    EQUIPMENT_SLOT_SHOULDERS    = 2,
-    EQUIPMENT_SLOT_BODY         = 3,
-    EQUIPMENT_SLOT_CHEST        = 4,
-    EQUIPMENT_SLOT_WAIST        = 5,
-    EQUIPMENT_SLOT_LEGS         = 6,
-    EQUIPMENT_SLOT_FEET         = 7,
-    EQUIPMENT_SLOT_WRISTS       = 8,
-    EQUIPMENT_SLOT_HANDS        = 9,
-    EQUIPMENT_SLOT_FINGER1      = 10,
-    EQUIPMENT_SLOT_FINGER2      = 11,
-    EQUIPMENT_SLOT_TRINKET1     = 12,
-    EQUIPMENT_SLOT_TRINKET2     = 13,
-    EQUIPMENT_SLOT_BACK         = 14,
-    EQUIPMENT_SLOT_MAINHAND     = 15,
-    EQUIPMENT_SLOT_OFFHAND      = 16,
-    EQUIPMENT_SLOT_RANGED       = 17,
-    EQUIPMENT_SLOT_TABARD       = 18,
-    EQUIPMENT_SLOT_END          = 19
+    ARE_YOU_SURE    = 11300, // Are you sure you want to remove the effect?
+    NO_EFFECT       = 11301, // no effect
+    EFFECT_NOW      = 11302, // Effect №%i (now: %s)
+    EFFECT_REMOVE   = 11303, // Remove effect
 };
-
-    Item* item = NULL;
-    item = GetUseableItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_OFFHAND);
-    item = GetItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_OFFHAND);
-
-            case GOSSIP_ACTION_INFO_DEF + 1:
-                player->ADD_GOSSIP_ITEM(GOSSIP_ICON_CHAT, GOSSIP_SENDACTION_SAYGE1,            GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 2);
-                player->ADD_GOSSIP_ITEM(GOSSIP_ICON_CHAT, GOSSIP_SENDACTION_SAYGE2,            GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 3);
-                player->ADD_GOSSIP_ITEM(GOSSIP_ICON_CHAT, GOSSIP_SENDACTION_SAYGE3,            GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 4);
-                player->ADD_GOSSIP_ITEM(GOSSIP_ICON_CHAT, GOSSIP_SENDACTION_SAYGE4,            GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 5);
-                player->SEND_GOSSIP_MENU(7340, creature->GetGUID());
-                break;
-
-    // -1 from client enchantment slot number
-    enum EnchantmentSlot
-    {
-        PERM_ENCHANTMENT_SLOT           = 0,
-        TEMP_ENCHANTMENT_SLOT           = 1,
-        SOCK_ENCHANTMENT_SLOT           = 2,
-        SOCK_ENCHANTMENT_SLOT_2         = 3,
-        SOCK_ENCHANTMENT_SLOT_3         = 4,
-        BONUS_ENCHANTMENT_SLOT          = 5,
-        PRISMATIC_ENCHANTMENT_SLOT      = 6,                    // added at apply special permanent enchantment
-        MAX_INSPECTED_ENCHANTMENT_SLOT  = 7,
-
-        PROP_ENCHANTMENT_SLOT_0         = 7,                    // used with RandomSuffix
-        PROP_ENCHANTMENT_SLOT_1         = 8,                    // used with RandomSuffix
-        PROP_ENCHANTMENT_SLOT_2         = 9,                    // used with RandomSuffix and RandomProperty
-        PROP_ENCHANTMENT_SLOT_3         = 10,                   // used with RandomProperty
-        PROP_ENCHANTMENT_SLOT_4         = 11,                   // used with RandomProperty
-        MAX_ENCHANTMENT_SLOT            = 12
-    };
-
-            enchant = sSpellItemEnchantmentStore.LookupEntry(enchantId);
-            if (enchant)
-                break;
-*/
 
 struct ItemUpgradeTemplate
 {
@@ -79,6 +24,10 @@ struct ItemUpgradeTemplate
     uint32 golds;
 };
 
+int ItemUpgradeTextAreYouSure = 0;
+int ItemUpgradeTextNoEffect = 0;
+int ItemUpgradeTextEffectNow = 0;
+int ItemUpgradeTextEffectRemove = 0;
 std::vector<ItemUpgradeTemplate> ItemUpgradeInfo;
 
 class Mod_ItemUpgrade_WorldScript : public WorldScript
@@ -93,10 +42,13 @@ class Mod_ItemUpgrade_WorldScript : public WorldScript
         sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading ItemUpgrade...");
         uint32 oldMSTime = getMSTime();
 
-        QueryResult result = WorldDatabase.PQuery("SELECT `enchant_id`, `prev_enchant_id`, `description`, `golds` FROM `world_item_upgrade`");
+        QueryResult result = WorldDatabase.PQuery("SELECT `enchant_id`, `prev_enchant_id`, `golds`, `description` FROM `world_item_upgrade`");
 
         if (!result)
+        {
+            sLog->outInfo(LOG_FILTER_SERVER_LOADING, ">> `world_item_upgrade` is empty");
             return;
+        }
 
         uint16 count = 0;
 
@@ -108,10 +60,20 @@ class Mod_ItemUpgrade_WorldScript : public WorldScript
 
             ItemUpgradeTemp.enchantId       = fields[0].GetUInt32();
             ItemUpgradeTemp.prevEnchantId   = fields[1].GetUInt32();
-            ItemUpgradeTemp.description     = fields[2].GetString();
-            ItemUpgradeTemp.golds           = fields[3].GetUInt32();
+            ItemUpgradeTemp.golds           = fields[2].GetUInt32() * GOLD;
+            //ItemUpgradeTemp.description     = fields[3].GetString();
             ItemUpgradeTemp.charges         = 0;
             ItemUpgradeTemp.duration        = 0;
+
+            SpellItemEnchantmentEntry const* enchantEntry = sSpellItemEnchantmentStore.LookupEntry(ItemUpgradeTemp.enchantId);
+            if (!enchantEntry) {
+                sLog->outError(LOG_FILTER_SQL, "Item Upgrade: not exists enchantment id %u", ItemUpgradeTemp.enchantId);
+                continue;
+            }
+
+            for (uint8 i = 0; i < 16; ++i)
+                if (strlen(enchantEntry->description[i]))
+                    ItemUpgradeTemp.description = enchantEntry->description[i];
 
             ItemUpgradeInfo.push_back(ItemUpgradeTemp);
             ++count;
@@ -123,6 +85,10 @@ class Mod_ItemUpgrade_WorldScript : public WorldScript
 
     void OnConfigLoad(bool /*reload*/)
     {
+        ItemUpgradeTextAreYouSure   =  ConfigMgr::GetIntDefault("ItemUpgrade.Text.AreYouSure", ARE_YOU_SURE);
+        ItemUpgradeTextNoEffect     =  ConfigMgr::GetIntDefault("ItemUpgrade.Text.NoEffect", NO_EFFECT);
+        ItemUpgradeTextEffectNow    =  ConfigMgr::GetIntDefault("ItemUpgrade.Text.EffectNow", EFFECT_NOW);
+        ItemUpgradeTextEffectRemove =  ConfigMgr::GetIntDefault("ItemUpgrade.Text.EffectRemove", EFFECT_REMOVE);
         LoadDataFromDataBase();
     }
 
@@ -175,7 +141,7 @@ class go_item_upgrade : public GameObjectScript
         uint16 itemSlot = getSlot(sender);
         uint16 itemEnchantSlot = getEnchant(sender);
 
-        if (itemSlot < EQUIPMENT_SLOT_START || itemSlot >= EQUIPMENT_SLOT_END) {
+        if (itemSlot >= EQUIPMENT_SLOT_END) {
             player->CLOSE_GOSSIP_MENU();
             return false;
         }
@@ -188,20 +154,36 @@ class go_item_upgrade : public GameObjectScript
         }
 
         if (itemEnchantSlot < PROP_ENCHANTMENT_SLOT_0 || itemEnchantSlot >= MAX_ENCHANTMENT_SLOT) {
-            player->ADD_GOSSIP_ITEM(GOSSIP_ICON_CHAT, "Выбрать другой предмет", senderValue(0, 0), GOSSIP_ACTION_INFO_DEF);
+            player->ADD_GOSSIP_ITEM(GOSSIP_ICON_CHAT, "<< ...", senderValue(0, 0), GOSSIP_ACTION_INFO_DEF);
 
             for (uint8 i = PROP_ENCHANTMENT_SLOT_0; i < MAX_ENCHANTMENT_SLOT; ++i) {
-                std::string oldEffect = "эффекта нет или он не известен";
+                std::string oldEffect = sObjectMgr->GetTrinityStringForDBCLocale(ItemUpgradeTextNoEffect);
                 uint32 enchantId = item->GetEnchantmentId(EnchantmentSlot(i));
-                for (uint32 j = 0; j < ItemUpgradeInfo.size(); ++j)
+                if (enchantId != 0)
                 {
-                    if (ItemUpgradeInfo[j].enchantId != enchantId)
-                        continue;
+                    bool isExists = false;
 
-                    oldEffect = ItemUpgradeInfo[j].description;
+                    for (uint32 j = 0; j < ItemUpgradeInfo.size(); ++j)
+                    {
+                        if (ItemUpgradeInfo[j].enchantId != enchantId)
+                            continue;
+
+                        oldEffect = ItemUpgradeInfo[j].description;
+                        isExists = true;
+                    }
+
+                    if (!isExists) {
+                        SpellItemEnchantmentEntry const* enchantEntry = sSpellItemEnchantmentStore.LookupEntry(enchantId);
+
+                        if (enchantEntry)
+                            for (uint8 i = 0; i < 16; ++i)
+                                if (strlen(enchantEntry->description[i]))
+                                    oldEffect = enchantEntry->description[i];
+                    }
                 }
+
                 char gossipTextFormat[100];
-                snprintf(gossipTextFormat, 100, "Эффект № %i (Сейчас: %s)", i - PROP_ENCHANTMENT_SLOT_0 + 1, oldEffect.c_str());
+                snprintf(gossipTextFormat, 100, sObjectMgr->GetTrinityStringForDBCLocale(ItemUpgradeTextEffectNow), i - PROP_ENCHANTMENT_SLOT_0 + 1, oldEffect.c_str());
                 player->ADD_GOSSIP_ITEM(GOSSIP_ICON_CHAT, gossipTextFormat, senderValue(itemSlot, i), GOSSIP_ACTION_INFO_DEF);
             }
             player->SEND_GOSSIP_MENU(player->GetGossipTextId(go), go->GetGUID());
@@ -212,17 +194,17 @@ class go_item_upgrade : public GameObjectScript
 
         if (action <= GOSSIP_ACTION_INFO_DEF)
         {
-            player->ADD_GOSSIP_ITEM(GOSSIP_ICON_CHAT, "Выбрать другой слот для эффекта", senderValue(itemSlot, 0), GOSSIP_ACTION_INFO_DEF);
+            player->ADD_GOSSIP_ITEM(GOSSIP_ICON_CHAT, "<< ...", senderValue(itemSlot, 0), GOSSIP_ACTION_INFO_DEF);
 
             if (currentEnchantId != 0)
-                player->ADD_GOSSIP_ITEM_EXTENDED(GOSSIP_ICON_CHAT, "Удалить эффект", senderValue(itemSlot, itemEnchantSlot), GOSSIP_ACTION_INFO_DEF + 1, "Вы уверены?", 1000000, 0);
+                player->ADD_GOSSIP_ITEM_EXTENDED(GOSSIP_ICON_CHAT, sObjectMgr->GetTrinityStringForDBCLocale(ItemUpgradeTextEffectRemove), senderValue(itemSlot, itemEnchantSlot), GOSSIP_ACTION_INFO_DEF + 1, sObjectMgr->GetTrinityStringForDBCLocale(ItemUpgradeTextAreYouSure), 100 * GOLD, 0);
 
             for (uint32 i = 0; i < ItemUpgradeInfo.size(); ++i)
             {
                 if (ItemUpgradeInfo[i].prevEnchantId != currentEnchantId)
                     continue;
 
-                player->ADD_GOSSIP_ITEM_EXTENDED(GOSSIP_ICON_CHAT, ItemUpgradeInfo[i].description.c_str(), senderValue(itemSlot, itemEnchantSlot), GOSSIP_ACTION_INFO_DEF + ItemUpgradeInfo[i].enchantId, "Вы уверены?", ItemUpgradeInfo[i].golds * 10000, 0);
+                player->ADD_GOSSIP_ITEM_EXTENDED(GOSSIP_ICON_CHAT, ItemUpgradeInfo[i].description.c_str(), senderValue(itemSlot, itemEnchantSlot), GOSSIP_ACTION_INFO_DEF + ItemUpgradeInfo[i].enchantId, ItemUpgradeInfo[i].description.c_str(), ItemUpgradeInfo[i].golds, 0);
             }
 
             player->SEND_GOSSIP_MENU(player->GetGossipTextId(go), go->GetGUID());
@@ -235,8 +217,8 @@ class go_item_upgrade : public GameObjectScript
         SQLTransaction trans = CharacterDatabase.BeginTransaction();
         if (enchantId == 1)
         {
-            golds = 100;
-            if (!player->HasEnoughMoney(golds * 10000))
+            golds = 100 * GOLD;
+            if (!player->HasEnoughMoney(golds))
             {
                 player->SendBuyError(BUY_ERR_NOT_ENOUGHT_MONEY, 0, 0, 0);
                 player->CLOSE_GOSSIP_MENU();
@@ -255,7 +237,7 @@ class go_item_upgrade : public GameObjectScript
 
                 golds = ItemUpgradeInfo[i].golds;
 
-                if (!player->HasEnoughMoney(golds * 10000))
+                if (!player->HasEnoughMoney(golds))
                 {
                     player->SendBuyError(BUY_ERR_NOT_ENOUGHT_MONEY, 0, 0, 0);
                     player->CLOSE_GOSSIP_MENU();
@@ -269,7 +251,7 @@ class go_item_upgrade : public GameObjectScript
 
         if (golds > 0)
         {
-            player->ModifyMoney(-golds * 10000);
+            player->ModifyMoney(-golds);
             player->SaveInventoryAndGoldToDB(trans);
         }
         item->SaveToDB(trans);

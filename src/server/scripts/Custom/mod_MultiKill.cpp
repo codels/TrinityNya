@@ -52,7 +52,10 @@ void LoadDataFromDataBase()
     QueryResult result = WorldDatabase.PQuery("SELECT `Count`, `BuffFirst`, `Gold`, `Sound`, `TrinityStringId`, `Honor`, `Type`, `KillCredit`, `BuffSecond` FROM `world_multikill`");
 
     if (!result)
+    {
+        sLog->outInfo(LOG_FILTER_SERVER_LOADING, ">> `world_multikill` is empty");
         return;
+    }
 
     uint16 count = 0;
     MultiKillMin = 0;
@@ -215,7 +218,7 @@ class Mod_MultiKill_PlayerScript : public PlayerScript
         MultiKillPlayer[guid].total = 0;
         MultiKillPlayer[guid].last = time(NULL);
     }
-        
+
     void OnPVPKill(Player* killer, Player* killed)
     {
         if (!MultiKillEnable)
