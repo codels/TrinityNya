@@ -3153,8 +3153,8 @@ SpecialCode.Enable = 0
 # ARENA WATCHER
 #
 #   On/Off arena watcher
-#        Default:     1 - (Enabled)
-#                     0 - (Disabled)
+#        Default:     0 - (Disabled)
+#                     1 - (Enabled)
 
 ArenaWatcher.Enable = 0
 
@@ -3163,12 +3163,6 @@ ArenaWatcher.Enable = 0
 #                     1 - (Enabled)
 
 ArenaWatcher.OnlyGM = 0
-
-#   Show gossip menu with 0 games
-#        Default:     0 - (Disabled)
-#                     1 - (Enabled)
-
-ArenaWatcher.ShowNoGames = 0
 
 #   Can watch only if battle is rated
 #        Default:     0 - (Disabled)
@@ -3215,3 +3209,19 @@ Account.Achievements = 0
 
 #
 CharacterModel.Enable = 0
+
+###################################################################################################
+# UPGRADE ITEMS
+#
+#   On/Off arena watcher
+#        Default:     0 - (Disabled)
+#                     1 - (Enabled)
+
+ItemUpgrade.Enable = 0
+
+# String ID from `trinity_string` for gossip menu
+
+ItemUpgrade.Text.AreYouSure = 11300
+ItemUpgrade.Text.NoEffect = 11301
+ItemUpgrade.Text.EffectNow = 11302
+ItemUpgrade.Text.EffectRemove = 11303

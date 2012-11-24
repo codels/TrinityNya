@@ -28,6 +28,7 @@ int ItemUpgradeTextAreYouSure = 0;
 int ItemUpgradeTextNoEffect = 0;
 int ItemUpgradeTextEffectNow = 0;
 int ItemUpgradeTextEffectRemove = 0;
+bool ItemUpgradeEnable = false;
 std::vector<ItemUpgradeTemplate> ItemUpgradeInfo;
 
 class Mod_ItemUpgrade_WorldScript : public WorldScript
@@ -42,7 +43,7 @@ class Mod_ItemUpgrade_WorldScript : public WorldScript
         sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading ItemUpgrade...");
         uint32 oldMSTime = getMSTime();
 
-        QueryResult result = WorldDatabase.PQuery("SELECT `enchant_id`, `prev_enchant_id`, `golds`, `description` FROM `world_item_upgrade`");
+        QueryResult result = WorldDatabase.PQuery("SELECT `enchant_id`, `prev_enchant_id`, `golds` FROM `world_item_upgrade`");
 
         if (!result)
         {
@@ -61,7 +62,6 @@ class Mod_ItemUpgrade_WorldScript : public WorldScript
             ItemUpgradeTemp.enchantId       = fields[0].GetUInt32();
             ItemUpgradeTemp.prevEnchantId   = fields[1].GetUInt32();
             ItemUpgradeTemp.golds           = fields[2].GetUInt32() * GOLD;
-            //ItemUpgradeTemp.description     = fields[3].GetString();
             ItemUpgradeTemp.charges         = 0;
             ItemUpgradeTemp.duration        = 0;
 
@@ -85,11 +85,14 @@ class Mod_ItemUpgrade_WorldScript : public WorldScript
 
     void OnConfigLoad(bool /*reload*/)
     {
-        ItemUpgradeTextAreYouSure   =  ConfigMgr::GetIntDefault("ItemUpgrade.Text.AreYouSure", ARE_YOU_SURE);
-        ItemUpgradeTextNoEffect     =  ConfigMgr::GetIntDefault("ItemUpgrade.Text.NoEffect", NO_EFFECT);
-        ItemUpgradeTextEffectNow    =  ConfigMgr::GetIntDefault("ItemUpgrade.Text.EffectNow", EFFECT_NOW);
-        ItemUpgradeTextEffectRemove =  ConfigMgr::GetIntDefault("ItemUpgrade.Text.EffectRemove", EFFECT_REMOVE);
-        LoadDataFromDataBase();
+        ItemUpgradeTextAreYouSure   = ConfigMgr::GetIntDefault("ItemUpgrade.Text.AreYouSure", ARE_YOU_SURE);
+        ItemUpgradeTextNoEffect     = ConfigMgr::GetIntDefault("ItemUpgrade.Text.NoEffect", NO_EFFECT);
+        ItemUpgradeTextEffectNow    = ConfigMgr::GetIntDefault("ItemUpgrade.Text.EffectNow", EFFECT_NOW);
+        ItemUpgradeTextEffectRemove = ConfigMgr::GetIntDefault("ItemUpgrade.Text.EffectRemove", EFFECT_REMOVE);
+        ItemUpgradeEnable           = ConfigMgr::GetIntDefault("ItemUpgrade.Enable", false);
+
+        if (ItemUpgradeEnable)
+            LoadDataFromDataBase();
     }
 
 };
@@ -113,6 +116,10 @@ class go_item_upgrade : public GameObjectScript
 
     bool OnGossipHello(Player* player, GameObject* go)
     {
+        if (!ItemUpgradeEnable) {
+            player->SEND_GOSSIP_MENU(player->GetGossipTextId(go), go->GetGUID());
+            return true;
+        }
         int loc_idx = player->GetSession()->GetSessionDbLocaleIndex();
 
         for (uint8 i = EQUIPMENT_SLOT_START; i < EQUIPMENT_SLOT_END; i++)
@@ -136,6 +143,11 @@ class go_item_upgrade : public GameObjectScript
 
     bool OnGossipSelect(Player* player, GameObject* go, uint32 sender, uint32 action)
     {
+        if (!ItemUpgradeEnable) {
+            player->CLOSE_GOSSIP_MENU();
+            return true;
+        }
+
         player->PlayerTalkClass->ClearMenus();
 
         uint16 itemSlot = getSlot(sender);
