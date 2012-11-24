@@ -3213,7 +3213,7 @@ CharacterModel.Enable = 0
 ###################################################################################################
 # UPGRADE ITEMS
 #
-#   On/Off arena watcher
+#   On/Off upgrade items
 #        Default:     0 - (Disabled)
 #                     1 - (Enabled)
 
