@@ -263,7 +263,7 @@ class go_item_upgrade : public GameObjectScript
 
         if (golds > 0)
         {
-            player->ModifyMoney(-golds);
+            player->ModifyMoney(-(int32)golds);
             player->SaveInventoryAndGoldToDB(trans);
         }
         item->SaveToDB(trans);
