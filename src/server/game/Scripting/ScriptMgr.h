@@ -24,11 +24,14 @@
 #include <ace/Atomic_Op.h>
 
 #include "DBCStores.h"
-#include "Player.h"
 #include "SharedDefines.h"
 #include "World.h"
 #include "Weather.h"
 #include "Mail.h"
+// trinityNya
+#include "InstanceSaveMgr.h"
+#include "SpellInfo.h"
+#include "Unit.h"
 
 class AuctionHouseObject;
 class AuraScript;
@@ -1081,7 +1084,7 @@ class ScriptMgr
 
     public: /* AchievementCriteriaScript */
 
-        bool OnCriteriaCheck(AchievementCriteriaData const* data, Player* source, Unit* target);
+        bool OnCriteriaCheck(uint32 scriptId, Player* source, Unit* target);
 
     public: /* PlayerScript */
 

@@ -16,30 +16,32 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "Common.h"
-#include "DBCEnums.h"
-#include "ObjectMgr.h"
-#include "ArenaTeamMgr.h"
-#include "GuildMgr.h"
-#include "World.h"
-#include "WorldPacket.h"
-#include "DatabaseEnv.h"
 #include "AchievementMgr.h"
 #include "ArenaTeam.h"
+#include "ArenaTeamMgr.h"
+#include "BattlegroundAB.h"
+#include "Battleground.h"
 #include "CellImpl.h"
+#include "Common.h"
+#include "DatabaseEnv.h"
+#include "DBCEnums.h"
+#include "DisableMgr.h"
 #include "GameEventMgr.h"
 #include "GridNotifiersImpl.h"
 #include "Guild.h"
-#include "Language.h"
-#include "Player.h"
-#include "SpellMgr.h"
-#include "DisableMgr.h"
-#include "ScriptMgr.h"
-#include "MapManager.h"
-#include "Battleground.h"
-#include "BattlegroundAB.h"
-#include "Map.h"
+#include "GuildMgr.h"
 #include "InstanceScript.h"
+#include "Language.h"
+#include "Map.h"
+#include "MapManager.h"
+#include "ObjectMgr.h"
+#include "Player.h"
+#include "ReputationMgr.h"
+#include "ScriptMgr.h"
+#include "SpellMgr.h"
+#include "World.h"
+#include "WorldPacket.h"
+
 
 namespace Trinity
 {
@@ -355,7 +357,7 @@ bool AchievementCriteriaData::Meets(uint32 criteria_id, Player const* source, Un
                 return false;
             return target->getGender() == gender.gender;
         case ACHIEVEMENT_CRITERIA_DATA_TYPE_SCRIPT:
-            return sScriptMgr->OnCriteriaCheck(this, const_cast<Player*>(source), const_cast<Unit*>(target));
+            return sScriptMgr->OnCriteriaCheck(ScriptId, const_cast<Player*>(source), const_cast<Unit*>(target));
         case ACHIEVEMENT_CRITERIA_DATA_TYPE_MAP_DIFFICULTY:
             if (source->GetMap()->IsRaid())
                 if (source->GetMap()->Is25ManRaid() != ((difficulty.difficulty & RAID_DIFFICULTY_MASK_25MAN) != 0))
@@ -2452,7 +2454,7 @@ void AchievementGlobalMgr::LoadCompletedAchievements()
 
     if (!result)
     {
-        sLog->outInfo(LOG_FILTER_SERVER_LOADING, ">> Loaded 0 completed achievements. DB table `character_achievement` is empty.");
+        sLog->outInfo(LOG_FILTER_SERVER_LOADING, ">> Loaded 0 realm first completed achievements. DB table `character_achievement` is empty.");
         return;
     }
 
@@ -2490,7 +2492,7 @@ void AchievementGlobalMgr::LoadCompletedAchievements()
             m_allCompletedAchievements.insert(achievementId);
     } while (result->NextRow());
 
-    sLog->outInfo(LOG_FILTER_SERVER_LOADING, ">> Loaded %lu completed achievements in %u ms", (unsigned long)m_allCompletedAchievements.size(), GetMSTimeDiffToNow(oldMSTime));
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, ">> Loaded %lu realm first completed achievements in %u ms", (unsigned long)m_allCompletedAchievements.size(), GetMSTimeDiffToNow(oldMSTime));
 }
 
 void AchievementGlobalMgr::LoadRewards()

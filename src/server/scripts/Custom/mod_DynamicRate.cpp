@@ -1,5 +1,6 @@
 #include "ScriptPCH.h"
 #include "Config.h"
+#include "Language.h"
 
 bool    DynamicRateEnable               = false;
 float   DynamicRateMin                  = 0.0f;
