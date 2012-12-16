@@ -94,7 +94,7 @@ void AHAddItem(AHItemInfo& info)
 {
     if (!AHEntry || !AuctionHouse)
         return;
-    
+
     Item* item = Item::CreateItem(info.id, 1, NULL);
 
     if (!item)
@@ -114,8 +114,8 @@ void AHAddItem(AHItemInfo& info)
     AuctionEntry* auctionEntry = new AuctionEntry;
     auctionEntry->Id = sObjectMgr->GenerateAuctionID();
     auctionEntry->auctioneer = AUCTIONEER_GUID;
-    auctionEntry->item_guidlow = item->GetGUIDLow();
-    auctionEntry->item_template = item->GetEntry();
+    auctionEntry->itemGUIDLow = item->GetGUIDLow();
+    auctionEntry->itemEntry = item->GetEntry();
     auctionEntry->owner = AHPlayerGuid;
     auctionEntry->startbid = info.bind;
     auctionEntry->buyout = info.buy;
@@ -139,7 +139,7 @@ void AuctionHouseCheck()
 
     AuctionHouseTimer.Reset();
     AHItemCountCheck = 0;
-    
+
     for (uint32 i = 0; i < AHItems.size(); ++i)
         if (AHItems[i].count < AHItems[i].max)
             for (uint32 j = AHItems[i].count; j < AHItems[i].max; ++j)
@@ -163,7 +163,7 @@ class Mod_AuctionHouseBot_AuctionHouseScript : public AuctionHouseScript
                 return;
 
             for (uint32 i = 0; i < AHItems.size(); ++i)
-                if (AHItems[i].id == entry->item_template)
+                if (AHItems[i].id == entry->itemEntry)
                 {
                     ++AHItems[i].count;
                     return;
@@ -177,7 +177,7 @@ class Mod_AuctionHouseBot_AuctionHouseScript : public AuctionHouseScript
                 return;
 
             for (uint32 i = 0; i < AHItems.size(); ++i)
-                if (AHItems[i].id == entry->item_template)
+                if (AHItems[i].id == entry->itemEntry)
                 {
                     if (AHItems[i].count > 0)
                         --AHItems[i].count;

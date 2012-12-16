@@ -2439,7 +2439,6 @@ void SpellMgr::LoadSpellAreas()
 
     //                                                  0     1         2              3               4                 5          6          7       8         9
     QueryResult result = WorldDatabase.Query("SELECT spell, area, quest_start, quest_start_status, quest_end_status, quest_end, aura_spell, racemask, gender, autocast FROM spell_area");
-
     if (!result)
     {
         sLog->outInfo(LOG_FILTER_SERVER_LOADING, ">> Loaded 0 spell area requirements. DB table `spell_area` is empty.");
@@ -2979,23 +2978,18 @@ void SpellMgr::LoadDbcDataCorrections()
 
         switch (spellInfo->Id)
         {
-			// TRINITY_NYA NEED NORMAL FIX!!! *((((
-			case 23880: // Bloodthirst
-				spellInfo->Effect[0] = SPELL_EFFECT_HEAL_PCT;
-				spellInfo->EffectBasePoints[0] = 0; // default to 1%
-				// make it capable of crit as magic effect using spell crit chance
-				spellInfo->AttributesEx2 &= ~SPELL_ATTR2_CANT_CRIT;
-				spellInfo->DmgClass = SPELL_DAMAGE_CLASS_MAGIC;
-				spellInfo->SchoolMask = SPELL_SCHOOL_MASK_HOLY;
-				break;
-			/*
-			case 23881: // Bloodthirst
-				//spellInfo->EffectImplicitTargetA[1] = TARGET_UNIT_CASTER;
-				break;
-			case 23885: // Bloodthirst
-				//spellInfo->EffectApplyAuraName[0] = SPELL_AURA_PROC_TRIGGER_SPELL_WITH_VALUE;
-				break;
-			*/
+            // TRINITY_NYA NEED NORMAL FIX!!! *((((
+            case 23880: // Bloodthirst
+                spellInfo->Effect[0] = SPELL_EFFECT_HEAL_PCT;
+                spellInfo->EffectBasePoints[0] = 0; // default to 1%
+                // make it capable of crit as magic effect using spell crit chance
+                spellInfo->AttributesEx2 &= ~SPELL_ATTR2_CANT_CRIT;
+                spellInfo->DmgClass = SPELL_DAMAGE_CLASS_MAGIC;
+                spellInfo->SchoolMask = SPELL_SCHOOL_MASK_HOLY;
+                break;
+            case 53096: // Quetz'lun's Judgment
+                spellInfo->MaxAffectedTargets = 1;
+                break;
             case 42730:
                 spellInfo->EffectTriggerSpell[EFFECT_1] = 42739;
                 break;
@@ -3329,6 +3323,13 @@ void SpellMgr::LoadDbcDataCorrections()
                 break;
             case 70650: // Death Knight T10 Tank 2P Bonus
                 spellInfo->EffectApplyAuraName[0] = SPELL_AURA_ADD_PCT_MODIFIER;
+                break;
+            case 71838: // Drain Life - Bryntroll Normal
+            case 71839: // Drain Life - Bryntroll Heroic
+                spellInfo->AttributesEx2 |= SPELL_ATTR2_CANT_CRIT;
+                break;
+            case 34471: // The Beast Within
+                spellInfo->AttributesEx5 |= SPELL_ATTR5_USABLE_WHILE_CONFUSED | SPELL_ATTR5_USABLE_WHILE_FEARED | SPELL_ATTR5_USABLE_WHILE_STUNNED;
                 break;
             // ULDUAR SPELLS
             //
