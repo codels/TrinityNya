@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -29,7 +29,6 @@ void AddSC_Mod_CharacterModel(); // by Codels
 void AddSC_Mod_DynamicInstance(); // by Codels
 void AddSC_Mod_DynamicRate(); // by Codels
 void AddSC_Mod_ExternalMail(); // searching author...
-void AddSC_Mod_FriendChat(); // by Codels
 void AddSC_Mod_Tournaments(); // by Codels
 void AddSC_Mod_GuildDefault(); // by s@m
 void AddSC_Mod_HonorRank(); // by Codels
@@ -215,6 +214,7 @@ void AddSC_boss_lorekeeperpolkelt();
 void AddSC_boss_rasfrost();
 void AddSC_boss_theravenian();
 void AddSC_boss_vectus();
+void AddSC_boss_kirtonos_the_herald();
 void AddSC_instance_scholomance();
 void AddSC_shadowfang_keep();                //Shadowfang keep
 void AddSC_instance_shadowfang_keep();
@@ -343,6 +343,7 @@ void AddSC_boss_ayamiss();
 void AddSC_boss_ossirian();
 void AddSC_instance_ruins_of_ahnqiraj();
 void AddSC_boss_cthun();                     //Temple of ahn'qiraj
+void AddSC_boss_viscidus();
 void AddSC_boss_fankriss();
 void AddSC_boss_huhuran();
 void AddSC_bug_trio();
@@ -601,6 +602,9 @@ void AddSC_instance_arcatraz();
 void AddSC_boss_high_botanist_freywinn();    //TK Botanica
 void AddSC_boss_laj();
 void AddSC_boss_warp_splinter();
+void AddSC_boss_thorngrin_the_tender();
+void AddSC_boss_commander_sarannis();
+void AddSC_instance_the_botanica();
 void AddSC_boss_alar();                      //TK The Eye
 void AddSC_boss_kaelthas();
 void AddSC_boss_void_reaver();
@@ -608,6 +612,7 @@ void AddSC_boss_high_astromancer_solarian();
 void AddSC_instance_the_eye();
 void AddSC_the_eye();
 void AddSC_boss_gatewatcher_iron_hand();     //TK The Mechanar
+void AddSC_boss_gatewatcher_gyrokill();
 void AddSC_boss_nethermancer_sepethrea();
 void AddSC_boss_pathaleon_the_calculator();
 void AddSC_boss_mechano_lord_capacitus();
@@ -847,6 +852,7 @@ void AddEasternKingdomsScripts()
     AddSC_boss_rasfrost();
     AddSC_boss_theravenian();
     AddSC_boss_vectus();
+    AddSC_boss_kirtonos_the_herald();
     AddSC_instance_scholomance();
     AddSC_shadowfang_keep();                //Shadowfang keep
     AddSC_instance_shadowfang_keep();
@@ -979,6 +985,7 @@ void AddKalimdorScripts()
     AddSC_boss_ossirian();
     AddSC_instance_ruins_of_ahnqiraj();
     AddSC_boss_cthun();                     //Temple of ahn'qiraj
+    AddSC_boss_viscidus();
     AddSC_boss_fankriss();
     AddSC_boss_huhuran();
     AddSC_bug_trio();
@@ -1081,6 +1088,9 @@ void AddOutlandScripts()
     AddSC_boss_high_botanist_freywinn();    //TK Botanica
     AddSC_boss_laj();
     AddSC_boss_warp_splinter();
+    AddSC_boss_thorngrin_the_tender();
+    AddSC_boss_commander_sarannis();
+    AddSC_instance_the_botanica();
     AddSC_boss_alar();                      //TK The Eye
     AddSC_boss_kaelthas();
     AddSC_boss_void_reaver();
@@ -1088,6 +1098,7 @@ void AddOutlandScripts()
     AddSC_instance_the_eye();
     AddSC_the_eye();
     AddSC_boss_gatewatcher_iron_hand();     //TK The Mechanar
+    AddSC_boss_gatewatcher_gyrokill();
     AddSC_boss_nethermancer_sepethrea();
     AddSC_boss_pathaleon_the_calculator();
     AddSC_boss_mechano_lord_capacitus();
@@ -1314,7 +1325,6 @@ void AddCustomScripts()
     AddSC_Mod_DynamicInstance();
     AddSC_Mod_DynamicRate();
     AddSC_Mod_ExternalMail();
-    AddSC_Mod_FriendChat();
     AddSC_Mod_Tournaments();
     AddSC_Mod_GuildDefault();
     AddSC_Mod_HonorRank();

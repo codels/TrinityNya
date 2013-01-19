@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
  * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@
 
 RASocket::RASocket()
 {
-    _minLevel = ConfigMgr::GetIntDefault("RA.MinLevel", 3);
+    _minLevel = uint8(ConfigMgr::GetIntDefault("RA.MinLevel", 3));
 }
 
 RASocket::~RASocket()
@@ -65,7 +65,13 @@ int RASocket::handle_close(ACE_HANDLE, ACE_Reactor_Mask)
 
 int RASocket::send(const std::string& line)
 {
-    return size_t(peer().send(line.c_str(), line.length())) == line.length() ? 0 : -1;
+#ifdef MSG_NOSIGNAL
+    ssize_t n = peer().send(line.c_str(), line.length(), MSG_NOSIGNAL);
+#else
+    ssize_t n = peer().send(line.c_str(), line.length());
+#endif // MSG_NOSIGNAL
+
+    return n == line.length() ? 0 : -1;
 }
 
 int RASocket::recv_line(ACE_Message_Block& buffer)
@@ -160,7 +166,7 @@ int RASocket::process_command(const std::string& command)
             break;
         }
 
-        if (size_t(peer().send(mb->rd_ptr(), mb->length())) != mb->length())
+        if (send(std::string(mb->rd_ptr(), mb->length())) == -1)
         {
             mb->release();
             return -1;
@@ -332,7 +338,7 @@ int RASocket::subnegotiate()
 
     //! Just send back end of subnegotiation packet
     uint8 const reply[2] = {0xFF, 0xF0};
-    return peer().send(reply, 2);
+    return int(peer().send(reply, 2));
 }
 
 int RASocket::svc(void)
@@ -356,8 +362,7 @@ int RASocket::svc(void)
     for (;;)
     {
         // show prompt
-        const char* tc_prompt = "TC> ";
-        if (size_t(peer().send(tc_prompt, strlen(tc_prompt))) != strlen(tc_prompt))
+        if (send("TC> ") == -1)
             return -1;
 
         std::string line;

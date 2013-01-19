@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -1418,7 +1418,7 @@ class spell_gen_luck_of_the_draw : public SpellScriptLoader
                             if (group->isLFGGroup())
                                 if (uint32 dungeonId = sLFGMgr->GetDungeon(group->GetGUID(), true))
                                     if (LFGDungeonData const* dungeon = sLFGMgr->GetLFGDungeon(dungeonId))
-                                        if (uint32(dungeon->map) == map->GetId() && dungeon->difficulty == uint32(map->GetDifficulty()))
+                                        if (uint32(dungeon->map) == map->GetId() && dungeon->difficulty == map->GetDifficulty())
                                             if (randomDungeon && randomDungeon->type == LFG_TYPE_RANDOM)
                                                 return; // in correct dungeon
 
@@ -1594,7 +1594,7 @@ class spell_gen_gnomish_transporter : public SpellScriptLoader
             void HandleDummy(SpellEffIndex /* effIndex */)
             {
                 Unit* caster = GetCaster();
-                caster->CastSpell(caster, roll_chance_i(50) ? SPELL_TRANSPORTER_SUCCESS : SPELL_TRANSPORTER_FAILURE , true);
+                caster->CastSpell(caster, roll_chance_i(50) ? SPELL_TRANSPORTER_SUCCESS : SPELL_TRANSPORTER_FAILURE, true);
             }
 
             void Register()

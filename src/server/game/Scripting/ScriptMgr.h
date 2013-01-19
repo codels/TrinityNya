@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
  * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -424,7 +424,24 @@ class ItemScript : public ScriptObject
         virtual bool OnExpire(Player* /*player*/, ItemTemplate const* /*proto*/) { return false; }
 };
 
-class CreatureScript : public ScriptObject, public UpdatableScript<Creature>
+class UnitScript : public ScriptObject
+{
+    protected:
+
+        UnitScript(const char* name, bool addToScripts = true);
+
+    public:
+        // Called when DoT's Tick Damage is being Dealt
+        virtual void ModifyPeriodicDamageAurasTick(Unit* /*target*/, Unit* /*attacker*/, uint32& /*damage*/) { }
+
+        // Called when Melee Damage is being Dealt
+        virtual void ModifyMeleeDamage(Unit* /*target*/, Unit* /*attacker*/, uint32& /*damage*/) { }
+
+        // Called when Spell Damage is being Dealt
+        virtual void ModifySpellDamageTaken(Unit* /*target*/, Unit* /*attacker*/, int32& /*damage*/) { }
+};
+
+class CreatureScript : public UnitScript, public UpdatableScript<Creature>
 {
     protected:
 
@@ -720,7 +737,7 @@ class AchievementCriteriaScript : public ScriptObject
         virtual bool OnCheck(Player* source, Unit* target) = 0;
 };
 
-class PlayerScript : public ScriptObject
+class PlayerScript : public UnitScript
 {
     protected:
 
@@ -794,6 +811,9 @@ class PlayerScript : public ScriptObject
 
         // Called when a player is deleted.
         virtual void OnDelete(uint64 /*guid*/, const char* /*name*/, WorldSession* /*session*/) { }
+
+        // Called when a player is about to be saved.
+        virtual void OnSave(Player* /*player*/) { }
 
         // Called when a player is bound to an instance
         virtual void OnBindToInstance(Player* /*player*/, Difficulty /*difficulty*/, uint32 /*mapId*/, bool /*permanent*/) { }
@@ -1110,9 +1130,10 @@ class ScriptMgr
         void OnPlayerLogout(Player* player);
         void OnPlayerCreate(Player* player);
         void OnPlayerDelete(uint64 guid, const char* name, WorldSession* session);
+        //void OnPlayerDelete(uint64 guid);
+        void OnPlayerSave(Player* player);
         void OnPlayerBindToInstance(Player* player, Difficulty difficulty, uint32 mapid, bool permanent);
         void OnPlayerSkillUpdate(Player* player, uint16 SkillId, uint16 SkillValue, uint16 SkillNewValue);
-        void OnPlayerSave(Player* player);
         void OnPlayerJoinedBattleground(Player* player, Battleground* bg);
         void OnPlayerRemoveFromBattleground(Player* player, Battleground* bg);
         void OnPlayerFirstKillBattleground(Player* player, Battleground* bg);
@@ -1140,6 +1161,12 @@ class ScriptMgr
         void OnGroupRemoveMember(Group* group, uint64 guid, RemoveMethod method, uint64 kicker, const char* reason);
         void OnGroupChangeLeader(Group* group, uint64 newLeaderGuid, uint64 oldLeaderGuid);
         void OnGroupDisband(Group* group);
+
+    public: /* UnitScript */
+
+        void ModifyPeriodicDamageAurasTick(Unit* target, Unit* attacker, uint32& damage);
+        void ModifyMeleeDamage(Unit* target, Unit* attacker, uint32& damage);
+        void ModifySpellDamageTaken(Unit* target, Unit* attacker, int32& damage);
 
     public: /* Scheduled scripts */
 

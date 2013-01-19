@@ -1,4 +1,4 @@
-# Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
+# Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
 #
 # This file is free software; as a special exception the author gives
 # unlimited permission to copy and/or distribute it, with or without
@@ -20,7 +20,6 @@ set(scripts_STAT_SRCS
   Custom/mod_DynamicInsctane.cpp
   Custom/mod_DynamicRate.cpp
   Custom/mod_ExternalMail.cpp
-  Custom/mod_FriendChat.cpp
   Custom/mod_Tournaments.cpp
   Custom/mod_GuildDefault.cpp
   Custom/mod_HonorRank.cpp

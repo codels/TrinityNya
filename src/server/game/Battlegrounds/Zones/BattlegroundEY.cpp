@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
  * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -247,7 +247,7 @@ void BattlegroundEY::UpdatePointStatuses()
             if (player)
             {
                 this->UpdateWorldStateForPlayer(PROGRESS_BAR_STATUS, m_PointBarStatus[point], player);
-                                                            //if point owner changed we must evoke event!
+                //if point owner changed we must evoke event!
                 if (pointOwnerTeamId != m_PointOwnedByTeam[point])
                 {
                     //point was uncontrolled and player is from team which captured point
@@ -259,10 +259,10 @@ void BattlegroundEY::UpdatePointStatuses()
                         this->EventTeamLostPoint(player, point);
                 }
 
-                // hack fix for Fel Reaver Ruins
+                /// @workaround The original AreaTrigger is covered by a bigger one and not triggered on client side.
                 if (point == FEL_REAVER && m_PointOwnedByTeam[point] == player->GetTeam())
                     if (m_FlagState && GetFlagPickerGUID() == player->GetGUID())
-                        if (player->GetDistance2d(2044,1730) < 2)
+                        if (player->GetDistance(2044.0f, 1729.729f, 1190.03f) < 3.0f)
                             EventPlayerCapturedFlag(player, BG_EY_OBJECT_FLAG_FEL_REAVER);
             }
         }

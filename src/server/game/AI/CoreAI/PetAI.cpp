@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
  * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -130,7 +130,6 @@ void PetAI::UpdateAI(const uint32 diff)
         }
         else
             HandleReturnMovement();
-
     }
 
     // Autocast (casted only in combat or persistent spells in any state)
@@ -182,6 +181,9 @@ void PetAI::UpdateAI(const uint32 diff)
                         spellUsed = true;
                     }
                 }
+
+                if (spellInfo->HasEffect(SPELL_EFFECT_JUMP_DEST))
+                    continue; // Pets must only jump to target
 
                 // No enemy, check friendly
                 if (!spellUsed)
@@ -249,6 +251,12 @@ void PetAI::UpdateAI(const uint32 diff)
         for (TargetSpellList::const_iterator itr = targetSpellStore.begin(); itr != targetSpellStore.end(); ++itr)
             delete itr->second;
     }
+
+    // Update speed as needed to prevent dropping too far behind and despawning
+    me->UpdateSpeed(MOVE_RUN, true);
+    me->UpdateSpeed(MOVE_WALK, true);
+    me->UpdateSpeed(MOVE_FLIGHT, true);
+
 }
 
 void PetAI::UpdateAllies()
@@ -266,6 +274,7 @@ void PetAI::UpdateAllies()
     //only pet and owner/not in group->ok
     if (m_AllySet.size() == 2 && !group)
         return;
+
     //owner is in group; group members filled in already (no raid -> subgroupcount = whole count)
     if (group && !group->isRaidGroup() && m_AllySet.size() == (group->GetMembersCount() + 2))
         return;
@@ -578,11 +587,19 @@ void PetAI::ReceiveEmote(Player* player, uint32 emote)
         {
             case TEXT_EMOTE_COWER:
                 if (me->isPet() && me->ToPet()->IsPetGhoul())
-                    me->HandleEmoteCommand(EMOTE_ONESHOT_ROAR);
+                    me->HandleEmoteCommand(/*EMOTE_ONESHOT_ROAR*/EMOTE_ONESHOT_OMNICAST_GHOUL);
                 break;
             case TEXT_EMOTE_ANGRY:
                 if (me->isPet() && me->ToPet()->IsPetGhoul())
-                    me->HandleEmoteCommand(EMOTE_ONESHOT_COWER);
+                    me->HandleEmoteCommand(/*EMOTE_ONESHOT_COWER*/EMOTE_STATE_STUN);
+                break;
+            case TEXT_EMOTE_GLARE:
+                if (me->isPet() && me->ToPet()->IsPetGhoul())
+                    me->HandleEmoteCommand(EMOTE_STATE_STUN);
+                break;
+            case TEXT_EMOTE_SOOTHE:
+                if (me->isPet() && me->ToPet()->IsPetGhoul())
+                    me->HandleEmoteCommand(EMOTE_ONESHOT_OMNICAST_GHOUL);
                 break;
         }
 }
