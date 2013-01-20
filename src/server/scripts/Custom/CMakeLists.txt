@@ -27,6 +27,7 @@ set(scripts_STAT_SRCS
   Custom/mod_MailHistory.cpp
   Custom/mod_MultiKill.cpp
   Custom/mod_SpecialCode.cpp
+  Custom/mod_LexicsCutter.cpp
 )
 
 message("  -> Prepared: Custom")

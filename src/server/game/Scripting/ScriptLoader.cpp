@@ -36,6 +36,7 @@ void AddSC_Mod_ItemUpgrade(); // by Codels
 void AddSC_Mod_MailHistory(); // by Codels
 void AddSC_Mod_Multikill(); // by Codels
 void AddSC_Mod_SpecialCode(); // by Codels
+void AddSC_Mod_LexicsCutter();
 // Custom mods: END
 
 //examples
@@ -1332,6 +1333,7 @@ void AddCustomScripts()
     AddSC_Mod_MailHistory();
     AddSC_Mod_Multikill();
     AddSC_Mod_SpecialCode();
+	AddSC_Mod_LexicsCutter();
 
 #endif
 }
