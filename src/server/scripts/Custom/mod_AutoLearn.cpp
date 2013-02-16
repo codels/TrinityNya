@@ -178,7 +178,7 @@ public:
             return;
 
         AutoLearnSpell(OnCreateSpellMask, player);
-        player->SaveToDB(true);
+        player->SaveToDB();
     }
 
     // Called when a player skill update

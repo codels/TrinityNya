@@ -758,7 +758,7 @@ public:
             player->LearnTalent(1306, 1);
             player->LearnTalent(1306, 2);
         }
-        player->SaveToDB(true);
+        player->SaveToDB();
     }
 };
 
