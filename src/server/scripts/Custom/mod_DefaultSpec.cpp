@@ -5,8 +5,8 @@ bool DefaultSpecEnable   = false;
 
 class mod_DefaultSpec_WorldScript : public WorldScript
 {
-    public:
-        mod_DefaultSpec_WorldScript() : WorldScript("mod_DefaultSpec_WorldScript") { }
+public:
+    mod_DefaultSpec_WorldScript() : WorldScript("mod_DefaultSpec_WorldScript") { }
 
     // Called after the world configuration is (re)loaded.
     void OnConfigLoad(bool /*reload*/)
@@ -17,8 +17,8 @@ class mod_DefaultSpec_WorldScript : public WorldScript
 
 class mod_DefaultSpec_PlayerScript : public PlayerScript
 {
-    public:
-        mod_DefaultSpec_PlayerScript() : PlayerScript("mod_DefaultSpec_PlayerScript") { }
+public:
+    mod_DefaultSpec_PlayerScript() : PlayerScript("mod_DefaultSpec_PlayerScript") { }
 
     // Called when a player is created.
     void OnCreate(Player* player)
@@ -758,6 +758,7 @@ class mod_DefaultSpec_PlayerScript : public PlayerScript
             player->LearnTalent(1306, 1);
             player->LearnTalent(1306, 2);
         }
+        player->SaveToDB(true);
     }
 };
 

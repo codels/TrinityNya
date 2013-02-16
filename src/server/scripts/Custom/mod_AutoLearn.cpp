@@ -24,12 +24,13 @@ bool AutoLearnEnable = false;
 uint8 OnLevelSpellMask = 0;
 uint8 OnSkillSpellMask = 0;
 uint8 OnLoginSpellMask = 0;
+uint8 OnCreateSpellMask = 0;
 std::vector<LearnSpellForClassInfo> LearnSpellForClass;
 
 class Mod_AutoLearn_WorldScript : public WorldScript
 {
-    public:
-        Mod_AutoLearn_WorldScript() : WorldScript("Mod_AutoLearn_WorldScript") { }
+public:
+    Mod_AutoLearn_WorldScript() : WorldScript("Mod_AutoLearn_WorldScript") { }
 
     // Called after the world configuration is (re)loaded.
     void OnConfigLoad(bool /*reload*/)
@@ -42,6 +43,7 @@ class Mod_AutoLearn_WorldScript : public WorldScript
         OnLevelSpellMask = 0;
         OnSkillSpellMask = 0;
         OnLoginSpellMask = 0;
+        OnCreateSpellMask = 0;
 
         if (ConfigMgr::GetBoolDefault("AutoLearn.Check.Level", false))
         {
@@ -58,6 +60,9 @@ class Mod_AutoLearn_WorldScript : public WorldScript
 
             if (ConfigMgr::GetBoolDefault("AutoLearn.Login.Spell", false))
                 OnLoginSpellMask += OnLevelSpellMask;
+
+            if (ConfigMgr::GetBoolDefault("AutoLearn.Create.Spell", false))
+                OnCreateSpellMask += OnLevelSpellMask;
         }
 
         if (ConfigMgr::GetBoolDefault("AutoLearn.SpellProfession", false))
@@ -65,6 +70,9 @@ class Mod_AutoLearn_WorldScript : public WorldScript
 
         if (ConfigMgr::GetBoolDefault("AutoLearn.Login.Skill", false))
             OnLoginSpellMask += OnSkillSpellMask;
+
+        if (ConfigMgr::GetBoolDefault("AutoLearn.Create.Skill", false))
+            OnCreateSpellMask += OnSkillSpellMask;
 
         if (loadSpellMask != (OnLevelSpellMask | OnSkillSpellMask))
             LoadDataFromDataBase();
@@ -142,8 +150,8 @@ class Mod_AutoLearn_WorldScript : public WorldScript
 
 class Mod_AutoLearn_PlayerScript : public PlayerScript
 {
-    public:
-        Mod_AutoLearn_PlayerScript() : PlayerScript("Mod_AutoLearn_PlayerScript") { }
+public:
+    Mod_AutoLearn_PlayerScript() : PlayerScript("Mod_AutoLearn_PlayerScript") { }
 
     // Called when a player's level changes (right before the level is applied)
     void OnLevelChanged(Player* Player, uint8 /*oldLevel*/)
@@ -157,10 +165,20 @@ class Mod_AutoLearn_PlayerScript : public PlayerScript
     // Called when a player logs in.
     void OnLogin(Player* player)
     {
-        if (!AutoLearnEnable)
+        if (!AutoLearnEnable || !OnLoginSpellMask)
             return;
 
         AutoLearnSpell(OnLoginSpellMask, player);
+    }
+
+    // Called when a player is created.
+    void OnCreate(Player* player)
+    {
+        if (!AutoLearnEnable || !OnCreateSpellMask)
+            return;
+
+        AutoLearnSpell(OnCreateSpellMask, player);
+        player->SaveToDB(true);
     }
 
     // Called when a player skill update

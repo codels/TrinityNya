@@ -167,7 +167,9 @@ enum WorldBoolConfigs
     CONFIG_ENABLE_MMAPS,
     CONFIG_WINTERGRASP_ENABLE,
     CONFIG_UI_QUESTLEVELS_IN_DIALOGS,     // Should we add quest levels to the title in the NPC dialogs?
+    // trinity_nya
     CONFIG_ACCOUNT_ACHIEVEMENTS,
+    CONFIG_DEATH_KNIGHT_SKIP_QUEST,
     BOOL_CONFIG_VALUE_COUNT
 };
 

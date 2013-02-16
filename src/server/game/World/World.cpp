@@ -1230,6 +1230,7 @@ void World::LoadConfigSettings(bool reload)
     m_int_configs[CONFIG_ANTICHEAT_MAX_REPORTS_FOR_DAILY_REPORT] = ConfigMgr::GetIntDefault("Anticheat.MaxReportsForDailyReport",70);
     // trinity_nya
     m_bool_configs[CONFIG_ACCOUNT_ACHIEVEMENTS] = ConfigMgr::GetBoolDefault("Account.Achievements", false);
+    m_bool_configs[CONFIG_DEATH_KNIGHT_SKIP_QUEST] = ConfigMgr::GetBoolDefault("DeathKnight.SkipQuest", false);
 
     // call ScriptMgr if we're reloading the configuration
     m_bool_configs[CONFIG_WINTERGRASP_ENABLE] = ConfigMgr::GetBoolDefault("Wintergrasp.Enable", false);

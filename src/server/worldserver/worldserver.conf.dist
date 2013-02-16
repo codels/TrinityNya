@@ -2852,6 +2852,14 @@ Logger.Opcodes=41,6,Console Server
 
 Loggers=Root Chat DBErrors GM RA Warden Character Load WorldServer Opcodes
 
+#
+#    Log.Async.Enable
+#        Description: Enables asyncronous message logging.
+#        Default:     0 - (Disabled)
+#                     1 - (Enabled)
+
+Log.Async.Enable = 0
+
 ###################################################################################################
 # MODIFICATION (THIS IS NOT BLIZZLIKE)
 ###################################################################################################
@@ -2974,13 +2982,8 @@ AutoLearn.Login.Spell = 0
 
 AutoLearn.Login.Skill = 0
 
-#
-#    Log.Async.Enable
-#        Description: Enables asyncronous message logging.
-#        Default:     0 - (Disabled)
-#                     1 - (Enabled)
-
-Log.Async.Enable = 0
+AutoLearn.Create.Spell = 0
+AutoLearn.Create.Skill = 0
 
 #
 ###################################################################################################
@@ -3223,3 +3226,6 @@ DefaultSpec.Enable = 0
 
 #on/off special code
 SpecialCode.Enable = 0
+
+#
+DeathKnight.SkipQuest = 0
