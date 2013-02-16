@@ -17,6 +17,7 @@ set(scripts_STAT_SRCS
   Custom/mod_BossHistory.cpp
   Custom/mod_CharacterHistory.cpp
   Custom/mod_CharacterModel.cpp
+  Custom/mod_DefaultSpec.cpp
   Custom/mod_DynamicInsctane.cpp
   Custom/mod_DynamicRate.cpp
   Custom/mod_ExternalMail.cpp

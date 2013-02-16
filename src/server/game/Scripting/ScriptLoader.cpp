@@ -26,6 +26,7 @@ void AddSC_Mod_BattlegroundHistory(); // by Codels
 void AddSC_Mod_BossHistory(); // by Codels
 void AddSC_Mod_CharacterHistory(); // by Codels
 void AddSC_Mod_CharacterModel(); // by Codels
+void AddSC_mod_DefaultSpec(); // by Codels
 void AddSC_Mod_DynamicInstance(); // by Codels
 void AddSC_Mod_DynamicRate(); // by Codels
 void AddSC_Mod_ExternalMail(); // searching author...
@@ -89,9 +90,11 @@ void AddSC_list_commandscript();
 void AddSC_lookup_commandscript();
 void AddSC_message_commandscript();
 void AddSC_misc_commandscript();
+void AddSC_mmaps_commandscript();
 void AddSC_modify_commandscript();
 void AddSC_npc_commandscript();
 void AddSC_quest_commandscript();
+void AddSC_rbac_commandscript();
 void AddSC_reload_commandscript();
 void AddSC_reset_commandscript();
 void AddSC_server_commandscript();
@@ -720,9 +723,11 @@ void AddCommandScripts()
     AddSC_list_commandscript();
     AddSC_message_commandscript();
     AddSC_misc_commandscript();
+    AddSC_mmaps_commandscript();
     AddSC_modify_commandscript();
     AddSC_npc_commandscript();
     AddSC_quest_commandscript();
+    AddSC_rbac_commandscript();
     AddSC_reload_commandscript();
     AddSC_reset_commandscript();
     AddSC_server_commandscript();
@@ -1323,6 +1328,7 @@ void AddCustomScripts()
     AddSC_Mod_BossHistory();
     AddSC_Mod_CharacterHistory();
     AddSC_Mod_CharacterModel();
+    AddSC_mod_DefaultSpec();
     AddSC_Mod_DynamicInstance();
     AddSC_Mod_DynamicRate();
     AddSC_Mod_ExternalMail();
@@ -1333,7 +1339,7 @@ void AddCustomScripts()
     AddSC_Mod_MailHistory();
     AddSC_Mod_Multikill();
     AddSC_Mod_SpecialCode();
-	AddSC_Mod_LexicsCutter();
+    AddSC_Mod_LexicsCutter();
 
 #endif
 }

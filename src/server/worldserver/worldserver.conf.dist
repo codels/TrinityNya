@@ -269,6 +269,14 @@ PlayerSave.Stats.MinLevel = 0
 PlayerSave.Stats.SaveOnlyOnLogout = 1
 
 #
+#    mmap.enablePathFinding
+#        Description: Enable/Disable pathfinding using mmaps - experimental
+#        Default:     0 - (Disabled)
+#                     1 - (Enabled)
+
+mmap.enablePathFinding = 0
+
+#
 #    vmap.enableLOS
 #    vmap.enableHeight
 #        Description: VMmap support for line of sight and height calculation.
@@ -278,14 +286,6 @@ PlayerSave.Stats.SaveOnlyOnLogout = 1
 
 vmap.enableLOS    = 1
 vmap.enableHeight = 1
-
-#
-#    vmap.petLOS
-#        Description: Check line of sight for pets, to avoid them attacking through walls.
-#        Default:     1 - (Enabled, each pet attack will be checked for line of sight)
-#                     0 - (Disabled, somewhat less CPU usage)
-
-vmap.petLOS = 1
 
 #
 #    vmap.enableIndoorCheck
@@ -812,18 +812,6 @@ RecruitAFriend.MaxLevel = 60
 #        Default:     4
 
 RecruitAFriend.MaxDifference = 4
-
-#
-#    InstantLogout
-#        Description: Required security level for instantly logging out everywhere.
-#                     Does not work while in combat, dueling or falling.
-#        Default:     1  - (Enabled, Mods/GMs/Admins)
-#                     0  - (Enabled, Everyone)
-#                     2  - (Enabled, GMs/Admins)
-#                     3  - (Enabled, Admins)
-#                     4  - (Disabled)
-
-InstantLogout = 1
 
 #
 #    DisableWaterBreath
@@ -1566,14 +1554,6 @@ ChatLevelReq.Whisper = 1
 #        Default:     1
 
 ChatLevelReq.Say = 1
-
-#
-#    AllowPlayerCommands
-#        Description: Allow players to use commands.
-#        Default:     1 - (Enabled)
-#                     0 - (Disabled)
-
-AllowPlayerCommands = 1
 
 #
 #    PreserveCustomChannels
@@ -2686,6 +2666,14 @@ PlayerDump.DisallowPaths = 1
 PlayerDump.DisallowOverwrite = 1
 
 #
+#     UI.ShowQuestLevelsInDialogs
+#        Description: Show quest levels next to quest titles in UI dialogs
+#        Example: [13] Westfall Stew
+#        Default: 0 (do not show)
+
+UI.ShowQuestLevelsInDialogs = 0
+
+#
 ###################################################################################################
 
 ###################################################################################################
@@ -2695,7 +2683,7 @@ PlayerDump.DisallowOverwrite = 1
 #  Appender config values: Given a appender "name"
 #    Appender.name
 #        Description: Defines 'where to log'
-#        Format:      Type,LogLevel,Flags,optional1,optional2
+#        Format:      Type,LogLevel,Flags,optional1,optional2,optional3
 #
 #                     Type
 #                         0 - (None)
@@ -2745,6 +2733,13 @@ PlayerDump.DisallowOverwrite = 1
 #                     Mode: Mode to open the file (read as optional2 if Type = File)
 #                          a - (Append)
 #                          w - (Overwrite)
+#
+#                     MaxFileSize: Maximum file size of the log file before creating a new log file
+#                     (read as optional3 if Type = File)
+#                         Size is measured in bytes expressed in a 64-bit unsigned integer.
+#                         Maximum value is 4294967295 (4 gb). Leave blank for no limit.
+#                         NOTE: Does not work with dynamic filenames.
+#                         Example:  536870912 (512 mb)
 #
 
 Appender.Console=1,3,0
@@ -2906,16 +2901,6 @@ CharacterHistory.Delete = 0
 #
 ###################################################################################################
 
-#on/off auctionhousebot
-AuctionHouseBot.Enable = 0
-#check interval(in minutes)
-AuctionHouseBot.Interval = 5
-#check max item
-AuctionHouseBot.ItemsPerCycle = 100
-#character
-AuctionHouseBot.PlayerGuid = 0
-AuctionHouseBot.AccountId = 0
-
 ###################################################################################################
 # AUTO LEARN SPELL SYSTEM
 #
@@ -3000,85 +2985,6 @@ Log.Async.Enable = 0
 #
 ###################################################################################################
 
-#on/off battleground history
-BattlegroundHistory.Enable = 0
-
-#######################################################################
-
-#on/off dynamic instance (warning, in dev!!!)
-DynamicDifficulty.Enable = 0
-DynamicDifficulty.DungeonOnly = 0
-DynamicDifficulty.WorldLevel = 80
-
-#######################################################################
-
-#on/off dynamic rate
-DynamicRate.Enable = 0
-#default rate
-DynamicRate.Default = 1
-#min set rate
-DynamicRate.Min = 0
-#max set rate
-DynamicRate.Max = 100
-#can set for account
-DynamicRate.Account = 0
-#can set for character
-DynamicRate.Character = 0
-#cd for set dynamic rate
-DynamicRate.Cooldown = 120
-
-#######################################################################
-
-#on/off external mail
-ExternalMail = 0
-#interval check(in minutes)
-ExternalMailInterval = 1
-
-#######################################################################
-
-#on/off friend chat
-FriendChat = 0
-
-#######################################################################
-
-#on/off honor rank
-HonorRank.Enable = 0
-#check on kill
-HonorRank.Check.Kill = 0
-#check on login
-HonorRank.Check.Login = 0
-#set new rank
-HonorRank.SetNew = 0
-
-#######################################################################
-
-#on/off announce kill boss
-BossHistory.Enable = 0
-#annonce or log only boss in instance
-BossHistory.InstanceOnly = 0
-#annonuce when the guild killed boss
-BossHistory.Announce = 0
-#on/off log kill boss
-BossHistory.Log = 0
-#textid for announce
-BossHistory.NormalTextId = 11006
-BossHistory.HeroicTextId = 11007
-
-#######################################################################
-
-#on/off mail log
-MailHistory.Enable = 0
-#on/off mail normal log
-MailHistory.Normal = 0
-#on/off mail auction log
-MailHistory.Auction = 0
-#on/off mail creature log
-MailHistory.Creature = 0
-#on/off mail gameobject log
-MailHistory.Gameobject = 0
-#on/off mail item log
-MailHistory.Item = 0
-
 ###################################################################################################
 # MULTIKILL SYSTEM
 #
@@ -3145,9 +3051,6 @@ Tournaments.LadderText = 0
 #
 ###################################################################################################
 
-#on/off special code
-SpecialCode.Enable = 0
-
 ###################################################################################################
 # ARENA WATCHER
 #
@@ -3195,20 +3098,6 @@ ArenaWatcher.Speed = 3.0
 #
 ###################################################################################################
 
-
-#on/off guild default
-GuildDefault.Enable = 0
-#guild id
-GuildDefault.ID = 0
-#guild rank
-GuildDefault.Rank = 0
-
-# Achievements for account
-Account.Achievements = 0
-
-#
-CharacterModel.Enable = 0
-
 ###################################################################################################
 # UPGRADE ITEMS
 #
@@ -3224,3 +3113,113 @@ ItemUpgrade.Text.AreYouSure = 11300
 ItemUpgrade.Text.NoEffect = 11301
 ItemUpgrade.Text.EffectNow = 11302
 ItemUpgrade.Text.EffectRemove = 11303
+
+###################################################################################################
+
+#on/off battleground history
+BattlegroundHistory.Enable = 0
+
+#######################################################################
+
+#on/off dynamic instance (warning, in dev!!!)
+DynamicDifficulty.Enable = 0
+DynamicDifficulty.DungeonOnly = 0
+DynamicDifficulty.WorldLevel = 80
+
+#######################################################################
+
+#on/off dynamic rate
+DynamicRate.Enable = 0
+#default rate
+DynamicRate.Default = 1
+#min set rate
+DynamicRate.Min = 0
+#max set rate
+DynamicRate.Max = 100
+#can set for account
+DynamicRate.Account = 0
+#can set for character
+DynamicRate.Character = 0
+#cd for set dynamic rate
+DynamicRate.Cooldown = 120
+
+#######################################################################
+
+#on/off external mail
+ExternalMail = 0
+#interval check(in minutes)
+ExternalMailInterval = 1
+
+#######################################################################
+
+#on/off friend chat
+FriendChat = 0
+
+#######################################################################
+
+#on/off honor rank
+HonorRank.Enable = 0
+#check on kill
+HonorRank.Check.Kill = 0
+#check on login
+HonorRank.Check.Login = 0
+#set new rank
+HonorRank.SetNew = 0
+
+#######################################################################
+
+#on/off announce kill boss
+BossHistory.Enable = 0
+#annonce or log only boss in instance
+BossHistory.InstanceOnly = 0
+#annonuce when the guild killed boss
+BossHistory.Announce = 0
+#on/off log kill boss
+BossHistory.Log = 0
+#textid for announce
+BossHistory.NormalTextId = 11006
+BossHistory.HeroicTextId = 11007
+
+#######################################################################
+
+#on/off auctionhousebot
+AuctionHouseBot.Enable = 0
+#check interval(in minutes)
+AuctionHouseBot.Interval = 5
+#check max item
+AuctionHouseBot.ItemsPerCycle = 100
+#character
+AuctionHouseBot.PlayerGuid = 0
+AuctionHouseBot.AccountId = 0
+
+#on/off mail log
+MailHistory.Enable = 0
+#on/off mail normal log
+MailHistory.Normal = 0
+#on/off mail auction log
+MailHistory.Auction = 0
+#on/off mail creature log
+MailHistory.Creature = 0
+#on/off mail gameobject log
+MailHistory.Gameobject = 0
+#on/off mail item log
+MailHistory.Item = 0
+
+#on/off guild default
+GuildDefault.Enable = 0
+#guild id
+GuildDefault.ID = 0
+#guild rank
+GuildDefault.Rank = 0
+
+# Achievements for account
+Account.Achievements = 0
+
+#
+CharacterModel.Enable = 0
+
+#
+DefaultSpec.Enable = 0
+
+#on/off special code
+SpecialCode.Enable = 0

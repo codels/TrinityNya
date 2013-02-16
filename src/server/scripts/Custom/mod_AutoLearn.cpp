@@ -55,14 +55,14 @@ class Mod_AutoLearn_WorldScript : public WorldScript
                 OnLevelSpellMask += SPELL_MASK_WEAPON;
             if (ConfigMgr::GetBoolDefault("AutoLearn.DualSpec", false))
                 OnLevelSpellMask += SPELL_MASK_DUAL_SPEC;
-            
+
             if (ConfigMgr::GetBoolDefault("AutoLearn.Login.Spell", false))
                 OnLoginSpellMask += OnLevelSpellMask;
         }
 
         if (ConfigMgr::GetBoolDefault("AutoLearn.SpellProfession", false))
             OnSkillSpellMask += SPELL_MASK_PROFESSION;
-            
+
         if (ConfigMgr::GetBoolDefault("AutoLearn.Login.Skill", false))
             OnLoginSpellMask += OnSkillSpellMask;
 
@@ -153,7 +153,7 @@ class Mod_AutoLearn_PlayerScript : public PlayerScript
 
         AutoLearnSpell(OnLevelSpellMask, Player);
     }
-    
+
     // Called when a player logs in.
     void OnLogin(Player* player)
     {
