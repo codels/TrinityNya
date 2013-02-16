@@ -394,6 +394,7 @@ public:
     bool IsStackableWithRanks() const;
     bool IsPassiveStackableWithRanks() const;
     bool IsMultiSlotAura() const;
+    bool IsStackableOnOneSlotWithDifferentCasters() const;
     bool IsDeathPersistent() const;
     bool IsRequiringDeadTarget() const;
     bool IsAllowingDeadTarget() const;

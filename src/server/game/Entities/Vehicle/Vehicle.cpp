@@ -338,9 +338,9 @@ bool Vehicle::AddPassenger(Unit* unit, int8 seatId)
     // exits the vehicle will dismiss. That's why the actual adding the passenger to the vehicle is scheduled
     // asynchronously, so it can be cancelled easily in case the vehicle is uninstalled meanwhile.
     SeatMap::iterator seat;
-    sLog->outDebug(LOG_FILTER_VEHICLES, "Unit %s scheduling enter vehicle entry %u id %u dbguid %u seat %d", 
+    sLog->outDebug(LOG_FILTER_VEHICLES, "Unit %s scheduling enter vehicle entry %u id %u dbguid %u seat %d",
         unit->GetName().c_str(), _me->GetEntry(), _vehicleInfo->m_ID, _me->GetGUIDLow(), seatId);
-    VehicleJoinEvent* e = new VehicleJoinEvent(this, unit, seat);
+    VehicleJoinEvent* e = new VehicleJoinEvent(this, unit);
     unit->m_Events.AddEvent(e, unit->m_Events.CalculateTime(0));
     _pendingJoinEvents.push_back(e);
 
@@ -355,6 +355,8 @@ bool Vehicle::AddPassenger(Unit* unit, int8 seatId)
             CancelJoinEvent(e);
             return false;
         }
+
+        e->Seat = seat;
     }
     else
     {
@@ -365,6 +367,7 @@ bool Vehicle::AddPassenger(Unit* unit, int8 seatId)
             return false;
         }
 
+        e->Seat = seat;
         if (seat->second.Passenger)
         {
             if (Unit* passenger = ObjectAccessor::GetUnit(*GetBase(), seat->second.Passenger))
@@ -525,7 +528,7 @@ void Vehicle::CalculatePassengerOffset(float& x, float& y, float& z, float& o)
     y = (iny - inx * tan(GetBase()->GetOrientation())) / (cos(GetBase()->GetOrientation()) + std::sin(GetBase()->GetOrientation()) * tan(GetBase()->GetOrientation()));
     x = (inx + iny * tan(GetBase()->GetOrientation())) / (cos(GetBase()->GetOrientation()) + std::sin(GetBase()->GetOrientation()) * tan(GetBase()->GetOrientation()));
 }
-    
+
 void Vehicle::CancelJoinEvent(VehicleJoinEvent* e)
 {
     e->to_Abort = true;
@@ -593,9 +596,9 @@ bool VehicleJoinEvent::Execute(uint64, uint32)
     if (Target->GetBase()->GetTypeId() == TYPEID_UNIT)
         sScriptMgr->OnAddPassenger(Target, Passenger, Seat->first);
 
-    return true; 
+    return true;
 }
-    
+
 void VehicleJoinEvent::Abort(uint64)
 {
     Passenger->m_vehicle = NULL;
