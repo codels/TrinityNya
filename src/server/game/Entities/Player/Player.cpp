@@ -982,7 +982,7 @@ bool Player::Create(uint32 guidlow, CharacterCreateInfo* createInfo)
 
     SetUInt32Value(UNIT_FIELD_BYTES_0, (RaceClassGender | (powertype << 24)));
     InitDisplayIds();
-    if (sWorld->getIntConfig(CONFIG_GAME_TYPE) == REALM_TYPE_PVP || sWorld->getIntConfig(CONFIG_GAME_TYPE) == REALM_TYPE_RPPVP)
+    if (sWorld->getIntConfig(CONFIG_GAME_TYPE) == REALM_TYPE_PVP || sWorld->getIntConfig(CONFIG_GAME_TYPE) == REALM_TYPE_RPPVP || sWorld->getIntConfig(CONFIG_GAME_TYPE) == REALM_TYPE_FFA_PVP)
     {
         SetByteFlag(UNIT_FIELD_BYTES_2, 1, UNIT_BYTE2_FLAG_PVP);
         SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PVP_ATTACKABLE);
@@ -7519,12 +7519,9 @@ void Player::UpdateZone(uint32 newZone, uint32 newArea)
             break;
     }
 
-    // TRINITY_NYA: isles in tanaris
-    bool spec = (GetMapId() == 1 && newZone == 440 && newArea == 2317);
-
-    if (zone->flags & AREA_FLAG_CAPITAL || spec)                     // Is in a capital city
+    if (zone->flags & AREA_FLAG_CAPITAL)                     // Is in a capital city
     {
-        if (!pvpInfo.inHostileArea || zone->IsSanctuary() || spec)
+        if (!pvpInfo.inHostileArea || zone->IsSanctuary())
         {
             SetFlag(PLAYER_FLAGS, PLAYER_FLAGS_RESTING);
             SetRestType(REST_TYPE_IN_CITY);
@@ -7551,6 +7548,10 @@ void Player::UpdateZone(uint32 newZone, uint32 newArea)
                 SetRestType(REST_TYPE_NO);
             }
         }
+    }
+
+    if (sWorld->getIntConfig(CONFIG_GAME_TYPE) == REALM_TYPE_FFA_PVP) {
+        pvpInfo.inNoPvPArea = false;
     }
 
     UpdatePvPState();

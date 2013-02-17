@@ -3232,3 +3232,6 @@ DeathKnight.SkipQuest = 0
 
 #
 PlayerCreate.WithoutItems = 0
+
+#
+CustomRewardPvP.Enable = 0

@@ -26,10 +26,11 @@ void AddSC_Mod_BattlegroundHistory(); // by Codels
 void AddSC_Mod_BossHistory(); // by Codels
 void AddSC_Mod_CharacterHistory(); // by Codels
 void AddSC_Mod_CharacterModel(); // by Codels
+void AddSC_Mod_CustomRewardPvP(); // by Codels
 void AddSC_mod_DefaultSpec(); // by Codels
 void AddSC_Mod_DynamicInstance(); // by Codels
 void AddSC_Mod_DynamicRate(); // by Codels
-void AddSC_Mod_ExternalMail(); // searching author...
+void AddSC_Mod_ExternalMail(); // by ???
 void AddSC_Mod_Tournaments(); // by Codels
 void AddSC_Mod_GuildDefault(); // by s@m
 void AddSC_Mod_HonorRank(); // by Codels
@@ -37,7 +38,7 @@ void AddSC_Mod_ItemUpgrade(); // by Codels
 void AddSC_Mod_MailHistory(); // by Codels
 void AddSC_Mod_Multikill(); // by Codels
 void AddSC_Mod_SpecialCode(); // by Codels
-void AddSC_Mod_LexicsCutter();
+void AddSC_Mod_LexicsCutter(); // by ???
 // Custom mods: END
 
 //examples
@@ -1328,6 +1329,7 @@ void AddCustomScripts()
     AddSC_Mod_BossHistory();
     AddSC_Mod_CharacterHistory();
     AddSC_Mod_CharacterModel();
+    AddSC_Mod_CustomRewardPvP();
     AddSC_mod_DefaultSpec();
     AddSC_Mod_DynamicInstance();
     AddSC_Mod_DynamicRate();
