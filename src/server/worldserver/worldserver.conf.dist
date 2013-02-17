@@ -3229,3 +3229,6 @@ SpecialCode.Enable = 0
 
 #
 DeathKnight.SkipQuest = 0
+
+#
+PlayerCreate.WithoutItems = 0

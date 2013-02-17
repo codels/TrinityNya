@@ -1121,6 +1121,7 @@ bool Player::Create(uint32 guidlow, CharacterCreateInfo* createInfo)
         addActionButton(action_itr->button, action_itr->action, action_itr->type);
 
     // original items
+    if (!sWorld->getBoolConfig(CONFIG_PLAYER_CREATE_WITHOUT_ITEMS)) {
     if (CharStartOutfitEntry const* oEntry = GetCharStartOutfitEntry(createInfo->Race, createInfo->Class, createInfo->Gender))
     {
         for (int j = 0; j < MAX_OUTFIT_ITEMS; ++j)
@@ -1155,6 +1156,7 @@ bool Player::Create(uint32 guidlow, CharacterCreateInfo* createInfo)
             }
             StoreNewItemInBestSlots(itemId, count);
         }
+    }
     }
 
     for (PlayerCreateInfoItems::const_iterator item_id_itr = info->item.begin(); item_id_itr != info->item.end(); ++item_id_itr)

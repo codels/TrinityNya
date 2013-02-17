@@ -1231,6 +1231,7 @@ void World::LoadConfigSettings(bool reload)
     // trinity_nya
     m_bool_configs[CONFIG_ACCOUNT_ACHIEVEMENTS] = ConfigMgr::GetBoolDefault("Account.Achievements", false);
     m_bool_configs[CONFIG_DEATH_KNIGHT_SKIP_QUEST] = ConfigMgr::GetBoolDefault("DeathKnight.SkipQuest", false);
+    m_bool_configs[CONFIG_PLAYER_CREATE_WITHOUT_ITEMS] = ConfigMgr::GetBoolDefault("PlayerCreate.WithoutItems", false);
 
     // call ScriptMgr if we're reloading the configuration
     m_bool_configs[CONFIG_WINTERGRASP_ENABLE] = ConfigMgr::GetBoolDefault("Wintergrasp.Enable", false);
