@@ -22,6 +22,7 @@
 #include "Common.h"
 #include "BigNumber.h"
 #include "RealmSocket.h"
+#include "ByteBuffer.h"
 
 class ACE_INET_Addr;
 struct Realm;

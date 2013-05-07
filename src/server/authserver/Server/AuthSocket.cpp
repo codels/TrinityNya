@@ -877,8 +877,7 @@ bool AuthSocket::_HandleRealmList()
     for (RealmList::RealmMap::const_iterator i = sRealmList->begin(); i != sRealmList->end(); ++i)
     {
         // don't work with realms which not compatible with the client
-        bool okBuild = ((_expversion & POST_BC_EXP_FLAG) && i->second.gamebuild == _build) || ((_expversion & PRE_BC_EXP_FLAG) && !AuthHelper::IsPreBCAcceptedClientBuild(i->second.gamebuild));
-
+        bool okBuild = ((_expversion & POST_BC_EXP_FLAG) && i->second.gamebuild == _build) || ((_expversion & PRE_BC_EXP_FLAG) && AuthHelper::IsPreBCAcceptedClientBuild(i->second.gamebuild));
         // No SQL injection. id of realm is controlled by the database.
         uint32 flag = i->second.flag;
         RealmBuildInfo const* buildInfo = AuthHelper::GetBuildInfo(i->second.gamebuild);
@@ -888,6 +887,8 @@ bool AuthSocket::_HandleRealmList()
                 continue;
 
             flag |= REALM_FLAG_OFFLINE | REALM_FLAG_SPECIFYBUILD;   // tell the client what build the realm is for
+        } else {
+            flag |= REALM_FLAG_RECOMMENDED;
         }
 
         if (!buildInfo)
@@ -907,17 +908,22 @@ bool AuthSocket::_HandleRealmList()
         uint8 lock = (i->second.allowedSecurityLevel > _accountSecurityLevel) ? 1 : 0;
 
         uint8 AmountOfCharacters = 0;
-        stmt = LoginDatabase.GetPreparedStatement(LOGIN_SEL_NUM_CHARS_ON_REALM);
-        stmt->setUInt32(0, i->second.m_ID);
-        stmt->setUInt32(1, id);
-        result = LoginDatabase.Query(stmt);
-        if (result)
-            AmountOfCharacters = (*result)[0].GetUInt8();
+        if (okBuild) {
+            stmt = LoginDatabase.GetPreparedStatement(LOGIN_SEL_NUM_CHARS_ON_REALM);
+            stmt->setUInt32(0, i->second.m_ID);
+            stmt->setUInt32(1, id);
+            result = LoginDatabase.Query(stmt);
+            if (result)
+                AmountOfCharacters = (*result)[0].GetUInt8();
+        }
 
-        pkt << i->second.icon;                              // realm type
-        if (_expversion & POST_BC_EXP_FLAG)                 // only 2.x and 3.x clients
-            pkt << lock;                                    // if 1, then realm locked
-        pkt << uint8(flag);                                 // RealmFlags
+        if (_expversion & POST_BC_EXP_FLAG) {
+            pkt << i->second.icon;
+            pkt << lock;                      // only 2.x and 3.x clients
+        } else
+            pkt << uint32(i->second.icon);
+
+        pkt << uint8(flag);                   // RealmFlags
         pkt << name;
         pkt << GetAddressString(GetAddressForClient(i->second, clientAddr));
         pkt << i->second.populationLevel;
@@ -956,7 +962,8 @@ bool AuthSocket::_HandleRealmList()
     if (_expversion & POST_BC_EXP_FLAG)                     // only 2.x and 3.x clients
         RealmListSizeBuffer << uint16(RealmListSize);
     else
-        RealmListSizeBuffer << uint32(RealmListSize);
+        //RealmListSizeBuffer << uint32(RealmListSize);
+        RealmListSizeBuffer << uint8(RealmListSize);
 
     ByteBuffer hdr;
     hdr << uint8(REALM_LIST);
