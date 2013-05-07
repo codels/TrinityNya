@@ -29,13 +29,13 @@
 
 #include <list>
 
-class SpellInfo;
-
 class CreatureAI;
+class CreatureGroup;
+class Group;
 class Quest;
 class Player;
+class SpellInfo;
 class WorldSession;
-class CreatureGroup;
 
 enum CreatureFlagsExtra
 {
@@ -155,13 +155,18 @@ struct CreatureTemplate
             return SKILL_SKINNING;                          // normal case
     }
 
-    bool isTameable(bool exotic) const
+    bool isExotic() const
+    {
+        return (type_flags & CREATURE_TYPEFLAGS_EXOTIC) != 0;
+    }
+
+    bool isTameable(bool canTameExotic) const
     {
         if (type != CREATURE_TYPE_BEAST || family == 0 || (type_flags & CREATURE_TYPEFLAGS_TAMEABLE) == 0)
             return false;
 
-        // if can tame exotic then can tame any temable
-        return exotic || (type_flags & CREATURE_TYPEFLAGS_EXOTIC) == 0;
+        // if can tame exotic then can tame any tameable
+        return canTameExotic || !isExotic();
     }
 };
 
@@ -169,7 +174,7 @@ struct CreatureTemplate
 typedef UNORDERED_MAP<uint32, CreatureTemplate> CreatureTemplateContainer;
 
 // Represents max amount of expansions.
-// TODO: Add MAX_EXPANSION constant.
+/// @todo: Add MAX_EXPANSION constant.
 #define MAX_CREATURE_BASE_HP 3
 
 // GCC have alternative #pragma pack(N) syntax and old gcc version not support pack(push, N), also any gcc version not support it at some platform
@@ -480,41 +485,17 @@ class Creature : public Unit, public GridObject<Creature>, public MapCreature
         void SetReactState(ReactStates st) { m_reactState = st; }
         ReactStates GetReactState() { return m_reactState; }
         bool HasReactState(ReactStates state) const { return (m_reactState == state); }
-        void InitializeReactState()
-        {
-            if (isTotem() || isTrigger() || GetCreatureType() == CREATURE_TYPE_CRITTER || isSpiritService())
-                SetReactState(REACT_PASSIVE);
-            else
-                SetReactState(REACT_AGGRESSIVE);
-            /*else if (isCivilian())
-            SetReactState(REACT_DEFENSIVE);*/;
-        }
+        void InitializeReactState();
 
-        ///// TODO RENAME THIS!!!!!
+        /// @todo Rename these properly
         bool isCanTrainingOf(Player* player, bool msg) const;
         bool isCanInteractWithBattleMaster(Player* player, bool msg) const;
         bool isCanTrainingAndResetTalentsOf(Player* player) const;
         bool canCreatureAttack(Unit const* victim, bool force = true) const;
-        bool IsImmunedToSpell(SpellInfo const* spellInfo);
-                                                            // redefine Unit::IsImmunedToSpell
-        bool IsImmunedToSpellEffect(SpellInfo const* spellInfo, uint32 index) const;
-                                                            // redefine Unit::IsImmunedToSpellEffect
-        bool isElite() const
-        {
-            if (isPet())
-                return false;
-
-            uint32 rank = GetCreatureTemplate()->rank;
-            return rank != CREATURE_ELITE_NORMAL && rank != CREATURE_ELITE_RARE;
-        }
-
-        bool isWorldBoss() const
-        {
-            if (isPet())
-                return false;
-
-            return GetCreatureTemplate()->type_flags & CREATURE_TYPEFLAGS_BOSS;
-        }
+        bool IsImmunedToSpell(SpellInfo const* spellInfo) const;                     // override Unit::IsImmunedToSpell
+        bool IsImmunedToSpellEffect(SpellInfo const* spellInfo, uint32 index) const; // override Unit::IsImmunedToSpellEffect
+        bool isElite() const;
+        bool isWorldBoss() const;
 
         bool IsDungeonBoss() const;
 
@@ -531,10 +512,7 @@ class Creature : public Unit, public GridObject<Creature>, public MapCreature
         bool SetDisableGravity(bool disable, bool packetOnly = false);
         bool SetHover(bool enable);
 
-        uint32 GetShieldBlockValue() const                  //dunno mob block value
-        {
-            return (getLevel()/2 + uint32(GetStat(STAT_STRENGTH)/20));
-        }
+        uint32 GetShieldBlockValue() const;
 
         SpellSchoolMask GetMeleeDamageSchoolMask() const { return m_meleeDamageSchoolMask; }
         void SetMeleeDamageSchool(SpellSchools school) { m_meleeDamageSchoolMask = SpellSchoolMask(1 << school); }
@@ -544,12 +522,7 @@ class Creature : public Unit, public GridObject<Creature>, public MapCreature
         void AddCreatureSpellCooldown(uint32 spellid);
         bool HasSpellCooldown(uint32 spell_id) const;
         bool HasCategoryCooldown(uint32 spell_id) const;
-        uint32 GetCreatureSpellCooldownDelay(uint32 spellId) const
-        {
-            CreatureSpellCooldowns::const_iterator itr = m_CreatureSpellCooldowns.find(spellId);
-            time_t t = time(NULL);
-            return uint32(itr != m_CreatureSpellCooldowns.end() && itr->second > t ? itr->second - t : 0);
-        }
+        uint32 GetCreatureSpellCooldownDelay(uint32 spellId) const;
         virtual void ProhibitSpellSchool(SpellSchoolMask idSchoolMask, uint32 unTimeMs);
 
         bool HasSpell(uint32 spellID) const;
@@ -564,11 +537,11 @@ class Creature : public Unit, public GridObject<Creature>, public MapCreature
         void UpdateAttackPowerAndDamage(bool ranged = false);
         void UpdateDamagePhysical(WeaponAttackType attType);
 
-        uint8 GetOriginalEquipmentId() const { return m_originalEquipmentId; }
-        uint32 GetCurrentEquipmentId() { return m_equipmentId; }
+        int8 GetOriginalEquipmentId() const { return m_originalEquipmentId; }
+        uint8 GetCurrentEquipmentId() { return m_equipmentId; }
         void SetCurrentEquipmentId(uint8 id) { m_equipmentId = id; }
 
-        float GetSpellDamageMod(int32 Rank);
+        float GetSpellDamageMod(int32 Rank) const;
 
         VendorItemData const* GetVendorItems() const;
         uint32 GetVendorItemCurrentCount(VendorItem const* vItem);
@@ -679,13 +652,7 @@ class Creature : public Unit, public GridObject<Creature>, public MapCreature
         bool isRegeneratingHealth() { return m_regenHealth; }
         void setRegeneratingHealth(bool regenHealth) { m_regenHealth = regenHealth; }
         virtual uint8 GetPetAutoSpellSize() const { return MAX_SPELL_CHARM; }
-        virtual uint32 GetPetAutoSpellOnPos(uint8 pos) const
-        {
-            if (pos >= MAX_SPELL_CHARM || m_charmInfo->GetCharmSpell(pos)->GetType() != ACT_ENABLED)
-                return 0;
-            else
-                return m_charmInfo->GetCharmSpell(pos)->GetAction();
-        }
+        virtual uint32 GetPetAutoSpellOnPos(uint8 pos) const;
 
         void SetPosition(float x, float y, float z, float o);
         void SetPosition(const Position &pos) { SetPosition(pos.GetPositionX(), pos.GetPositionY(), pos.GetPositionZ(), pos.GetOrientation()); }
@@ -703,8 +670,8 @@ class Creature : public Unit, public GridObject<Creature>, public MapCreature
         uint32 GetWaypointPath(){return m_path_id;}
         void LoadPath(uint32 pathid) { m_path_id = pathid; }
 
-        uint32 GetCurrentWaypointID(){return m_waypointID;}
-        void UpdateWaypointID(uint32 wpID){m_waypointID = wpID;}
+        uint32 GetCurrentWaypointID() const { return m_waypointID; }
+        void UpdateWaypointID(uint32 wpID) { m_waypointID = wpID; }
 
         void SearchFormation();
         CreatureGroup* GetFormation() {return m_formation;}
@@ -715,11 +682,7 @@ class Creature : public Unit, public GridObject<Creature>, public MapCreature
         void SetDisableReputationGain(bool disable) { DisableReputationGain = disable; }
         bool IsReputationGainDisabled() { return DisableReputationGain; }
         bool IsDamageEnoughForLootingAndReward() const { return m_PlayerDamageReq == 0; }
-        void LowerPlayerDamageReq(uint32 unDamage)
-        {
-            if (m_PlayerDamageReq)
-                m_PlayerDamageReq > unDamage ? m_PlayerDamageReq -= unDamage : m_PlayerDamageReq = 0;
-        }
+        void LowerPlayerDamageReq(uint32 unDamage);
         void ResetPlayerDamageReq() { m_PlayerDamageReq = GetHealth() / 2; }
         uint32 m_PlayerDamageReq;
 
@@ -763,7 +726,7 @@ class Creature : public Unit, public GridObject<Creature>, public MapCreature
         MovementGeneratorType m_defaultMovementType;
         uint32 m_DBTableGuid;                               ///< For new or temporary creatures is 0 for saved it is lowguid
         uint8 m_equipmentId;
-        uint8 m_originalEquipmentId;
+        int8 m_originalEquipmentId; // can be -1
 
         bool m_AlreadyCallAssistance;
         bool m_AlreadySearchedAssistance;
@@ -778,10 +741,10 @@ class Creature : public Unit, public GridObject<Creature>, public MapCreature
 
         bool DisableReputationGain;
 
-        CreatureTemplate const* m_creatureInfo;                 // in difficulty mode > 0 can different from sObjectMgr->GetCreatureTemplate(GetEntry())
+        CreatureTemplate const* m_creatureInfo;                 // Can differ from sObjectMgr->GetCreatureTemplate(GetEntry()) in difficulty mode > 0
         CreatureData const* m_creatureData;
 
-        uint16 m_LootMode;                                  // bitmask, default LOOT_MODE_DEFAULT, determines what loot will be lootable
+        uint16 m_LootMode;                                  // Bitmask (default: LOOT_MODE_DEFAULT) that determines what loot will be lootable
         uint32 guid_transport;
 
         bool IsInvisibleDueToDespawn() const;

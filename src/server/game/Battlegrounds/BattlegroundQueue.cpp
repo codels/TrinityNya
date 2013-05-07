@@ -49,14 +49,12 @@ BattlegroundQueue::~BattlegroundQueue()
 {
     m_events.KillAllEvents(false);
 
-    m_QueuedPlayers.clear();
     for (int i = 0; i < MAX_BATTLEGROUND_BRACKETS; ++i)
     {
         for (uint32 j = 0; j < BG_QUEUE_GROUP_TYPES_COUNT; ++j)
         {
             for (GroupsQueueType::iterator itr = m_QueuedGroups[i][j].begin(); itr!= m_QueuedGroups[i][j].end(); ++itr)
                 delete (*itr);
-            m_QueuedGroups[i][j].clear();
         }
     }
 }
@@ -288,8 +286,6 @@ uint32 BattlegroundQueue::GetAverageQueueWaitTime(GroupQueueInfo* ginfo, Battleg
 //remove player from queue and from group info, if group info is empty then remove it too
 void BattlegroundQueue::RemovePlayer(uint64 guid, bool decreaseInvitedCount)
 {
-    //Player* player = ObjectAccessor::FindPlayer(guid);
-
     int32 bracket_id = -1;                                     // signed for proper for-loop finish
     QueuedPlayersMap::iterator itr;
 
@@ -297,7 +293,10 @@ void BattlegroundQueue::RemovePlayer(uint64 guid, bool decreaseInvitedCount)
     itr = m_QueuedPlayers.find(guid);
     if (itr == m_QueuedPlayers.end())
     {
-        sLog->outError(LOG_FILTER_BATTLEGROUND, "BattlegroundQueue: couldn't find player to remove GUID: %u", GUID_LOPART(guid));
+        std::string playerName = "Unknown";
+        if (Player* player = ObjectAccessor::FindPlayer(guid))
+            playerName = player->GetName();
+        sLog->outError(LOG_FILTER_BATTLEGROUND, "BattlegroundQueue: couldn't find player %s (GUID: %u)", playerName.c_str(), GUID_LOPART(guid));
         return;
     }
 
