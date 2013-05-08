@@ -1244,6 +1244,23 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
             delete targets;
             break;
         }
+        case SMART_ACTION_SET_BASE_RATE_XP:
+        {
+            ObjectList* targets = GetTargets(e, unit);
+            if (!targets)
+                break;
+
+            for (ObjectList::const_iterator itr = targets->begin(); itr != targets->end(); ++itr)
+            {
+                if (!IsPlayer(*itr))
+                    continue;
+
+                (*itr)->ToPlayer()->setBaseRateXP(e.action.raw.param1);
+            }
+
+            delete targets;
+            break;
+        }
         case SMART_ACTION_REMOVE_ITEM:
         {
             ObjectList* targets = GetTargets(e, unit);

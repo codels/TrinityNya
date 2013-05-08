@@ -497,7 +497,7 @@ class AllCreatureScript : public ScriptObject
 
         virtual void AllCreatureCreate(Creature* /*creature*/) { }
 
-        virtual void AllCreatureSpellDamageMod(Creature* /*creature*/, SpellInfo const* /*spellProto*/, DamageEffectType /*damagetype*/, float& /*doneTotalMod*/) { }
+        virtual void AllCreatureSpellDamageMod(Creature const* /*creature*/, SpellInfo const* /*spellProto*/, DamageEffectType /*damagetype*/, float& /*doneTotalMod*/) { }
 
         virtual void AllCreatureCreateLoot(Creature* /*creature*/, uint32& /*lootid*/) { }
 
@@ -1026,7 +1026,7 @@ class ScriptMgr
         void AllCreatureJustDied(Creature* creature);
         void AllCreatureSelectLevel(Creature* creature, bool& needSetStats);
         void AllCreatureCreate(Creature* creature);
-        void AllCreatureSpellDamageMod(Creature* creature, SpellInfo const* spellProto, DamageEffectType damagetype, float& doneTotalMod);
+        void AllCreatureSpellDamageMod(Creature const* creature, SpellInfo const* spellProto, DamageEffectType damagetype, float& doneTotalMod);
         void AllCreatureCreateLoot(Creature* creature, uint32& lootid);
         void AllCreatureCode(Player* player, Creature* creature, uint32 sender, uint32 action, const char* code);
 

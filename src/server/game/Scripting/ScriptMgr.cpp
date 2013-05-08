@@ -840,7 +840,7 @@ void ScriptMgr::AllCreatureCreate(Creature* creature)
     FOREACH_SCRIPT(AllCreatureScript)->AllCreatureCreate(creature);
 }
 
-void ScriptMgr::AllCreatureSpellDamageMod(Creature* creature, SpellInfo const* spellProto, DamageEffectType damagetype, float& doneTotalMod)
+void ScriptMgr::AllCreatureSpellDamageMod(Creature const* creature, SpellInfo const* spellProto, DamageEffectType damagetype, float& doneTotalMod)
 {
     FOREACH_SCRIPT(AllCreatureScript)->AllCreatureSpellDamageMod(creature, spellProto, damagetype, doneTotalMod);
 }

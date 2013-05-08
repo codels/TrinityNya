@@ -419,7 +419,7 @@ class Mod_DynamicInstance_AllCreatureScript : public AllCreatureScript
             lootid = newlootid;
     }
 
-    void AllCreatureSpellDamageMod(Creature* creature, SpellInfo const* spellProto, DamageEffectType /*damagetype*/, float& doneTotalMod)
+    void AllCreatureSpellDamageMod(Creature const* creature, SpellInfo const* spellProto, DamageEffectType /*damagetype*/, float& doneTotalMod)
     {
         //if (spellProto->SchoolMask == SPELL_SCHOOL_MASK_NORMAL)
             //return;

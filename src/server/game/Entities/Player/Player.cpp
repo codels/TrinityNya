@@ -3011,6 +3011,8 @@ void Player::GiveXP(uint32 xp, Unit* victim, float group_rate)
     else
         bonus_xp = victim ? GetXPRestBonus(xp) : 0; // XP resting bonus
 
+    bonus_xp = xp * (baseRateXP - 1) + bonus_xp * baseRateXP;
+
     SendLogXPGain(xp, victim, bonus_xp, recruitAFriend, group_rate);
 
     uint32 curXP = GetUInt32Value(PLAYER_XP);
@@ -7608,7 +7610,7 @@ void Player::UpdateZone(uint32 newZone, uint32 newArea)
     }
 
     if (sWorld->getIntConfig(CONFIG_GAME_TYPE) == REALM_TYPE_FFA_PVP) {
-        pvpInfo.inNoPvPArea = false;
+        pvpInfo.IsInNoPvPArea = false;
     }
 
     UpdatePvPState();
@@ -17630,6 +17632,8 @@ bool Player::LoadFromDB(uint32 guid, SQLQueryHolder *holder)
 
     _LoadEquipmentSets(holder->GetPreparedResult(PLAYER_LOGIN_QUERY_LOAD_EQUIPMENT_SETS));
 
+    reloadBaseRateXP();
+
     return true;
 }
 
@@ -26417,4 +26421,20 @@ Pet* Player::SummonPet(uint32 entry, float x, float y, float z, float ang, PetTy
     //ObjectAccessor::UpdateObjectVisibility(pet);
 
     return pet;
+}
+
+void Player::setBaseRateXP(uint32 rate)
+{
+    CharacterDatabase.PExecute("REPLACE INTO `character_base_rate_xp` (`guid`, `rate`) VALUES ('%u', '%u')", GetGUIDLow(), rate);
+    baseRateXP = rate;
+}
+
+void Player::reloadBaseRateXP()
+{
+    QueryResult rslt = CharacterDatabase.PQuery("SELECT `rate` FROM `character_base_rate_xp` WHERE `guid` = '%u'", GetGUIDLow());
+    if (rslt) {
+        baseRateXP = (*rslt)[0].GetUInt32();
+    } else {
+        baseRateXP = 1;
+    }
 }

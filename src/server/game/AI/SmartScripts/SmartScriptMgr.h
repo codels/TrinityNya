@@ -489,8 +489,8 @@ enum SMART_ACTION
     SMART_ACTION_ADD_GO_FLAG                        = 105,    // Flags
     SMART_ACTION_REMOVE_GO_FLAG                     = 106,    // Flags
     SMART_ACTION_SUMMON_CREATURE_GROUP              = 107,    // Group, attackInvoker
-
-    SMART_ACTION_END                                = 108
+    SMART_ACTION_SET_BASE_RATE_XP                   = 108,    // rate
+    SMART_ACTION_END                                = 109
 };
 
 struct SmartAction

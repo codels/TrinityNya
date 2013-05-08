@@ -290,6 +290,12 @@ bool Condition::Meets(ConditionSourceInfo& sourceInfo)
                 condMeets = CompareValues(static_cast<ComparisionType>(ConditionValue2), unit->GetHealthPct(), static_cast<float>(ConditionValue1));
             break;
         }
+        case CONDITION_BASE_RATE_XP:
+        {
+            if (Player* player = object->ToPlayer())
+                condMeets = (!ConditionValue1 || player->getBaseRateXP() >= ConditionValue1) && (!ConditionValue2 || player->getBaseRateXP() <= ConditionValue2);
+            break;
+        }
         case CONDITION_WORLD_STATE:
         {
             condMeets = ConditionValue2 == sWorld->getWorldState(ConditionValue1);
@@ -473,6 +479,9 @@ uint32 Condition::GetSearcherTypeMaskForCondition()
             mask |= GRID_MAP_TYPE_MASK_ALL;
             break;
         case CONDITION_GENDER:
+            mask |= GRID_MAP_TYPE_MASK_PLAYER;
+            break;
+        case CONDITION_BASE_RATE_XP:
             mask |= GRID_MAP_TYPE_MASK_PLAYER;
             break;
         case CONDITION_UNIT_STATE:
@@ -1926,6 +1935,7 @@ bool ConditionMgr::isConditionTypeValid(Condition* cond)
                 sLog->outError(LOG_FILTER_SQL, "HpPct condition has useless data in value3 (%u)!", cond->ConditionValue3);
             break;
         }
+        case CONDITION_BASE_RATE_XP:
         case CONDITION_AREAID:
         case CONDITION_INSTANCE_INFO:
             break;
