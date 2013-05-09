@@ -173,13 +173,13 @@ NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 DELETE FROM `conditions` WHERE `SourceTypeOrReferenceId` = 15 AND `SourceGroup` = @GOSSIP_MENU_ID;
 INSERT INTO `conditions` (`SourceTypeOrReferenceId`, `SourceGroup`, `SourceEntry`, `SourceId`, `ElseGroup`, `ConditionTypeOrReference`, `ConditionTarget`,
 `ConditionValue1`, `ConditionValue2`, `ConditionValue3`, `NegativeCondition`, `ErrorType`, `ErrorTextId`, `ScriptName`, `Comment`) VALUES
-(15, @GOSSIP_MENU_ID, 0, 0, 0, @CONDITION_BASE_RATE_XP, 0, 501, 0, 0, 0, 0, 0, '', 'not display'),
-(15, @GOSSIP_MENU_ID, 1, 0, 0, @CONDITION_BASE_RATE_XP, 0, 0, 4, 0, 0, 0, 0, '', NULL),
-(15, @GOSSIP_MENU_ID, 2, 0, 0, @CONDITION_BASE_RATE_XP, 0, 0, 9, 0, 0, 0, 0, '', NULL),
-(15, @GOSSIP_MENU_ID, 3, 0, 0, @CONDITION_BASE_RATE_XP, 0, 0, 24, 0, 0, 0, 0, '', NULL),
-(15, @GOSSIP_MENU_ID, 4, 0, 0, @CONDITION_BASE_RATE_XP, 0, 0, 49, 0, 0, 0, 0, '', NULL),
-(15, @GOSSIP_MENU_ID, 5, 0, 0, @CONDITION_BASE_RATE_XP, 0, 0, 99, 0, 0, 0, 0, '', NULL),
-(15, @GOSSIP_MENU_ID, 6, 0, 0, @CONDITION_BASE_RATE_XP, 0, 0, 499, 0, 0, 0, 0, '', NULL);
+(15, @GOSSIP_MENU_ID, 0, 0, 0, @CONDITION_BASE_RATE_XP, 0, 0, 1, 0, 0, 0, 0, '', 'not display'),
+(15, @GOSSIP_MENU_ID, 1, 0, 0, @CONDITION_BASE_RATE_XP, 0, 0, 5, 0, 0, 0, 0, '', NULL),
+(15, @GOSSIP_MENU_ID, 2, 0, 0, @CONDITION_BASE_RATE_XP, 0, 0, 10, 0, 0, 0, 0, '', NULL),
+(15, @GOSSIP_MENU_ID, 3, 0, 0, @CONDITION_BASE_RATE_XP, 0, 0, 25, 0, 0, 0, 0, '', NULL),
+(15, @GOSSIP_MENU_ID, 4, 0, 0, @CONDITION_BASE_RATE_XP, 0, 0, 50, 0, 0, 0, 0, '', NULL),
+(15, @GOSSIP_MENU_ID, 5, 0, 0, @CONDITION_BASE_RATE_XP, 0, 0, 100, 0, 0, 0, 0, '', NULL),
+(15, @GOSSIP_MENU_ID, 6, 0, 0, @CONDITION_BASE_RATE_XP, 0, 0, 500, 0, 0, 0, 0, '', NULL);
 
 DELETE FROM `creature` WHERE `guid` BETWEEN @CREATURE_GUID_START AND @CREATURE_GUID_START + 7 OR `id` = @NPC_ENTRY;
 INSERT INTO `creature` (`guid`, `id`, `map`, `spawnMask`, `phaseMask`, `modelid`, `equipment_id`, `position_x`, `position_y`, `position_z`, `orientation`,
