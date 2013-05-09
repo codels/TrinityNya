@@ -37,7 +37,7 @@ INSERT INTO `locales_item`
 `description_loc2`, `description_loc3`, `description_loc4`, `description_loc5`, `description_loc6`, `description_loc7`,
 `description_loc8`) VALUES
 (@ITEM_ID,
-'', '', '', '', '', '', '', 'Стартовый набор',
+'', '', '', '', '', '', '', 'РЎС‚Р°СЂС‚РѕРІС‹Р№ РЅР°Р±РѕСЂ',
 NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 
 
