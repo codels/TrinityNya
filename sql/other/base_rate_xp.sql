@@ -21,6 +21,13 @@ SET @QUEST_FLAGS_SHARABLE = 8;
 SET @QUEST_FLAGS_AUTO_ACCEPT = 524288;
 SET @QUEST_FLAGS_NO_MONEY_FROM_XP = 256;
 SET @QUEST_FLAGS = @QUEST_FLAGS_SHARABLE + @QUEST_FLAGS_AUTO_ACCEPT + @QUEST_FLAGS_NO_MONEY_FROM_XP;
+SET @CONDITION_SOURCE_TYPE_ITEM_LOOT_TEMPLATE = 5;
+SET @CONDITION_SOURCE_TYPE_GOSSIP_MENU = 15;
+SET @ITEM_LOOT_ID = 41426;
+SET @ITEM_BIG_BLIZZARD_BEAR = 43599;
+SET @ITEM_BABY_BLIZZARD_BEAR = 44819;
+SET @ITEM_EMBLEM_OF_TRIUMPH = 47241;
+SET @ITEM_EMBLEM_OF_FROST = 49426;
 
 
 DELETE FROM `creature_template` WHERE `entry` = @NPC_ENTRY;
@@ -169,17 +176,16 @@ NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
 /* ObjectiveText4 */
 NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 
-
-DELETE FROM `conditions` WHERE `SourceTypeOrReferenceId` = 15 AND `SourceGroup` = @GOSSIP_MENU_ID;
+DELETE FROM `conditions` WHERE `SourceTypeOrReferenceId` = @CONDITION_SOURCE_TYPE_GOSSIP_MENU AND `SourceGroup` = @GOSSIP_MENU_ID;
 INSERT INTO `conditions` (`SourceTypeOrReferenceId`, `SourceGroup`, `SourceEntry`, `SourceId`, `ElseGroup`, `ConditionTypeOrReference`, `ConditionTarget`,
 `ConditionValue1`, `ConditionValue2`, `ConditionValue3`, `NegativeCondition`, `ErrorType`, `ErrorTextId`, `ScriptName`, `Comment`) VALUES
-(15, @GOSSIP_MENU_ID, 0, 0, 0, @CONDITION_BASE_RATE_XP, 0, 0, 1, 0, 0, 0, 0, '', 'not display'),
-(15, @GOSSIP_MENU_ID, 1, 0, 0, @CONDITION_BASE_RATE_XP, 0, 0, 5, 0, 0, 0, 0, '', NULL),
-(15, @GOSSIP_MENU_ID, 2, 0, 0, @CONDITION_BASE_RATE_XP, 0, 0, 10, 0, 0, 0, 0, '', NULL),
-(15, @GOSSIP_MENU_ID, 3, 0, 0, @CONDITION_BASE_RATE_XP, 0, 0, 25, 0, 0, 0, 0, '', NULL),
-(15, @GOSSIP_MENU_ID, 4, 0, 0, @CONDITION_BASE_RATE_XP, 0, 0, 50, 0, 0, 0, 0, '', NULL),
-(15, @GOSSIP_MENU_ID, 5, 0, 0, @CONDITION_BASE_RATE_XP, 0, 0, 100, 0, 0, 0, 0, '', NULL),
-(15, @GOSSIP_MENU_ID, 6, 0, 0, @CONDITION_BASE_RATE_XP, 0, 0, 500, 0, 0, 0, 0, '', NULL);
+(@CONDITION_SOURCE_TYPE_GOSSIP_MENU, @GOSSIP_MENU_ID, 0, 0, 0, @CONDITION_BASE_RATE_XP, 0, 0, 1, 0, 0, 0, 0, '', 'not display'),
+(@CONDITION_SOURCE_TYPE_GOSSIP_MENU, @GOSSIP_MENU_ID, 1, 0, 0, @CONDITION_BASE_RATE_XP, 0, 0, 5, 0, 0, 0, 0, '', NULL),
+(@CONDITION_SOURCE_TYPE_GOSSIP_MENU, @GOSSIP_MENU_ID, 2, 0, 0, @CONDITION_BASE_RATE_XP, 0, 0, 10, 0, 0, 0, 0, '', NULL),
+(@CONDITION_SOURCE_TYPE_GOSSIP_MENU, @GOSSIP_MENU_ID, 3, 0, 0, @CONDITION_BASE_RATE_XP, 0, 0, 25, 0, 0, 0, 0, '', NULL),
+(@CONDITION_SOURCE_TYPE_GOSSIP_MENU, @GOSSIP_MENU_ID, 4, 0, 0, @CONDITION_BASE_RATE_XP, 0, 0, 50, 0, 0, 0, 0, '', NULL),
+(@CONDITION_SOURCE_TYPE_GOSSIP_MENU, @GOSSIP_MENU_ID, 5, 0, 0, @CONDITION_BASE_RATE_XP, 0, 0, 100, 0, 0, 0, 0, '', NULL),
+(@CONDITION_SOURCE_TYPE_GOSSIP_MENU, @GOSSIP_MENU_ID, 6, 0, 0, @CONDITION_BASE_RATE_XP, 0, 0, 500, 0, 0, 0, 0, '', NULL);
 
 DELETE FROM `creature` WHERE `guid` BETWEEN @CREATURE_GUID_START AND @CREATURE_GUID_START + 7 OR `id` = @NPC_ENTRY;
 INSERT INTO `creature` (`guid`, `id`, `map`, `spawnMask`, `phaseMask`, `modelid`, `equipment_id`, `position_x`, `position_y`, `position_z`, `orientation`,
@@ -192,3 +198,27 @@ INSERT INTO `creature` (`guid`, `id`, `map`, `spawnMask`, `phaseMask`, `modelid`
 (@CREATURE_GUID_START + 5, @NPC_ENTRY, 0, 1, 1, 0, 0, 1704.57, 1664.84, 132.145, 4.14071, 300, 0, 0, 42, 0, 0, 0, 0, 0),
 (@CREATURE_GUID_START + 6, @NPC_ENTRY, 1, 1, 1, 0, 0, -2882.42, -234.735, 53.9166, 3.88798, 300, 0, 0, 42, 0, 0, 0, 0, 0),
 (@CREATURE_GUID_START + 7, @NPC_ENTRY, 530, 1, 1, 0, 0, 10344.5, -6346.36, 31.3845, 6.06907, 300, 0, 0, 42, 0, 0, 0, 0, 0);
+
+-- cleanup
+DELETE FROM `item_loot_template`
+WHERE 	`entry` = @ITEM_LOOT_ID
+	AND `item` IN (@ITEM_BIG_BLIZZARD_BEAR, @ITEM_BABY_BLIZZARD_BEAR, @ITEM_EMBLEM_OF_TRIUMPH, @ITEM_EMBLEM_OF_FROST);
+
+INSERT INTO `item_loot_template`
+(`entry`, `item`, `ChanceOrQuestChance`, `lootmode`, `groupid`, `mincountOrRef`, `maxcount`) VALUES
+(@ITEM_LOOT_ID, @ITEM_BIG_BLIZZARD_BEAR, 100, 1, 0, 1, 1),
+(@ITEM_LOOT_ID, @ITEM_BABY_BLIZZARD_BEAR, 100, 1, 0, 1, 1),
+(@ITEM_LOOT_ID, @ITEM_EMBLEM_OF_TRIUMPH, 100, 1, 0, 50, 50),
+(@ITEM_LOOT_ID, @ITEM_EMBLEM_OF_FROST, 100, 1, 0, 50, 50);
+
+DELETE FROM `conditions`
+WHERE	`SourceTypeOrReferenceId` = @CONDITION_SOURCE_TYPE_ITEM_LOOT_TEMPLATE
+	AND `SourceGroup` = @ITEM_LOOT_ID
+	AND `SourceEntry` IN (@ITEM_BIG_BLIZZARD_BEAR, @ITEM_BABY_BLIZZARD_BEAR, @ITEM_EMBLEM_OF_TRIUMPH, @ITEM_EMBLEM_OF_FROST);
+
+INSERT INTO `conditions` (`SourceTypeOrReferenceId`, `SourceGroup`, `SourceEntry`, `SourceId`, `ElseGroup`, `ConditionTypeOrReference`, `ConditionTarget`,
+`ConditionValue1`, `ConditionValue2`, `ConditionValue3`, `NegativeCondition`, `ErrorType`, `ErrorTextId`, `ScriptName`, `Comment`) VALUES
+(@CONDITION_SOURCE_TYPE_ITEM_LOOT_TEMPLATE, @ITEM_LOOT_ID, @ITEM_BIG_BLIZZARD_BEAR, 0, 0, @CONDITION_BASE_RATE_XP, 0, 1, 1, 0, 0, 0, 0, '', 'Big Blizzard Bear (if rate x1)'),
+(@CONDITION_SOURCE_TYPE_ITEM_LOOT_TEMPLATE, @ITEM_LOOT_ID, @ITEM_BABY_BLIZZARD_BEAR, 0, 0, @CONDITION_BASE_RATE_XP, 0, 5, 5, 0, 0, 0, 0, '', 'Baby Blizzard Bear (if rate x5)'),
+(@CONDITION_SOURCE_TYPE_ITEM_LOOT_TEMPLATE, @ITEM_LOOT_ID, @ITEM_EMBLEM_OF_TRIUMPH, 0, 0, @CONDITION_BASE_RATE_XP, 0, 5, 5, 0, 0, 0, 0, '', 'Emblem of Triumph (if rate x5)'),
+(@CONDITION_SOURCE_TYPE_ITEM_LOOT_TEMPLATE, @ITEM_LOOT_ID, @ITEM_EMBLEM_OF_FROST, 0, 0, @CONDITION_BASE_RATE_XP, 0, 1, 1, 0, 0, 0, 0, '', 'Emblem of Frost (if rate x1)');

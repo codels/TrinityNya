@@ -44,30 +44,35 @@ NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 DELETE FROM `playercreateinfo_item` WHERE `itemid` = @ITEM_ID;
 INSERT INTO `playercreateinfo_item` (`race`, `class`, `itemid`, `amount`) VALUES (0, 0, @ITEM_ID, 1);
 
+SET @LOOT_GROUP = 1; -- if 0 then all item else one item
+
 DELETE FROM `item_loot_template` WHERE `entry` = @ITEM_ID;
 INSERT INTO `item_loot_template`
 (`entry`, `item`, `ChanceOrQuestChance`, `lootmode`, `groupid`, `mincountOrRef`, `maxcount`) VALUES
-(@ITEM_ID, 42943, 100, 1, 0, 1, 1), -- Bloodied Arcanite Reaper (Warrior)
-(@ITEM_ID, 44099, 100, 1, 0, 1, 1), -- Strengthened Stockade Pauldrons (Warrior, Paladin)
-(@ITEM_ID, 48677, 100, 1, 0, 1, 1), -- Champion's Deathdealer Breastplate (Hunter)
-(@ITEM_ID, 42944, 100, 1, 0, 2, 2), -- Balanced Heartseeker (Rogue x2)
-(@ITEM_ID, 42946, 100, 1, 0, 1, 1), -- Charmed Ancient Bone Bow (Rogue, Hunter, Warrior)
-(@ITEM_ID, 42947, 100, 1, 0, 1, 1), -- Dignified Headmaster's Charge (Priest, Shaman, Mage, Warlock, Druid)
-(@ITEM_ID, 42949, 100, 1, 0, 1, 1), -- Polished Spaulders of Valor (Warrior, Paladin)
-(@ITEM_ID, 42950, 100, 1, 0, 1, 1), -- Champion Herod's Shoulder (Hunter)
-(@ITEM_ID, 42951, 100, 1, 0, 1, 1), -- Mystical Pauldrons of Elements (Shaman)
-(@ITEM_ID, 42952, 100, 1, 0, 1, 1), -- Stained Shadowcraft Spaulders (Rogue)
-(@ITEM_ID, 42984, 100, 1, 0, 1, 1), -- Preened Ironfeather Shoulders (Druid)
-(@ITEM_ID, 42985, 100, 1, 0, 1, 1), -- Tattered Dreadmist Mantle (Priest, Mage, Warlock)
-(@ITEM_ID, 42991, 100, 1, 0, 1, 1), -- Swift Hand of Justice (All)
-(@ITEM_ID, 42992, 100, 1, 0, 1, 1), -- Discerning Eye of the Beast (Priest, Shaman, Mage, Warlock, Druid, Hunter, Paladin)
-(@ITEM_ID, 48683, 100, 1, 0, 1, 1), -- Mystical Vest of Elements (Shaman)
-(@ITEM_ID, 48685, 100, 1, 0, 1, 1), -- Polished Breastplate of Valor (Warrior, Paladin)
-(@ITEM_ID, 48687, 100, 1, 0, 1, 1), -- Preened Ironfeather Breastplate (Druid)
-(@ITEM_ID, 48689, 100, 1, 0, 1, 1), -- Stained Shadowcraft Tunic (Rogue)
-(@ITEM_ID, 48691, 100, 1, 0, 1, 1), -- Tattered Dreadmist Robe (Priest, Mage, Warlock)
-(@ITEM_ID, 50255, 100, 1, 0, 1, 1), -- Dread Pirate Ring (All)
-(@ITEM_ID, 44092, 100, 1, 0, 1, 1); -- Reforged Truesilver Champion (Paladin)
+(@ITEM_ID, 42943, 0, 1, @LOOT_GROUP, 1, 1), 	-- Bloodied Arcanite Reaper (Warrior)
+-- (@ITEM_ID, 44099, 0, 1, @LOOT_GROUP, 1, 1), 	-- Strengthened Stockade Pauldrons (Warrior, Paladin)
+(@ITEM_ID, 48677, 0, 1, @LOOT_GROUP, 1, 1), 	-- Champion's Deathdealer Breastplate (Hunter)
+(@ITEM_ID, 42944, 0, 1, @LOOT_GROUP, 2, 2), 	-- Balanced Heartseeker (Rogue x2)
+(@ITEM_ID, 42946, 0, 1, @LOOT_GROUP, 1, 1), 	-- Charmed Ancient Bone Bow (Rogue, Hunter, Warrior)
+(@ITEM_ID, 42947, 0, 1, @LOOT_GROUP, 1, 1), 	-- Dignified Headmaster's Charge (Priest, Shaman, Mage, Warlock, Druid)
+(@ITEM_ID, 42949, 0, 1, @LOOT_GROUP, 1, 1), 	-- Polished Spaulders of Valor (Warrior, Paladin)
+(@ITEM_ID, 42950, 0, 1, @LOOT_GROUP, 1, 1), 	-- Champion Herod's Shoulder (Hunter)
+(@ITEM_ID, 42951, 0, 1, @LOOT_GROUP, 1, 1), 	-- Mystical Pauldrons of Elements (Shaman)
+(@ITEM_ID, 42952, 0, 1, @LOOT_GROUP, 1, 1), 	-- Stained Shadowcraft Spaulders (Rogue)
+(@ITEM_ID, 42984, 0, 1, @LOOT_GROUP, 1, 1), 	-- Preened Ironfeather Shoulders (Druid)
+(@ITEM_ID, 42985, 0, 1, @LOOT_GROUP, 1, 1), 	-- Tattered Dreadmist Mantle (Priest, Mage, Warlock)
+(@ITEM_ID, 42991, 0, 1, @LOOT_GROUP, 1, 1), 	-- Swift Hand of Justice (All)
+(@ITEM_ID, 42992, 0, 1, @LOOT_GROUP, 1, 1), 	-- Discerning Eye of the Beast (Priest, Shaman, Mage, Warlock, Druid, Hunter, Paladin)
+(@ITEM_ID, 48683, 0, 1, @LOOT_GROUP, 1, 1), 	-- Mystical Vest of Elements (Shaman)
+(@ITEM_ID, 48685, 0, 1, @LOOT_GROUP, 1, 1), 	-- Polished Breastplate of Valor (Warrior, Paladin)
+(@ITEM_ID, 48687, 0, 1, @LOOT_GROUP, 1, 1), 	-- Preened Ironfeather Breastplate (Druid)
+(@ITEM_ID, 48689, 0, 1, @LOOT_GROUP, 1, 1), 	-- Stained Shadowcraft Tunic (Rogue)
+(@ITEM_ID, 48691, 0, 1, @LOOT_GROUP, 1, 1), 	-- Tattered Dreadmist Robe (Priest, Mage, Warlock)
+(@ITEM_ID, 50255, 0, 1, @LOOT_GROUP, 1, 1), 	-- Dread Pirate Ring (All)
+(@ITEM_ID, 44092, 0, 1, @LOOT_GROUP, 1, 1), 	-- Reforged Truesilver Champion
+(@ITEM_ID, 858, 100, 1, 0, 10, 10), 			-- Lesser Healing Potion (All x10)
+(@ITEM_ID, 2455, 100, 1, 0, 10, 10), 			-- Minor Mana Potion (All x10)
+(@ITEM_ID, 2459, 100, 1, 0, 5, 5); 				-- Swiftness Potion (All x5)
 
 SET @CLASS_WARRIOR = 1;
 SET @CLASS_PALADIN = 2;
@@ -79,18 +84,19 @@ SET @CLASS_SHAMAN = 64;
 SET @CLASS_MAGE = 128;
 SET @CLASS_WARLOCK = 256;
 SET @CLASS_DRUID = 1024;
+SET @CLASS_PLATE = @CLASS_WARRIOR + @CLASS_PALADIN + @CLASS_DEATH_KNIGHT;
 
 DELETE FROM `conditions` WHERE `SourceTypeOrReferenceId` = @CONDITION_SOURCE_TYPE_ITEM_LOOT_TEMPLATE AND `SourceGroup` = @ITEM_ID;
 INSERT INTO `conditions` (`SourceTypeOrReferenceId`, `SourceGroup`, `SourceEntry`, `SourceId`, `ElseGroup`, `ConditionTypeOrReference`, `ConditionTarget`,
 `ConditionValue1`, `ConditionValue2`, `ConditionValue3`, `NegativeCondition`, `ErrorType`, `ErrorTextId`, `ScriptName`, `Comment`) VALUES
-(@CONDITION_SOURCE_TYPE_ITEM_LOOT_TEMPLATE, @ITEM_ID, 42943, 0, 0, @CONDITION_CLASS_MASK, 0, @CLASS_WARRIOR, 0, 0, 0, 0, 0, '', 'Bloodied Arcanite Reaper'),
-(@CONDITION_SOURCE_TYPE_ITEM_LOOT_TEMPLATE, @ITEM_ID, 44099, 0, 0, @CONDITION_CLASS_MASK, 0, @CLASS_WARRIOR + @CLASS_PALADIN, 0, 0, 0, 0, 0, '', 'Strengthened Stockade Pauldrons'),
-(@CONDITION_SOURCE_TYPE_ITEM_LOOT_TEMPLATE, @ITEM_ID, 48677, 0, 0, @CONDITION_CLASS_MASK, 0, @CLASS_HUNTER, 0, 0, 0, 0, 0, '', 'Champion\'s Deathdealer Breastplate'),
+(@CONDITION_SOURCE_TYPE_ITEM_LOOT_TEMPLATE, @ITEM_ID, 42943, 0, 0, @CONDITION_CLASS_MASK, 0, @CLASS_WARRIOR + @CLASS_DEATH_KNIGHT, 0, 0, 0, 0, 0, '', 'Bloodied Arcanite Reaper'),
+-- (@CONDITION_SOURCE_TYPE_ITEM_LOOT_TEMPLATE, @ITEM_ID, 44099, 0, 0, @CONDITION_CLASS_MASK, 0, @CLASS_PLATE, 0, 0, 0, 0, 0, '', 'Strengthened Stockade Pauldrons'),
+(@CONDITION_SOURCE_TYPE_ITEM_LOOT_TEMPLATE, @ITEM_ID, 48677, 0, 0, @CONDITION_CLASS_MASK, 0, @CLASS_HUNTER, 0, 0, 0, 0, 0, '', "Champion's Deathdealer Breastplate"),
 (@CONDITION_SOURCE_TYPE_ITEM_LOOT_TEMPLATE, @ITEM_ID, 42944, 0, 0, @CONDITION_CLASS_MASK, 0, @CLASS_ROGUE, 0, 0, 0, 0, 0, '', 'Balanced Heartseeker'),
 (@CONDITION_SOURCE_TYPE_ITEM_LOOT_TEMPLATE, @ITEM_ID, 42946, 0, 0, @CONDITION_CLASS_MASK, 0, @CLASS_ROGUE + @CLASS_HUNTER + @CLASS_WARRIOR, 0, 0, 0, 0, 0, '', 'Charmed Ancient Bone Bow'),
-(@CONDITION_SOURCE_TYPE_ITEM_LOOT_TEMPLATE, @ITEM_ID, 42947, 0, 0, @CONDITION_CLASS_MASK, 0, @CLASS_PRIEST + @CLASS_SHAMAN + @CLASS_MAGE + @CLASS_WARLOCK + @CLASS_DRUID, 0, 0, 0, 0, 0, '', 'Dignified Headmaster\'s Charge'),
-(@CONDITION_SOURCE_TYPE_ITEM_LOOT_TEMPLATE, @ITEM_ID, 42949, 0, 0, @CONDITION_CLASS_MASK, 0, @CLASS_WARRIOR + @CLASS_PALADIN, 0, 0, 0, 0, 0, '', 'Polished Spaulders of Valor'),
-(@CONDITION_SOURCE_TYPE_ITEM_LOOT_TEMPLATE, @ITEM_ID, 42950, 0, 0, @CONDITION_CLASS_MASK, 0, @CLASS_HUNTER, 0, 0, 0, 0, 0, '', 'Champion Herod\'s Shoulder'),
+(@CONDITION_SOURCE_TYPE_ITEM_LOOT_TEMPLATE, @ITEM_ID, 42947, 0, 0, @CONDITION_CLASS_MASK, 0, @CLASS_PRIEST + @CLASS_SHAMAN + @CLASS_MAGE + @CLASS_WARLOCK + @CLASS_DRUID, 0, 0, 0, 0, 0, '', "Dignified Headmaster's Charge"),
+(@CONDITION_SOURCE_TYPE_ITEM_LOOT_TEMPLATE, @ITEM_ID, 42949, 0, 0, @CONDITION_CLASS_MASK, 0, @CLASS_PLATE, 0, 0, 0, 0, 0, '', 'Polished Spaulders of Valor'),
+(@CONDITION_SOURCE_TYPE_ITEM_LOOT_TEMPLATE, @ITEM_ID, 42950, 0, 0, @CONDITION_CLASS_MASK, 0, @CLASS_HUNTER, 0, 0, 0, 0, 0, '', "Champion Herod's Shoulder"),
 (@CONDITION_SOURCE_TYPE_ITEM_LOOT_TEMPLATE, @ITEM_ID, 42951, 0, 0, @CONDITION_CLASS_MASK, 0, @CLASS_SHAMAN, 0, 0, 0, 0, 0, '', 'Mystical Pauldrons of Elements'),
 (@CONDITION_SOURCE_TYPE_ITEM_LOOT_TEMPLATE, @ITEM_ID, 42952, 0, 0, @CONDITION_CLASS_MASK, 0, @CLASS_ROGUE, 0, 0, 0, 0, 0, '', 'Stained Shadowcraft Spaulders'),
 (@CONDITION_SOURCE_TYPE_ITEM_LOOT_TEMPLATE, @ITEM_ID, 42984, 0, 0, @CONDITION_CLASS_MASK, 0, @CLASS_DRUID, 0, 0, 0, 0, 0, '', 'Preened Ironfeather Shoulders'),
@@ -98,7 +104,7 @@ INSERT INTO `conditions` (`SourceTypeOrReferenceId`, `SourceGroup`, `SourceEntry
 -- skip all (@CONDITION_SOURCE_TYPE_ITEM_LOOT_TEMPLATE, @ITEM_ID, 42991, 0, 0, @CONDITION_CLASS_MASK, 0, classMask, 0, 0, 0, 0, 0, '', 'Swift Hand of Justice'),
 (@CONDITION_SOURCE_TYPE_ITEM_LOOT_TEMPLATE, @ITEM_ID, 42992, 0, 0, @CONDITION_CLASS_MASK, 0, @CLASS_PRIEST + @CLASS_SHAMAN + @CLASS_MAGE + @CLASS_WARLOCK + @CLASS_DRUID + @CLASS_HUNTER + @CLASS_PALADIN, 0, 0, 0, 0, 0, '', 'Discerning Eye of the Beast'),
 (@CONDITION_SOURCE_TYPE_ITEM_LOOT_TEMPLATE, @ITEM_ID, 48683, 0, 0, @CONDITION_CLASS_MASK, 0, @CLASS_SHAMAN, 0, 0, 0, 0, 0, '', 'Mystical Vest of Elements'),
-(@CONDITION_SOURCE_TYPE_ITEM_LOOT_TEMPLATE, @ITEM_ID, 48685, 0, 0, @CONDITION_CLASS_MASK, 0, @CLASS_WARRIOR + @CLASS_PALADIN, 0, 0, 0, 0, 0, '', 'Polished Breastplate of Valor'),
+(@CONDITION_SOURCE_TYPE_ITEM_LOOT_TEMPLATE, @ITEM_ID, 48685, 0, 0, @CONDITION_CLASS_MASK, 0, @CLASS_PLATE, 0, 0, 0, 0, 0, '', 'Polished Breastplate of Valor'),
 (@CONDITION_SOURCE_TYPE_ITEM_LOOT_TEMPLATE, @ITEM_ID, 48687, 0, 0, @CONDITION_CLASS_MASK, 0, @CLASS_DRUID, 0, 0, 0, 0, 0, '', 'Preened Ironfeather Breastplate'),
 (@CONDITION_SOURCE_TYPE_ITEM_LOOT_TEMPLATE, @ITEM_ID, 48689, 0, 0, @CONDITION_CLASS_MASK, 0, @CLASS_ROGUE, 0, 0, 0, 0, 0, '', 'Stained Shadowcraft Tunic'),
 (@CONDITION_SOURCE_TYPE_ITEM_LOOT_TEMPLATE, @ITEM_ID, 48691, 0, 0, @CONDITION_CLASS_MASK, 0, @CLASS_PRIEST + @CLASS_MAGE + @CLASS_WARLOCK, 0, 0, 0, 0, 0, '', 'Tattered Dreadmist Robe'),
